@@ -1,4 +1,4 @@
-package errors
+package errcode
 
 import (
 	"github.com/gin-gonic/gin/render"

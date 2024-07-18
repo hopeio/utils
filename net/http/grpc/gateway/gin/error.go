@@ -2,7 +2,8 @@ package gin
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/hopeio/protobuf/errcode"
+	"github.com/hopeio/utils/errors/errcode"
+
 	"github.com/hopeio/utils/encoding/protobuf/jsonpb"
 	httpi "github.com/hopeio/utils/net/http"
 	"github.com/hopeio/utils/net/http/grpc/reconn"

@@ -2,13 +2,13 @@ package oauth
 
 import (
 	"errors"
+	"github.com/hopeio/utils/net/http/oauth/provider"
 	"html/template"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
-	"github.com/hopeio/utils/validation/auth/oauth/provider"
 	"github.com/markbates/goth"
 )
 

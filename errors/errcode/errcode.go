@@ -1,4 +1,4 @@
-package errors
+package errcode
 
 import (
 	"github.com/gin-gonic/gin/render"
@@ -8,12 +8,9 @@ import (
 	"google.golang.org/grpc/status"
 	"net/http"
 	"strconv"
-	"sync"
 )
 
-var codeMap = sync.Map{}
-
-type DefaultErrRep interface {
+type IErrRep interface {
 	ErrRep() *ErrRep
 }
 
@@ -23,16 +20,15 @@ type GrpcStatus interface {
 
 type ErrCode uint32
 
-func RegisterErrCode(code ErrCode, msg string) {
-	codeMap.Store(code, msg)
-}
-
 func (x ErrCode) String() string {
-	value, ok := codeMap.Load(x)
-	if ok {
-		return value.(string)
+	if x == Success {
+		return "OK"
 	}
-	return ""
+	value, ok := codeMap[x]
+	if ok {
+		return value
+	}
+	return strconv.Itoa(int(x))
 }
 
 func (x ErrCode) ErrRep() *ErrRep {
