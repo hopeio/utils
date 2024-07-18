@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	httpi "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/utils/types/param"
 	"net/http"
 	"net/url"
 	"time"
@@ -12,8 +13,6 @@ import (
 	"github.com/go-oauth2/oauth2/v4"
 	"github.com/go-oauth2/oauth2/v4/errors"
 	"github.com/go-oauth2/oauth2/v4/server"
-	"github.com/hopeio/protobuf/oauth"
-	"github.com/hopeio/protobuf/response"
 )
 
 type Server struct {
@@ -42,7 +41,7 @@ func NewServer(cfg *server.Config, manager oauth2.Manager) *Server {
 	return srv
 }
 
-func (s *Server) GetRedirectURI(req *oauth.OauthReq, data map[string]interface{}) (uri string, err error) {
+func (s *Server) GetRedirectURI(req *param.OauthReq, data map[string]interface{}) (uri string, err error) {
 	u, err := url.Parse(req.RedirectURI)
 	if err != nil {
 		return
@@ -91,7 +90,7 @@ func (s *Server) CheckResponseType(rt oauth2.ResponseType) bool {
 	return false
 }
 
-func (s *Server) ValidationAuthorizeRequest(req *oauth.OauthReq) error {
+func (s *Server) ValidationAuthorizeRequest(req *param.OauthReq) error {
 	if req.ClientID == "" || req.RedirectURI == "" {
 		return errors.ErrInvalidRequest
 	}
@@ -105,7 +104,7 @@ func (s *Server) ValidationAuthorizeRequest(req *oauth.OauthReq) error {
 	return nil
 }
 
-func (s *Server) GetAuthorizeToken(ctx context.Context, req *oauth.OauthReq) (ti oauth2.TokenInfo, err error) {
+func (s *Server) GetAuthorizeToken(ctx context.Context, req *param.OauthReq) (ti oauth2.TokenInfo, err error) {
 	// check the client allows the grant type
 	if fn := s.ClientAuthorizedHandler; fn != nil {
 		gt := oauth2.AuthorizationCode
@@ -150,47 +149,51 @@ func (s *Server) GetAuthorizeToken(ctx context.Context, req *oauth.OauthReq) (ti
 	return
 }
 
-func (s *Server) redirectError(req *oauth.OauthReq, err error) *response.HttpResponse {
+func (s *Server) redirectError(req *param.OauthReq, err error, w http.ResponseWriter) {
 	data, _, _ := s.GetErrorData(err)
-	return s.redirect(req, data)
+	s.redirect(req, data, w)
 }
 
-func (s *Server) redirect(req *oauth.OauthReq, data map[string]interface{}) *response.HttpResponse {
-	w := &response.HttpResponse{}
+func (s *Server) redirect(req *param.OauthReq, data map[string]interface{}, w http.ResponseWriter) {
+	w.WriteHeader(http.StatusFound)
+	if req.LoginURI != "" {
+		w.Header().Set(httpi.HeaderLocation, req.LoginURI)
+		w.Write([]byte("未登录"))
+		return
+	}
 	uri, err := s.GetRedirectURI(req, data)
 	if err != nil {
-		w.Body = []byte(err.Error())
-		return w
+		w.Write([]byte(err.Error()))
+		return
 	}
-	if req.LoginURI != "" {
-		w.Body = []byte("未登录")
-	}
-	w.Header = []string{httpi.HeaderLocation, uri}
-	w.StatusCode = http.StatusFound
-	return w
+
+	w.Header().Set(httpi.HeaderLocation, uri)
 }
 
-func (s *Server) HandleAuthorizeRequest(ctx context.Context, req *oauth.OauthReq, token string) (w *response.HttpResponse) {
+func (s *Server) HandleAuthorizeRequest(ctx context.Context, req *param.OauthReq, token string, w http.ResponseWriter) {
 	err := s.ValidationAuthorizeRequest(req)
 	if err != nil {
-		return s.redirectError(req, err)
+		s.redirectError(req, err, w)
+		return
 	}
 
 	// user authorization
 	req.UserID, err = s.UserAuthorizationHandler(token)
 
 	if err != nil || req.UserID == "" {
-		return s.redirect(req, nil)
+		s.redirect(req, nil, w)
+		return
 	}
 	req.LoginURI = ""
 	// specify the expiration time of access token
 
 	ti, verr := s.GetAuthorizeToken(ctx, req)
 	if verr != nil {
-		return s.redirectError(req, verr)
+		s.redirectError(req, verr, w)
+		return
 	}
 
-	return s.redirect(req, s.GetAuthorizeData(oauth2.ResponseType(req.ResponseType), ti))
+	s.redirect(req, s.GetAuthorizeData(oauth2.ResponseType(req.ResponseType), ti), w)
 }
 
 func (s *Server) GetAuthorizeData(rt oauth2.ResponseType, ti oauth2.TokenInfo) map[string]interface{} {
@@ -278,7 +281,7 @@ func (s *Server) GetErrorData(err error) (map[string]interface{}, int, http.Head
 	return data, statusCode, re.Header
 }
 
-func (s *Server) ValidationTokenRequest(r *oauth.OauthReq) (*oauth2.TokenGenerateRequest, error) {
+func (s *Server) ValidationTokenRequest(r *param.OauthReq) (*oauth2.TokenGenerateRequest, error) {
 
 	if r.GrantType == "" {
 		return nil, errors.ErrUnsupportedGrantType
@@ -312,42 +315,36 @@ func (s *Server) ValidationTokenRequest(r *oauth.OauthReq) (*oauth2.TokenGenerat
 	return tgr, nil
 }
 
-func (s *Server) HandleTokenRequest(ctx context.Context, r *oauth.OauthReq) (*response.HttpResponse, error) {
+func (s *Server) HandleTokenRequest(ctx context.Context, r *param.OauthReq, w http.ResponseWriter) error {
 	tgr, err := s.ValidationTokenRequest(r)
 	if err != nil {
-		return s.tokenError(err)
+		return s.tokenError(err, w)
 	}
 
 	ti, err := s.GetAccessToken(ctx, oauth2.GrantType(r.GrantType), tgr)
 	if err != nil {
-		return s.tokenError(err)
+		return s.tokenError(err, w)
 	}
 
-	return s.token(s.GetTokenData(ti), nil)
+	return s.token(s.GetTokenData(ti), nil, http.StatusOK, w)
 }
 
-func (s *Server) tokenError(err error) (*response.HttpResponse, error) {
+func (s *Server) tokenError(err error, w http.ResponseWriter) error {
 	data, statusCode, header := s.GetErrorData(err)
-	return s.token(data, header, statusCode)
+	return s.token(data, header, statusCode, w)
 }
-func (s *Server) token(data map[string]interface{}, header http.Header, statusCode ...int) (*response.HttpResponse, error) {
-	res := &response.HttpResponse{}
-	res.Header = []string{"Content-Type", "application/json;charset=UTF-8",
-		"Cache-Control", "no-store",
-		"Pragma", "no-cache"}
+func (s *Server) token(data map[string]interface{}, header http.Header, statusCode int, w http.ResponseWriter) error {
+	w.WriteHeader(statusCode)
+	wheader := w.Header()
+	wheader.Set("Content-Type", "application/json;charset=UTF-8")
+	wheader.Set("Cache-Control", "no-store")
+	wheader.Set("Pragma", "no-cache")
 
-	for k, v := range header {
-		res.Header = append(res.Header, k, v[0])
-	}
+	httpi.CopyHttpHeader(header, wheader)
 
-	status := http.StatusOK
-	if len(statusCode) > 0 && statusCode[0] > 0 {
-		status = statusCode[0]
-	}
-
-	res.StatusCode = uint32(status)
-	res.Body, _ = json.Marshal(data)
-	return res, nil
+	jdata, _ := json.Marshal(data)
+	w.Write(jdata)
+	return nil
 }
 
 func (s *Server) GetAccessToken(ctx context.Context, gt oauth2.GrantType, tgr *oauth2.TokenGenerateRequest) (oauth2.TokenInfo, error) {

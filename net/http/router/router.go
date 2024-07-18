@@ -85,7 +85,6 @@ import (
 	httpi "github.com/hopeio/utils/net/http"
 	urli "github.com/hopeio/utils/net/url"
 	"net/http"
-	"reflect"
 	"strings"
 	"sync"
 )
@@ -244,7 +243,7 @@ func New() *Router {
 // This function is intended for bulk loading and to allow the usage of less
 // frequently used, non-standardized or custom methods (e.g. for internal
 // communication with a proxy).
-func (r *Router) Handle(method, path string, middleware []http.HandlerFunc, handle reflect.Value) {
+func (r *Router) Handle(method, path string, middleware []http.HandlerFunc, httpHandler http.Handler) {
 	varsCount := uint16(0)
 
 	if method == "" {
@@ -252,10 +251,6 @@ func (r *Router) Handle(method, path string, middleware []http.HandlerFunc, hand
 	}
 	if len(path) < 1 || path[0] != '/' {
 		panic("path must begin with '/' in path '" + path + "'")
-	}
-
-	if handle.IsNil() {
-		panic("handle must not be empty")
 	}
 
 	if r.SaveMatchedRoutePath {
@@ -266,7 +261,7 @@ func (r *Router) Handle(method, path string, middleware []http.HandlerFunc, hand
 		r.trees = new(node)
 	}
 
-	r.trees.addRoute(path, &methodHandle{method, middleware, nil, &handle})
+	r.trees.addRoute(path, &methodHandle{method, middleware, httpHandler})
 
 	// Update maxParams
 	if paramsCount := countParams(path); paramsCount+varsCount > r.maxParams {
@@ -304,7 +299,7 @@ func (r *Router) Handler(method, path string, handle ...http.HandlerFunc) {
 		r.trees = new(node)
 	}
 
-	r.trees.addRoute(path, &methodHandle{method, handle[:len(handle)-1], handle[len(handle)-1], &reflect.Value{}})
+	r.trees.addRoute(path, &methodHandle{method, handle[:len(handle)-1], handle[len(handle)-1]})
 
 	// Update maxParams
 	if paramsCount := countParams(path); paramsCount+varsCount > r.maxParams {
@@ -408,7 +403,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	if root := r.trees; root != nil {
 		r.middleware.ServeHTTP(w, req)
-		if middleware, handles, ps, tsr := root.getValue(path, r.getParams); handles != nil {
+		if middleware, handles, _, tsr := root.getValue(path, r.getParams); handles != nil {
 			mh := getHandle(req.Method, handles)
 			if mh.Valid() {
 				for i := range middleware {
@@ -422,13 +417,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				mh.httpHandler.ServeHTTP(w, req)
 				return
 			}
-			if mh.handle.IsValid() {
-				if r.SaveMatchedRoutePath {
-					*ps = append(*ps, Param{Key: MatchedRoutePathParam, Value: path})
-				}
-				commonHandler(w, req, mh.handle, ps)
-				return
-			}
+
 			if allow := r.allowed(path, req.Method, handles); allow != "" {
 				w.Header().Set("Allow", allow)
 				if req.Method == http.MethodOptions && r.HandleOPTIONS && r.GlobalOPTIONS != nil {

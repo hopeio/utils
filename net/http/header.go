@@ -62,3 +62,11 @@ func CopyHttpHeader(src, dst http.Header) {
 		sv = sv[n:]
 	}
 }
+
+func copyHeader(dst, src http.Header) {
+	for k, vv := range src {
+		for _, v := range vv {
+			dst.Add(k, v)
+		}
+	}
+}

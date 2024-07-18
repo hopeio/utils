@@ -3,7 +3,9 @@ package runtime
 import (
 	"context"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/hopeio/protobuf/errcode"
+	"github.com/hopeio/utils/errors/errcode"
+	"google.golang.org/grpc/codes"
+
 	httpi "github.com/hopeio/utils/net/http"
 	"github.com/hopeio/utils/net/http/grpc/gateway"
 	"github.com/hopeio/utils/net/http/grpc/reconn"
@@ -40,7 +42,7 @@ func CustomHttpError(ctx context.Context, mux *runtime.ServeMux, marshaler runti
 	w.Header().Set(httpi.HeaderContentType, contentType)
 	se, ok := err.(*errcode.ErrRep)
 	if !ok {
-		se = &errcode.ErrRep{Code: errcode.Unknown, Message: err.Error()}
+		se = &errcode.ErrRep{Code: errcode.ErrCode(codes.Unknown), Message: err.Error()}
 	}
 
 	md, ok := runtime.ServerMetadataFromContext(ctx)

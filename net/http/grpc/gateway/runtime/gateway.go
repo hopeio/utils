@@ -8,7 +8,6 @@ import (
 	"net/url"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/hopeio/utils/encoding/protobuf/jsonpb"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -18,7 +17,7 @@ func Gateway(gatewayHandle GatewayHandler) *runtime.ServeMux {
 	ctx := context.Background()
 
 	gwmux := runtime.NewServeMux(
-		runtime.WithMarshalerOption(runtime.MIMEWildcard, &jsonpb.JSONPb{}),
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &JSONPb{}),
 
 		runtime.WithMetadata(func(ctx context.Context, req *http.Request) metadata.MD {
 			area, err := url.PathUnescape(req.Header.Get(httpi.HeaderArea))
@@ -68,7 +67,6 @@ func Gateway(gatewayHandle GatewayHandler) *runtime.ServeMux {
 		runtime.WithOutgoingHeaderMatcher(gateway.OutgoingHeaderMatcher))
 
 	runtime.WithForwardResponseOption(gateway.CookieHook)(gwmux)
-	runtime.WithForwardResponseOption(gateway.ResponseHook)(gwmux)
 	runtime.WithRoutingErrorHandler(RoutingErrorHandler)(gwmux)
 	runtime.WithErrorHandler(CustomHttpError)(gwmux)
 	if gatewayHandle != nil {

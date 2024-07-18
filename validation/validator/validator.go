@@ -52,8 +52,7 @@ func Trans(err error) string {
 	var msg []string
 	ve, ok := err.(validator.ValidationErrors)
 	if !ok {
-		log.Error("无效的参数")
-		return ""
+		return err.Error()
 	}
 	for _, v := range ve.Translate(trans) {
 		msg = append(msg, v)

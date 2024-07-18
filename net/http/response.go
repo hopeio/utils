@@ -3,7 +3,7 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hopeio/protobuf/errcode"
+	"github.com/hopeio/utils/errors/errcode"
 	"io"
 	"net/http"
 	"time"
@@ -25,10 +25,18 @@ func (res *ResData[T]) Response(w http.ResponseWriter, httpcode int) {
 	w.Write(jsonBytes)
 }
 
-type ResAnyData = ResData[any]
-
 func NewResData[T any](code errcode.ErrCode, msg string, data T) *ResData[T] {
 	return &ResData[T]{
+		Code:    code,
+		Message: msg,
+		Details: data,
+	}
+}
+
+type ResAnyData = ResData[any]
+
+func NewResAnyData(code errcode.ErrCode, msg string, data any) *ResAnyData {
+	return &ResAnyData{
 		Code:    code,
 		Message: msg,
 		Details: data,
@@ -39,12 +47,12 @@ func RespErrcode(w http.ResponseWriter, code errcode.ErrCode) {
 	NewResData[any](code, code.Error(), nil).Response(w, http.StatusOK)
 }
 
-func RespErr(w http.ResponseWriter, err error) {
-	NewResData[any](errcode.Unknown, err.Error(), nil).Response(w, http.StatusOK)
+func SuccessRespMsg(w http.ResponseWriter, msg string) {
+	NewResData[any](errcode.Success, msg, nil).Response(w, http.StatusOK)
 }
 
-func RespErrMsg(w http.ResponseWriter, msg string) {
-	NewResData[any](errcode.Success, msg, nil).Response(w, http.StatusOK)
+func SuccessRespData(w http.ResponseWriter, data any) {
+	NewResData[any](errcode.Success, errcode.Success.String(), data).Response(w, http.StatusOK)
 }
 
 func RespErrRep(w http.ResponseWriter, rep *errcode.ErrRep) {
@@ -53,6 +61,10 @@ func RespErrRep(w http.ResponseWriter, rep *errcode.ErrRep) {
 
 func Response[T any](w http.ResponseWriter, code errcode.ErrCode, msg string, data T) {
 	NewResData(code, msg, data).Response(w, http.StatusOK)
+}
+
+func SuccessResponse[T any](w http.ResponseWriter, msg string, data T) {
+	NewResData(errcode.Success, msg, data).Response(w, http.StatusOK)
 }
 
 func StreamWriter(w http.ResponseWriter, writer func(w io.Writer) bool) {
@@ -88,30 +100,18 @@ func Stream(w http.ResponseWriter) {
 	})
 }
 
-var ResponseSysErr = []byte(`{"code":10000,"message":"系统错误"}`)
+var ResponseSysErr = []byte(`{"code":-1,"message":"system error"}`)
 var ResponseOk = []byte(`{"code":0,"message":"OK"}`)
 
-type ReceiveData struct {
-	Code    errcode.ErrCode `json:"code"`
-	Message string          `json:"message,omitempty"`
-	//验证码
-	Details json.RawMessage `json:"details,omitempty"`
-}
+type ReceiveData = ResData[json.RawMessage]
 
-func NewReceivesData(code errcode.ErrCode, msg string, data any) *ReceiveData {
+func NewReceiveData(code errcode.ErrCode, msg string, data any) *ReceiveData {
 	jsonBytes, _ := json.Marshal(data)
 	return &ReceiveData{
 		Code:    code,
 		Message: msg,
 		Details: jsonBytes,
 	}
-}
-
-func (r *ReceiveData) Response(w http.ResponseWriter, httpcode int) {
-	w.WriteHeader(httpcode)
-	w.Header().Set(HeaderContentType, "application/json; charset=utf-8")
-	jsonBytes, _ := json.Marshal(r)
-	w.Write(jsonBytes)
 }
 
 func (r *ReceiveData) UnmarshalData(v any) error {
