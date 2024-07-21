@@ -7,30 +7,30 @@ import (
 	"unsafe"
 )
 
-var str62 string = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const digits string = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-func FormatInt(num, base int64) string {
+func FormatUint(num, base int64) string {
 	if base < 37 {
 		return strconv.FormatInt(num, int(base))
 	}
 	var bytes []byte
 	for num > 0 {
-		bytes = append(bytes, str62[num%base])
+		bytes = append(bytes, digits[num%base])
 		num = num / base
 	}
 	reverse(bytes)
 	return string(bytes)
 }
 
-func ParseInt(str string, base float64) (int64, error) {
+func ParseUint(str string, base float64) (uint64, error) {
 	if base < 37 {
-		return strconv.ParseInt(str, int(base), strconv.IntSize)
+		return strconv.ParseUint(str, int(base), strconv.IntSize)
 	}
-	var num int64
+	var num uint64
 	n := len(str)
 	for i := 0; i < n; i++ {
 		pos := findIndex(str[i])
-		num += int64(math.Pow(base, float64(n-i-1)) * float64(pos))
+		num += uint64(math.Pow(base, float64(n-i-1)) * float64(pos))
 	}
 	return num, nil
 }

@@ -9,14 +9,14 @@ import (
 )
 
 // 随机id
-func GenID() uint64 {
+func NewID() uint64 {
 	return IDGenerator.NewID()
 }
 
 var currentID uint64 = 0
 
 // 单机程顺序id
-func GenOrderID() uint64 {
+func NewOrderID() uint64 {
 	return atomic.AddUint64(&currentID, 1)
 }
 

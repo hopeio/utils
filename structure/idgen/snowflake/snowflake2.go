@@ -1,8 +1,8 @@
 package snowflake
 
-// Package sonyflake implements Sonyflake, a distributed unique ID generator inspired by Twitter's Snowflake.
+// Package snowflake implements Snowflake, a distributed unique ID generator inspired by Twitter's Snowflake.
 //
-// A Sonyflake ID is composed of
+// A Snowflake ID is composed of
 //     39 bits for time in units of 10 msec
 //      8 bits for a sequence number
 //     16 bits for a machine id
@@ -14,26 +14,26 @@ import (
 	"time"
 )
 
-// These constants are the bit lengths of Sonyflake ID parts.
+// These constants are the bit lengths of Snowflake ID parts.
 const (
 	BitLenTime      = 39                               // bit length of time
 	BitLenSequence  = 8                                // bit length of sequence number
 	BitLenMachineID = 63 - BitLenTime - BitLenSequence // bit length of machine id
 )
 
-// Settings configures Sonyflake:
+// Settings configures Snowflake:
 //
-// StartTime is the time since which the Sonyflake time is defined as the elapsed time.
-// If StartTime is 0, the start time of the Sonyflake is set to "2014-09-01 00:00:00 +0000 UTC".
-// If StartTime is ahead of the current time, Sonyflake is not created.
+// StartTime is the time since which the Snowflake time is defined as the elapsed time.
+// If StartTime is 0, the start time of the Snowflake is set to "2014-09-01 00:00:00 +0000 UTC".
+// If StartTime is ahead of the current time, Snowflake is not created.
 //
-// MachineID returns the unique ID of the Sonyflake instance.
-// If MachineID returns an error, Sonyflake is not created.
+// MachineID returns the unique ID of the Snowflake instance.
+// If MachineID returns an error, Snowflake is not created.
 // If MachineID is nil, default MachineID is used.
 // Default MachineID returns the lower 16 bits of the private IP address.
 //
 // CheckMachineID validates the uniqueness of the machine ID.
-// If CheckMachineID returns false, Sonyflake is not created.
+// If CheckMachineID returns false, Snowflake is not created.
 // If CheckMachineID is nil, no validation is done.
 type Settings struct {
 	StartTime      time.Time
@@ -41,8 +41,8 @@ type Settings struct {
 	CheckMachineID func(uint16) bool
 }
 
-// Sonyflake is a distributed unique ID generator.
-type Sonyflake struct {
+// Snowflake is a distributed unique ID generator.
+type Snowflake struct {
 	mutex       *sync.Mutex
 	startTime   int64
 	elapsedTime int64
@@ -50,13 +50,13 @@ type Sonyflake struct {
 	machineID   uint16
 }
 
-// NewSonyflake returns a new Sonyflake configured with the given Settings.
-// NewSonyflake returns nil in the following cases:
+// NewSnowflake returns a new Snowflake configured with the given Settings.
+// NewSnowflake returns nil in the following cases:
 // - Settings.StartTime is ahead of the current time.
 // - Settings.MachineID returns an error.
 // - Settings.CheckMachineID returns false.
-func NewSonyflake(st Settings) *Sonyflake {
-	sf := new(Sonyflake)
+func NewSnowflake(st Settings) *Snowflake {
+	sf := new(Snowflake)
 	sf.mutex = new(sync.Mutex)
 	sf.sequence = uint16(1<<BitLenSequence - 1)
 
@@ -64,9 +64,9 @@ func NewSonyflake(st Settings) *Sonyflake {
 		return nil
 	}
 	if st.StartTime.IsZero() {
-		sf.startTime = toSonyflakeTime(time.Date(2014, 9, 1, 0, 0, 0, 0, time.UTC))
+		sf.startTime = toSnowflakeTime(time.Date(2014, 9, 1, 0, 0, 0, 0, time.UTC))
 	} else {
-		sf.startTime = toSonyflakeTime(st.StartTime)
+		sf.startTime = toSnowflakeTime(st.StartTime)
 	}
 
 	var err error
@@ -83,8 +83,8 @@ func NewSonyflake(st Settings) *Sonyflake {
 }
 
 // NextID generates a next unique ID.
-// After the Sonyflake time overflows, NextID returns an error.
-func (sf *Sonyflake) NextID() (uint64, error) {
+// After the Snowflake time overflows, NextID returns an error.
+func (sf *Snowflake) NextID() (uint64, error) {
 	const maskSequence = uint16(1<<BitLenSequence - 1)
 
 	sf.mutex.Lock()
@@ -99,29 +99,29 @@ func (sf *Sonyflake) NextID() (uint64, error) {
 		if sf.sequence == 0 {
 			sf.elapsedTime++
 			overtime := sf.elapsedTime - current
-			time.Sleep(sleepTime((overtime)))
+			time.Sleep(sleepTime(overtime))
 		}
 	}
 
 	return sf.toID()
 }
 
-const sonyflakeTimeUnit = 1e7 // nsec, i.e. 10 msec
+const snowflakeTimeUnit = 1e7 // nsec, i.e. 10 msec
 
-func toSonyflakeTime(t time.Time) int64 {
-	return t.UTC().UnixNano() / sonyflakeTimeUnit
+func toSnowflakeTime(t time.Time) int64 {
+	return t.UTC().UnixNano() / snowflakeTimeUnit
 }
 
 func currentElapsedTime(startTime int64) int64 {
-	return toSonyflakeTime(time.Now()) - startTime
+	return toSnowflakeTime(time.Now()) - startTime
 }
 
 func sleepTime(overtime int64) time.Duration {
 	return time.Duration(overtime)*10*time.Millisecond -
-		time.Duration(time.Now().UTC().UnixNano()%sonyflakeTimeUnit)*time.Nanosecond
+		time.Duration(time.Now().UTC().UnixNano()%snowflakeTimeUnit)*time.Nanosecond
 }
 
-func (sf *Sonyflake) toID() (uint64, error) {
+func (sf *Snowflake) toID() (uint64, error) {
 	if sf.elapsedTime >= 1<<BitLenTime {
 		return 0, errors.New("over the time limit")
 	}
@@ -165,7 +165,7 @@ func lower16BitPrivateIP() (uint16, error) {
 	return uint16(ip[2])<<8 + uint16(ip[3]), nil
 }
 
-// Decompose returns a set of Sonyflake ID parts.
+// Decompose returns a set of Snowflake ID parts.
 func Decompose(id uint64) map[string]uint64 {
 	const maskSequence = uint64((1<<BitLenSequence - 1) << BitLenMachineID)
 	const maskMachineID = uint64(1<<BitLenMachineID - 1)

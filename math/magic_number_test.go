@@ -14,3 +14,7 @@ func TestMagicNumber(t *testing.T) {
 	t.Log(ValidateSecondKey(3 ^ magicNumber))
 	t.Log(ValidateSecondKey(time.Now().Unix() - 1 ^ magicNumber))
 }
+
+func TestBitOperation(t *testing.T) {
+	t.Log(-1 ^ (-1 << 8))
+}

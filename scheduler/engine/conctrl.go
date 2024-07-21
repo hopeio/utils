@@ -178,7 +178,7 @@ func (e *Engine[KEY]) addTasks(ctx context.Context, priority int, tasks ...*Task
 			task.Context = ctx
 		}
 		task.Priority += priority
-		task.id = id2.GenOrderID()
+		task.id = id2.NewOrderID()
 		e.taskChanProducer <- task
 	}
 }
@@ -273,7 +273,7 @@ func (e *Engine[KEY]) AddFixedTasks(workerId int, generation int, tasks ...*Task
 			continue
 		}
 		task.Priority += generation
-		task.id = id2.GenOrderID()
+		task.id = id2.NewOrderID()
 		worker.taskCh <- task
 	}
 	return nil
