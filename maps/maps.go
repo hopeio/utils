@@ -8,18 +8,34 @@ func Map[M ~map[K]V, K comparable, V, T any](m M, subValue func(K, V) T) []T {
 	return r
 }
 
-func Keys[M ~map[K]V, K comparable, V, T any](m M, subValue func(K) T) []T {
-	r := make([]T, 0, len(m))
-	for k, _ := range m {
-		r = append(r, subValue(k))
+func Keys[M ~map[K]V, K comparable, V any](m M) []K {
+	r := make([]K, 0, len(m))
+	for k := range m {
+		r = append(r, k)
 	}
 	return r
 }
 
-func Values[M ~map[K]V, K comparable, V, T any](m M, subValue func(V) T) []T {
+func KeysTransform[M ~map[K]V, K comparable, V, T any](m M, transform func(K) T) []T {
+	r := make([]T, 0, len(m))
+	for k, _ := range m {
+		r = append(r, transform(k))
+	}
+	return r
+}
+
+func Values[M ~map[K]V, K comparable, V any](m M) []V {
+	r := make([]V, 0, len(m))
+	for _, v := range m {
+		r = append(r, v)
+	}
+	return r
+}
+
+func ValuesTransform[M ~map[K]V, K comparable, V, T any](m M, transform func(V) T) []T {
 	r := make([]T, 0, len(m))
 	for _, v := range m {
-		r = append(r, subValue(v))
+		r = append(r, transform(v))
 	}
 	return r
 }
