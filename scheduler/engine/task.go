@@ -51,11 +51,6 @@ func NewTask[KEY Key](task TaskFunc[KEY]) *Task[KEY] {
 	}
 }
 
-func (t *Task[KEY]) SetContext(ctx context.Context) *Task[KEY] {
-	t.Context = ctx
-	return t
-}
-
 func (t *Task[KEY]) SetPriority(priority int) *Task[KEY] {
 	t.Priority = priority
 	return t

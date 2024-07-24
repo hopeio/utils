@@ -1,11 +1,10 @@
 package aop
 
 import (
+	randi "github.com/hopeio/utils/rand"
 	"math/rand"
 	"reflect"
 	"strconv"
-
-	"github.com/hopeio/utils/reflect/mock"
 )
 
 func Autowired(v interface{}) {
@@ -50,7 +49,7 @@ func autowired(value reflect.Value, typMap map[reflect.Type]struct{}) {
 			fieldValue.SetFloat(r)
 		case reflect.String:
 			if tag == "" {
-				fieldValue.SetString(mock.RandString())
+				fieldValue.SetString(randi.String())
 			} else {
 				fieldValue.SetString(tag)
 			}

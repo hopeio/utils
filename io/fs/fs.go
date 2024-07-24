@@ -5,12 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	filepath2 "github.com/hopeio/utils/io/fs/path"
 	"github.com/hopeio/utils/log"
 	"github.com/hopeio/utils/scheduler/monitor"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strconv"
 )
 
@@ -276,16 +275,16 @@ func Open(filepath string) (*os.File, error) {
 	return OpenFile(filepath, os.O_RDWR, 0666)
 }
 
-func OpenFile(filepath string, flag int, perm os.FileMode) (*os.File, error) {
-	_, err := os.Stat(filepath)
+func OpenFile(path string, flag int, perm os.FileMode) (*os.File, error) {
+	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		dir := filepath2.CleanDir(filepath)
+		dir := filepath.Clean(filepath.Dir(path))
 		err = os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return os.OpenFile(filepath, flag, perm)
+	return os.OpenFile(path, flag, perm)
 }
 
 // LastFile 当前目录最后一个创建的文件
@@ -294,7 +293,11 @@ func LastFile(dir string) (os.FileInfo, map[string]os.FileInfo, error) {
 	if len(entries) == 0 {
 		return nil, nil, err
 	}
-	sort.Sort(DirEntries(entries))
+	slices.SortFunc(entries, func(a, b os.DirEntry) int {
+		filei, _ := a.Info()
+		filej, _ := b.Info()
+		return filei.ModTime().Compare(filej.ModTime())
+	})
 	lastFile, err := entries[0].Info()
 	if err != nil {
 		return nil, nil, err
@@ -307,7 +310,7 @@ func LastFile(dir string) (os.FileInfo, map[string]os.FileInfo, error) {
 }
 
 func Move(src, dst string) error {
-	dir := filepath2.CleanDir(dst)
+	dir := filepath.Clean(filepath.Dir(dst))
 	err := os.MkdirAll(dir, os.ModePerm)
 	if err != nil {
 		return err

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/hopeio/utils/console"
 	fs2 "github.com/hopeio/utils/io/fs"
-	filepath2 "github.com/hopeio/utils/io/fs/path"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -43,7 +42,7 @@ func NewTask(filePath, tsFolder string, url string) (*Downloader, error) {
 		}
 		filePath = pwd + fs2.PathSeparator + filePath
 	} else {
-		if err := os.MkdirAll(filepath2.CleanDir(filePath), os.ModePerm); err != nil {
+		if err := os.MkdirAll(filepath.Clean(filepath.Dir(filePath)), os.ModePerm); err != nil {
 			return nil, fmt.Errorf("create storage folder failed: %s", err.Error())
 		}
 	}

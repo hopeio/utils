@@ -21,17 +21,83 @@ type Key interface {
 }
 
 type Config[KEY Key] struct {
-	WorkerCount uint
+	WorkerCount     uint64
+	WaitTaskCount   uint64
+	MonitorInterval time.Duration // 全局检测定时器间隔时间，任务的卡住检测，worker panic recover都可以用这个检测
+	DoneCache       ristretto.Config[KEY, struct{}]
+	EnableTelemetry bool
 }
 
 func (c *Config[KEY]) NewEngine() *Engine[KEY] {
-	return NewEngine[KEY](c.WorkerCount)
+	return c.NewEngineWithContext(context.Background())
+}
+
+func (c *Config[KEY]) NewEngineWithContext(ctx context.Context) *Engine[KEY] {
+	c.Init()
+	ctx, cancel := context.WithCancel(ctx)
+	cache, _ := ristretto.NewCache(&ristretto.Config[KEY, struct{}]{
+		NumCounters:        1e4,   // number of keys to track frequency of (10M).
+		MaxCost:            1e3,   // maximum cost of cache (MaxCost * 1MB).
+		BufferItems:        64,    // number of keys per Get buffer.
+		Metrics:            false, // number of keys per Get buffer.
+		IgnoreInternalCost: true,
+	})
+	engine := &Engine[KEY]{
+		workerCount:      c.WorkerCount,
+		waitTaskCount:    c.WaitTaskCount,
+		ctx:              ctx,
+		cancel:           cancel,
+		taskChanProducer: make(chan *Task[KEY]),
+		taskChanConsumer: make(chan *Task[KEY]),
+		taskReadyHeap:    heap.Heap[*Task[KEY]]{},
+		monitorInterval:  c.MonitorInterval,
+		done:             cache,
+		errHandler:       func(task *Task[KEY]) { task.ErrLog() },
+		lock:             sync.RWMutex{},
+		taskErrChan:      make(chan *Task[KEY]),
+		zeroKey:          *new(KEY),
+	}
+	return engine
+}
+
+func (c *Config[KEY]) Init() {
+	if c.WorkerCount == 0 {
+		c.WorkerCount = 10
+	}
+	if c.MonitorInterval == 0 {
+		c.MonitorInterval = 5 * time.Second
+	}
+	if c.DoneCache.NumCounters == 0 {
+		c.DoneCache.NumCounters = 1e4
+	}
+	if c.DoneCache.MaxCost == 0 {
+		c.DoneCache.MaxCost = 1e3
+	}
+	if c.DoneCache.BufferItems == 0 {
+		c.DoneCache.BufferItems = 64
+	}
+
+}
+
+func NewConfig[KEY Key]() *Config[KEY] {
+	return &Config[KEY]{
+		WorkerCount:     10,
+		WaitTaskCount:   50,
+		MonitorInterval: 5 * time.Second,
+		DoneCache: ristretto.Config[KEY, struct{}]{
+			NumCounters:        1e4,   // number of keys to track frequency of (10M).
+			MaxCost:            1e3,   // maximum cost of cache (MaxCost * 1MB).
+			BufferItems:        64,    // number of keys per Get buffer.
+			Metrics:            false, // number of keys per Get buffer.
+			IgnoreInternalCost: true,
+		},
+	}
 }
 
 type Engine[KEY Key] struct {
-	limitWorkerCount, currentWorkerCount, workingWorkerCount uint64
-	limitWaitTaskCount                                       uint
-	workers                                                  []*Worker[KEY]
+	workerCount, currentWorkerCount, workingWorkerCount uint64
+	waitTaskCount                                       uint64
+	workers                                             []*Worker[KEY]
 	// workerGroup [][]*Worker[KEY] //TODO 工作组概念
 	taskChanProducer chan *Task[KEY]
 	taskChanConsumer chan *Task[KEY]
@@ -42,18 +108,18 @@ type Engine[KEY Key] struct {
 	speedLimit       time2.Ticker
 	rateLimiter      *rate.Limiter
 	//TODO
-	monitorInterval              time.Duration // 全局检测定时器间隔时间，任务的卡住检测，worker panic recover都可以用这个检测
-	workerFactoryRunning         atomic.Bool
-	errHandleRunning             bool
-	enableTracing, enableMetrics bool
-	isRunning, isStopped         bool
-	lock                         sync.RWMutex
+	monitorInterval      time.Duration // 全局检测定时器间隔时间，任务的卡住检测，worker panic recover都可以用这个检测
+	workerFactoryRunning atomic.Bool
+	errHandleRunning     bool
+	enableTelemetry      bool
+	isRunning, isStopped bool
+	lock                 sync.RWMutex
 	EngineStatistics
 	done         *ristretto.Cache[KEY, struct{}]
 	kindHandlers []*KindHandler[KEY]
 	errHandler   func(task *Task[KEY])
 	taskErrChan  chan *Task[KEY]
-	stopCallBack []func()
+	onStop       []func(context.Context)
 	zeroKey      KEY // 泛型不够强大,又为了性能妥协的字段
 }
 
@@ -65,34 +131,14 @@ type KindHandler[KEY Key] struct {
 	HandleFun TaskFunc[KEY]
 }
 
-func NewEngine[KEY Key](workerCount uint) *Engine[KEY] {
+func NewEngine[KEY Key](workerCount uint64) *Engine[KEY] {
 	return NewEngineWithContext[KEY](workerCount, context.Background())
 }
 
-func NewEngineWithContext[KEY Key](workerCount uint, ctx context.Context) *Engine[KEY] {
-	ctx, cancel := context.WithCancel(ctx)
-	cache, _ := ristretto.NewCache(&ristretto.Config[KEY, struct{}]{
-		NumCounters:        1e4,   // number of keys to track frequency of (10M).
-		MaxCost:            1e3,   // maximum cost of cache (MaxCost * 1MB).
-		BufferItems:        64,    // number of keys per Get buffer.
-		Metrics:            false, // number of keys per Get buffer.
-		IgnoreInternalCost: true,
-	})
-	return &Engine[KEY]{
-		limitWorkerCount:   uint64(workerCount),
-		limitWaitTaskCount: workerCount * 10,
-		ctx:                ctx,
-		cancel:             cancel,
-		taskChanProducer:   make(chan *Task[KEY]),
-		taskChanConsumer:   make(chan *Task[KEY]),
-		taskReadyHeap:      heap.Heap[*Task[KEY]]{},
-		monitorInterval:    5 * time.Second,
-		done:               cache,
-		errHandler:         func(task *Task[KEY]) { task.ErrLog() },
-		lock:               sync.RWMutex{},
-		taskErrChan:        make(chan *Task[KEY]),
-		zeroKey:            *new(KEY),
-	}
+func NewEngineWithContext[KEY Key](workerCount uint64, ctx context.Context) *Engine[KEY] {
+	conf := NewConfig[KEY]()
+	conf.WorkerCount = workerCount
+	return conf.NewEngineWithContext(ctx)
 }
 
 func (e *Engine[KEY]) Context() context.Context {
@@ -159,7 +205,7 @@ func (e *Engine[KEY]) ErrHandlerWriteToFile(path string) *Engine[KEY] {
 	if err != nil {
 		panic(err)
 	}
-	e.StopCallBack(func() {
+	e.OnStop(func(context.Context) {
 		file.Close()
 	})
 	return e.ErrHandler(func(task *Task[KEY]) {
@@ -167,8 +213,8 @@ func (e *Engine[KEY]) ErrHandlerWriteToFile(path string) *Engine[KEY] {
 	})
 }
 
-func (e *Engine[KEY]) StopCallBack(callBack func()) *Engine[KEY] {
-	e.stopCallBack = append(e.stopCallBack, callBack)
+func (e *Engine[KEY]) OnStop(callBack func(context.Context)) *Engine[KEY] {
+	e.onStop = append(e.onStop, callBack)
 	return e
 }
 

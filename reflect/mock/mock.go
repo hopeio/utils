@@ -1,6 +1,7 @@
 package mock
 
 import (
+	randi "github.com/hopeio/utils/rand"
 	"math/rand/v2"
 	"reflect"
 )
@@ -30,7 +31,7 @@ func mock(value reflect.Value, typMap map[reflect.Type]int) {
 		r := rand.ExpFloat64()
 		value.SetFloat(r)
 	case reflect.String:
-		value.SetString(RandString())
+		value.SetString(randi.String())
 	case reflect.Ptr:
 		if value.IsNil() && value.CanSet() {
 			value.Set(reflect.New(typ.Elem()))
@@ -64,17 +65,4 @@ func mock(value reflect.Value, typMap map[reflect.Type]int) {
 			value.SetMapIndex(mk, mv)
 		}
 	}
-}
-
-func RandString() string {
-	runes := make([]rune, 5)
-	for i := range runes {
-		runes[i] = randRune()
-	}
-	return string(runes)
-}
-
-func randRune() rune {
-	r := rand.N(500)
-	return rune(r + 19968)
 }

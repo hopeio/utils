@@ -3,6 +3,7 @@ package path
 import (
 	stringsi "github.com/hopeio/utils/strings"
 	sdpath "path"
+	"path/filepath"
 	"strings"
 )
 
@@ -46,7 +47,7 @@ func DirCleanse(dir string) string { // will be used when save the dir or the pa
 
 // 针对带目录的完整文件名,Removed unsupported characters
 func Cleanse(path string) string { // will be used when save the dir or the part
-	dir, file := Split(path)
+	dir, file := filepath.Split(path)
 	if dir == "" {
 		return DirCleanse(dir)
 	}
@@ -57,30 +58,8 @@ func Cleanse(path string) string { // will be used when save the dir or the part
 	return DirCleanse(dir) + string(path[len(dir)-1-len(file)]) + FileCleanse(file)
 }
 
-func CleanDir(path string) string {
-	dir, _ := Split(path)
-	return sdpath.Clean(dir)
-}
-
-// 获取url的文件部分
-func Base(path string) string {
-	_, file := Split(path)
-	return file
-}
-
-// 返回目录名和文件名
-func Split(path string) (dir, file string) {
-	i := lastSlash(path)
-	return path[:i+1], path[i+1:]
-}
-
 // 获取文件名除去扩展名
 func FileNoExt(filepath string) string {
 	base := sdpath.Base(filepath)
 	return base[:len(base)-len(sdpath.Ext(base))]
-}
-
-func Dir(path string) string {
-	i := lastSlash(path)
-	return path[:i]
 }

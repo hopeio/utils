@@ -10,6 +10,10 @@ import (
 
 const CommonCmd = ` -i "%s" -y `
 
+type Config struct {
+	Path string
+}
+
 var execPath = "ffmpeg"
 
 func SetExecPath(path string) {
@@ -17,7 +21,7 @@ func SetExecPath(path string) {
 }
 
 func ffmpegCmd(cmd string) error {
-	cmd = execPath + cmd
+	cmd = execPath
 	log.Println(cmd)
 	err := osi.ContainQuotedStdoutCMD(cmd)
 	if err != nil {

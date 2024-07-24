@@ -147,7 +147,7 @@ const (
 
 //go:linkname mallocgc runtime.mallocgc
 //goland:noinspection GoUnusedParameter
-func mallocgc(nb uintptr, vt *reflect.GoType, zero bool) unsafe.Pointer
+func mallocgc(nb uintptr, vt *reflect.Type, zero bool) unsafe.Pointer
 
 type StackMapBuilder struct {
 	b Bitmap

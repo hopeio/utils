@@ -54,7 +54,7 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 				}
 
 				// go 无法动态的设置case,但是可以动态的把channel置为nil
-				if len(e.taskReadyHeap) >= int(e.limitWaitTaskCount) {
+				if len(e.taskReadyHeap) >= int(e.waitTaskCount) {
 					taskChan = nil
 				} else {
 					taskChan = e.taskChanProducer
@@ -149,7 +149,7 @@ func (e *Engine[KEY]) addWorker() {
 		for {
 			select {
 			case readyTask := <-e.taskChanConsumer:
-				if atomic.LoadUint64(&e.currentWorkerCount) < atomic.LoadUint64(&e.limitWorkerCount) {
+				if atomic.LoadUint64(&e.currentWorkerCount) < atomic.LoadUint64(&e.workerCount) {
 					e.newWorker(readyTask)
 				} else {
 					log.Info("worker count is full")
@@ -215,7 +215,7 @@ func (e *Engine[KEY]) reTryTasks(tasks ...*Task[KEY]) {
 }
 
 func (e *Engine[KEY]) AddWorker(num int) {
-	atomic.AddUint64(&e.limitWorkerCount, uint64(num))
+	atomic.AddUint64(&e.workerCount, uint64(num))
 	e.addWorker()
 }
 
@@ -280,7 +280,7 @@ func (e *Engine[KEY]) AddFixedTasks(workerId int, generation int, tasks ...*Task
 }
 
 func (e *Engine[KEY]) RunSingleWorker(tasks ...*Task[KEY]) {
-	e.limitWorkerCount = 1
+	e.workerCount = 1
 	e.Run(tasks...)
 }
 
@@ -391,8 +391,8 @@ func (e *Engine[KEY]) Stop() {
 		}
 	}
 
-	for _, callback := range e.stopCallBack {
-		callback()
+	for _, callback := range e.onStop {
+		callback(e.ctx)
 	}
 	e.isStopped = true
 }

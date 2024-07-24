@@ -19,7 +19,7 @@ func NewRequest(key string, kind engine.Kind, taskFunc TaskFunc) *Request {
 type Config = engine.Config[string]
 type Engine = engine.Engine[string]
 
-func NewEngine(workerCount uint) *engine.Engine[string] {
+func NewEngine(workerCount uint64) *engine.Engine[string] {
 	return engine.NewEngine[string](workerCount)
 }
 

@@ -84,7 +84,7 @@ type Client struct {
 	// retry
 	retryTimes    int
 	retryInterval time.Duration
-	retryHandler  func(*Client)
+	retryHandler  func(*http.Request)
 
 	req *Request
 }
@@ -179,7 +179,7 @@ func (c *Client) RetryTimesWithInterval(retryTimes int, retryInterval time.Durat
 	return c
 }
 
-func (c *Client) RetryHandler(handle func(*Client)) *Client {
+func (c *Client) RetryHandler(handle func(r *http.Request)) *Client {
 	c.retryHandler = handle
 	return c
 }

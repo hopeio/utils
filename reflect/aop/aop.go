@@ -6,16 +6,6 @@ import (
 	"unsafe"
 )
 
-type AnyFunc func()
-
-func (f AnyFunc) Aop(before, after AnyFunc) AnyFunc {
-	return func() {
-		before()
-		f()
-		after()
-	}
-}
-
 // Deprecated only support func var
 func Invoke(before func(), target any, after func()) {
 	v2 := reflect.ValueOf(target).Elem()

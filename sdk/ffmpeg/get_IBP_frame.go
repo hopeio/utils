@@ -3,8 +3,8 @@ package ffmpeg
 import (
 	"fmt"
 	"github.com/hopeio/utils/io/fs"
-	"github.com/hopeio/utils/io/fs/path"
 	osi "github.com/hopeio/utils/os"
+	"path/filepath"
 )
 
 type Frame int
@@ -31,7 +31,7 @@ const GetFrameCmd = CommonCmd + `-vf "select=eq(pict_type\,%s)" -fps_mode vfr -q
 
 func GetFrame(src string, f Frame) error {
 	//cmd := `ffmpeg -i ` + src + ` -vf "select=eq(pict_type\,` + f.String() + `)" -vsync vfr -qscale:v 2 -f image2 ` + dst + `/%03d.jpg`
-	dst := path.CleanDir(src) + f.String() + "Frame"
+	dst := filepath.Clean(filepath.Dir(src)) + f.String() + "Frame"
 	fs.Mkdir(dst)
 	cmd := fmt.Sprintf(GetFrameCmd, src, f.String(), dst)
 	_, err := osi.ContainQuotedCMD(cmd)

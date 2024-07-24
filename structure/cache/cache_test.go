@@ -3,7 +3,7 @@ package cache
 import (
 	"fmt"
 	"github.com/coocood/freecache"
-	gocache "github.com/hopeio/utils/structure/cache/go-cache"
+	gocache "github.com/hopeio/utils/structure/cache/gocache"
 	"runtime/debug"
 	"sync"
 	"testing"

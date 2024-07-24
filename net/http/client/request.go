@@ -202,12 +202,12 @@ Retry:
 		if c.retryInterval != 0 {
 			time.Sleep(c.retryInterval)
 		}
-		if c.retryHandler != nil {
-			c.retryHandler(c)
-		}
 		reqTime = time.Now()
 		if reqBody != nil && reqBody.Data != nil {
 			request.Body = io.NopCloser(bytes.NewReader(reqBody.Data))
+		}
+		if c.retryHandler != nil {
+			c.retryHandler(request)
 		}
 	}
 	resp, err = c.httpClient.Do(request)

@@ -2,13 +2,14 @@ package path
 
 import (
 	"fmt"
+	"path"
 	"path/filepath"
 	"testing"
 )
 
 func TestDir(t *testing.T) {
-	dir := "F:/a\\video"
-	t.Log(Split(dir))
+	dir := "https://a\\video/a.jpg"
+	t.Log(path.Split(dir))
 	t.Log(filepath.Split(dir))
 	t.Log(filepath.Dir(dir), filepath.Base(dir))
 }
