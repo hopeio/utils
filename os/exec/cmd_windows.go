@@ -1,6 +1,6 @@
 //go:build windows
 
-package os
+package exec
 
 import (
 	stringsi "github.com/hopeio/utils/strings"

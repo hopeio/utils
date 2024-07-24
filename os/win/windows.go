@@ -111,6 +111,6 @@ func GetProcName(pid uint32) string {
 	if ret == 0 {
 		fmt.Println(err)
 	}
-	return filepath.Base(ConvertDOSPath(windows.UTF16ToString(buf[:])))
+	return filepath.Base(ConvertDosPath(windows.UTF16ToString(buf[:])))
 
 }

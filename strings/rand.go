@@ -1,4 +1,4 @@
-package rand
+package strings
 
 import "math/rand/v2"
 

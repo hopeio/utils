@@ -1,6 +1,6 @@
 //go:build unix
 
-package os
+package exec
 
 func ContainQuotedCMD(s string) (string, error) {
 	return Cmd(s)

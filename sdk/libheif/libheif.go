@@ -2,7 +2,7 @@ package libheif
 
 import (
 	"fmt"
-	osi "github.com/hopeio/utils/os"
+	execi "github.com/hopeio/utils/os/exec"
 	"strings"
 )
 
@@ -16,7 +16,7 @@ func ImgToHeif(filePath, dst string) error {
 	if strings.HasSuffix(dst, ".heif") {
 		dst = dst[:len(dst)-5]
 	}
-	_, err := osi.ContainQuotedCMD(fmt.Sprintf(ImgToHeifCmd, filePath, dst))
+	_, err := execi.ContainQuotedCMD(fmt.Sprintf(ImgToHeifCmd, filePath, dst))
 
 	return err
 }

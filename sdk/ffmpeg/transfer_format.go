@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	fs2 "github.com/hopeio/utils/io/fs"
-	osi "github.com/hopeio/utils/os"
+	execi "github.com/hopeio/utils/os/exec"
 	"log"
 	"os"
 )
@@ -14,7 +14,7 @@ const TransferFormatGPUCmd = ` -hwaccel qsv -i "%s" -c copy -y "%s"`
 func TransferFormatGPU(filePath, dst string) error {
 	command := fmt.Sprintf(execPath+TransferFormatGPUCmd, filePath, dst)
 	log.Println(command)
-	_, err := osi.Cmd(command)
+	_, err := execi.Cmd(command)
 	return err
 }
 

@@ -8,7 +8,7 @@ import (
 	"unsafe"
 )
 
-func ConvertDOSPath(p string) string {
+func ConvertDosPath(p string) string {
 	rawDrive := strings.Join(strings.Split(p, `\`)[:3], `\`)
 
 	for d := 'A'; d <= 'Z'; d++ {

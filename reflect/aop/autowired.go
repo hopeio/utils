@@ -1,7 +1,7 @@
 package aop
 
 import (
-	randi "github.com/hopeio/utils/rand"
+	randi "github.com/hopeio/utils/strings"
 	"math/rand"
 	"reflect"
 	"strconv"

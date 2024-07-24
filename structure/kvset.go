@@ -1,4 +1,4 @@
-package encoding
+package structure
 
 import (
 	"github.com/hopeio/utils/reflect/converter"

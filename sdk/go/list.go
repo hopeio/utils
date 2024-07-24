@@ -1,7 +1,7 @@
 package _go
 
 import (
-	osi "github.com/hopeio/utils/os"
+	execi "github.com/hopeio/utils/os/exec"
 	"os"
 	"strings"
 )
@@ -34,10 +34,10 @@ func GetDepDir(dep string) string {
 }
 
 func modDepDir(dep string) string {
-	depPath, err := osi.Cmd(GoListDir + dep)
+	depPath, err := execi.Cmd(GoListDir + dep)
 	if err != nil || depPath == "" {
-		osi.Cmd("go get " + dep)
-		depPath, _ = osi.Cmd(GoListDir + dep)
+		execi.Cmd("go get " + dep)
+		depPath, _ = execi.Cmd(GoListDir + dep)
 	}
 	return depPath
 }

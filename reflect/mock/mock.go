@@ -1,7 +1,7 @@
 package mock
 
 import (
-	randi "github.com/hopeio/utils/rand"
+	randi "github.com/hopeio/utils/strings"
 	"math/rand/v2"
 	"reflect"
 )

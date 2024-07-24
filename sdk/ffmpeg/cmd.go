@@ -1,7 +1,7 @@
 package ffmpeg
 
 import (
-	osi "github.com/hopeio/utils/os"
+	execi "github.com/hopeio/utils/os/exec"
 	"log"
 )
 
@@ -23,7 +23,7 @@ func SetExecPath(path string) {
 func ffmpegCmd(cmd string) error {
 	cmd = execPath
 	log.Println(cmd)
-	err := osi.ContainQuotedStdoutCMD(cmd)
+	err := execi.ContainQuotedStdoutCMD(cmd)
 	if err != nil {
 		log.Println(err)
 		return err

@@ -1,4 +1,4 @@
-package hash
+package strarray
 
 import (
 	"encoding"
@@ -16,7 +16,6 @@ func Marshal(v interface{}) []interface{} {
 }
 
 type encodeState struct {
-	key     string
 	strings []interface{}
 }
 
@@ -42,11 +41,11 @@ func (e *encodeState) encode(key string, v reflect.Value) {
 	}
 }
 
-var textMarshalerType = reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
+var textMarshallerType = reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
 
 func (e *encodeState) structEncoder(key string, v reflect.Value) {
 	t := v.Type()
-	if t.Implements(textMarshalerType) {
+	if t.Implements(textMarshallerType) {
 		m := v.Interface().(encoding.TextMarshaler)
 		bytes, _ := m.MarshalText()
 		e.strings = append(e.strings, key, string(bytes))

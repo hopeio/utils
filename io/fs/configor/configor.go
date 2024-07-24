@@ -1,4 +1,4 @@
-package local
+package configor
 
 import (
 	"github.com/fsnotify/fsnotify"
