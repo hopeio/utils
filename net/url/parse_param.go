@@ -1,7 +1,6 @@
 package url
 
 import (
-	"github.com/hopeio/utils/log"
 	"github.com/hopeio/utils/math"
 	stringsi "github.com/hopeio/utils/strings"
 	"net/url"
@@ -46,35 +45,51 @@ func QueryParamByTag(param any, tag string) string {
 
 func parseParamByTag(param any, query url.Values, tag string) {
 	v := reflect.ValueOf(param)
-	if v.Kind() == reflect.Interface || v.Kind() == reflect.Ptr {
+	kind := v.Kind()
+	if kind == reflect.Interface || kind == reflect.Ptr {
+		if v.IsNil() {
+			return
+		}
 		v = v.Elem()
 	}
-	t := v.Type()
-	for i := 0; i < v.NumField(); i++ {
-		filed := v.Field(i)
-		kind := filed.Kind()
-		if kind == reflect.Interface || kind == reflect.Ptr || kind == reflect.Struct {
-			log.Panicf("unsupported sub field kind %v", kind)
-		}
+	if v.Kind() == reflect.Struct {
+		t := v.Type()
+		for i := 0; i < v.NumField(); i++ {
+			filed := v.Field(i)
+			fieldKind := filed.Kind()
+			if fieldKind == reflect.Interface || fieldKind == reflect.Ptr || fieldKind == reflect.Struct {
+				if t.Field(i).Anonymous {
+					parseParamByTag(filed.Interface(), query, tag)
+				} else {
+					//TODO: 处理对象
+				}
+				continue
+			}
+			if fieldKind == reflect.Map {
+				//TODO: 处理map
+				continue
+			}
+			if fieldKind == reflect.Slice || fieldKind == reflect.Array {
+				for i := 0; i < filed.Len(); i++ {
+					query.Add(t.Field(i).Tag.Get(tag), getFieldValue(filed.Index(i)))
+				}
+				continue
+			}
 
-		if kind == reflect.Slice || kind == reflect.Array {
-			for i := 0; i < filed.Len(); i++ {
-				query.Add(t.Field(i).Tag.Get(tag), getFieldValue(filed.Index(i)))
+			value := getFieldValue(filed)
+			if value != "" {
+				query.Set(t.Field(i).Tag.Get(tag), getFieldValue(v.Field(i)))
 			}
-			continue
-		}
-		if kind == reflect.Map {
-			for _, key := range filed.MapKeys() {
-				query.Set(key.Interface().(string), getFieldValue(filed.MapIndex(key)))
-			}
-			continue
-		}
-		value := getFieldValue(filed)
-		if value != "" {
-			query.Set(t.Field(i).Tag.Get(tag), getFieldValue(v.Field(i)))
 		}
 	}
-
+	if kind == reflect.Map {
+		if v.IsNil() {
+			return
+		}
+		for _, key := range v.MapKeys() {
+			query.Set(key.Interface().(string), getFieldValue(v.MapIndex(key)))
+		}
+	}
 }
 
 func getFieldValue(v reflect.Value) string {

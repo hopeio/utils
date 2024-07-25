@@ -139,6 +139,9 @@ func (req *Request) Do(param, response any) error {
 	if req.Url == "" {
 		return errors.New("没有设置url")
 	}
+	if req.ctx == nil {
+		req.ctx = context.Background()
+	}
 	c := req.client
 	var body io.Reader
 	var reqBody, respBody *Body
