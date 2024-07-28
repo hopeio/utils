@@ -55,7 +55,6 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/chromedp/cdproto v0.0.0-20240202021202-6d0b6a386732
 	github.com/chromedp/chromedp v0.9.5
-	github.com/coocood/freecache v1.2.4
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/elastic/go-elasticsearch/v8 v8.13.1
 	github.com/goccy/go-json v0.10.3
@@ -73,7 +72,6 @@ require (
 	github.com/prometheus/common v0.53.0
 	github.com/quic-go/quic-go v0.44.0
 	github.com/rs/cors v1.11.0
-	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/spf13/cast v1.6.0
 	github.com/spf13/pflag v1.0.5
 	github.com/tidwall/gjson v1.17.1
