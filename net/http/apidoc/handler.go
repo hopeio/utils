@@ -3,14 +3,15 @@ package apidoc
 import (
 	"bytes"
 	"github.com/go-openapi/runtime/middleware"
+	httpi "github.com/hopeio/utils/net/http"
 	"net/http"
 	"os"
 	"path"
 )
 
 // 目录结构 ./api/mod/mod.swagger.json ./api/mod/mod.apidoc.md
-// 请求路由 /api-doc /api-doc/swagger/mod/mod.swagger.json /api-doc/markdown/mod/mod.apidoc.md
-var UriPrefix = "/api-doc"
+// 请求路由 /apidoc /apidoc/swagger/mod/mod.swagger.json /apidoc/markdown/mod/mod.apidoc.md
+var UriPrefix = "/apidoc"
 var ApiDocDir = "./apidoc/"
 
 const TypeSwagger = "swagger"
@@ -26,7 +27,7 @@ func Swagger(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(err.Error()))
 			return
 		}
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set(httpi.HeaderContentType, "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		w.Write(b)
 		return
