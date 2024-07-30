@@ -14,16 +14,16 @@ func ReadReadCloser(readCloser io.ReadCloser) ([]byte, error) {
 	return data, nil
 }
 
-type warpCloser struct {
+type wrapCloser struct {
 	io.Reader
 }
 
-func (*warpCloser) Close() error {
+func (*wrapCloser) Close() error {
 	return nil
 }
 
-func WarpCloser(body io.Reader) io.ReadCloser {
-	return &warpCloser{body}
+func WrapCloser(body io.Reader) io.ReadCloser {
+	return &wrapCloser{body}
 }
 
 func ReadLines(reader io.Reader, f func(line string) bool) error {

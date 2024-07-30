@@ -16,37 +16,37 @@ func (l *Logger) Named(name string) *Logger {
 	return &Logger{l.Logger.Named(name)}
 }
 
-// WithOptions warp the zap WithOptions, applies the supplied Options, and
+// WithOptions wrap the zap WithOptions, applies the supplied Options, and
 // returns the resulting Logger. It's safe to use concurrently.
 func (l *Logger) WithOptions(opts ...zap.Option) *Logger {
 	return &Logger{l.Logger.WithOptions(opts...)}
 }
 
-// With warp the zap With. Fields added
+// With wrap the zap With. Fields added
 // to the child don't affect the parent, and vice versa.
 func (l *Logger) With(fields ...zap.Field) *Logger {
 	return &Logger{l.Logger.With(fields...)}
 }
 
-// Sugar warp the zap Sugar.
+// Sugar wrap the zap Sugar.
 func (l *Logger) ZapLogger() *zap.Logger {
 	return l.Logger
 }
 
-// Sugar warp the zap Sugar.
+// Sugar wrap the zap Sugar.
 func (l *Logger) Sugar() *zap.SugaredLogger {
 	l.WithOptions(zap.AddCallerSkip(-1))
 	return l.Logger.Sugar()
 }
 
-// AddCore warp the zap AddCore.
+// AddCore wrap the zap AddCore.
 func (l *Logger) AddCore(newCore zapcore.Core) *Logger {
 	return l.WithOptions(zap.WrapCore(func(core zapcore.Core) zapcore.Core {
 		return zapcore.NewTee(core, newCore)
 	}))
 }
 
-// AddSkip warp the zap AddCallerSkip.
+// AddSkip wrap the zap AddCallerSkip.
 func (l *Logger) AddSkip(skip int) *Logger {
 	return &Logger{l.Logger.WithOptions(zap.AddCallerSkip(skip))}
 }

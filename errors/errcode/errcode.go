@@ -3,7 +3,6 @@ package errcode
 import (
 	"github.com/gin-gonic/gin/render"
 	"github.com/hopeio/utils/log"
-	stringsi "github.com/hopeio/utils/strings"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"net/http"
@@ -31,7 +30,7 @@ func (x ErrCode) String() string {
 	return strconv.Itoa(int(x))
 }
 
-func (x ErrCode) ErrRep() *ErrRep {
+func (x ErrCode) Rep() *ErrRep {
 	return &ErrRep{Code: x, Message: x.String()}
 }
 
@@ -44,11 +43,7 @@ func (x ErrCode) Message(msg string) *ErrRep {
 	return &ErrRep{Code: x, Message: msg}
 }
 
-func (x ErrCode) MarshalJSON() ([]byte, error) {
-	return stringsi.ToBytes(`{"code":` + strconv.Itoa(int(x)) + `,"message":"` + x.String() + `"}`), nil
-}
-
-func (x ErrCode) Warp(err error) *ErrRep {
+func (x ErrCode) Wrap(err error) *ErrRep {
 	return &ErrRep{Code: x, Message: err.Error()}
 }
 
@@ -62,5 +57,5 @@ func (x ErrCode) Error() string {
 }
 
 func (x ErrCode) Response(w http.ResponseWriter) {
-	render.WriteJSON(w, x)
+	render.WriteJSON(w, x.Rep())
 }

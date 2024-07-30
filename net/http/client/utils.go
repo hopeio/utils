@@ -32,6 +32,6 @@ func setProxy(client *http.Client, proxy func(*http.Request) (*url.URL, error)) 
 	client.Transport.(*http.Transport).Proxy = proxy
 }
 
-func CloseReaderWarp(err error) error {
+func CloseReaderWrap(err error) error {
 	return fmt.Errorf("close reader error: %w", err)
 }

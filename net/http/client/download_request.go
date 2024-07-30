@@ -155,7 +155,7 @@ func (c *DownloadReq) GetReader() (io.ReadCloser, error) {
 			return nil, err
 		}
 		resp.Body.Close()
-		reader = ioi.WarpCloser(bytes.NewBuffer(data))
+		reader = ioi.WrapCloser(bytes.NewBuffer(data))
 	}
 	return reader, nil
 }

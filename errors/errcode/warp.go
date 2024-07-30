@@ -13,16 +13,16 @@ func (x *WarpErrCode) Unwrap() error {
 	return x.err
 }
 
-type WarpErrRep struct {
+type WrapErrRep struct {
 	ErrRep
 	err error
 }
 
-func (e *WarpErrRep) Error() string {
+func (e *WrapErrRep) Error() string {
 	return e.Message
 }
 
-func (e *WarpErrRep) Unwrap() error {
+func (e *WrapErrRep) Unwrap() error {
 	return e.err
 }
 

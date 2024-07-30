@@ -3,17 +3,18 @@ package mail
 import (
 	"bytes"
 	"crypto/tls"
+	"fmt"
 	"github.com/hopeio/utils/encoding/text/template"
 	"net"
 	"net/smtp"
-
-	"github.com/hopeio/utils/log"
 )
 
 // 550,Mailbox not found or access denied.是因为收件邮箱不存在
 type Mail struct {
+	Addr                                          string
 	FromName, From, Subject, ContentType, Content string
 	To                                            []string
+	Auth                                          smtp.Auth
 }
 
 const msg = `{{define "mail"}}To: {{join .To ",\n\t"}}
@@ -28,28 +29,32 @@ func init() {
 	templatei.Parse(msg)
 }
 
-func (m *Mail) GenMsg() []byte {
+func (m *Mail) GenMsg() ([]byte, error) {
 	var buf = new(bytes.Buffer)
 	err := templatei.Execute(buf, "mail", m)
 	if err != nil {
-		log.Panic("executing template:", err)
+		return nil, fmt.Errorf("executing template: %w", err)
 	}
-	return buf.Bytes()
+	return buf.Bytes(), nil
 }
-func (m *Mail) SendMail(addr string, auth smtp.Auth) error {
-	return smtp.SendMail(addr, auth, m.From, m.To, m.GenMsg())
+func (m *Mail) SendMail() error {
+	msg, err := m.GenMsg()
+	if err != nil {
+		return err
+	}
+	return smtp.SendMail(m.Addr, m.Auth, m.From, m.To, msg)
 }
 
-func (m *Mail) SendMailTLS(addr string, auth smtp.Auth) error {
-	client, err := createSMTPClient(addr)
+func (m *Mail) SendMailTLS() error {
+	client, err := createSMTPClient(m.Addr)
 	if err != nil {
 		return err
 	}
 	defer client.Close()
 
-	if auth != nil {
+	if m.Auth != nil {
 		if ok, _ := client.Extension("AUTH"); ok {
-			if err := client.Auth(auth); err != nil {
+			if err := client.Auth(m.Auth); err != nil {
 				return err
 			}
 		}
@@ -66,7 +71,11 @@ func (m *Mail) SendMailTLS(addr string, auth smtp.Auth) error {
 	if err != nil {
 		return err
 	}
-	_, err = w.Write(m.GenMsg())
+	msg, err := m.GenMsg()
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(msg)
 	if err != nil {
 		return err
 	}

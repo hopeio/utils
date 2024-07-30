@@ -13,6 +13,6 @@ func TestGenMsg(t *testing.T) {
 		Content:  "邮件",
 		To:       []string{"test1@mail.com", "test2@mail.com"},
 	}
-	bytes := msg.GenMsg()
+	bytes, _ := msg.GenMsg()
 	fmt.Println(string(bytes))
 }

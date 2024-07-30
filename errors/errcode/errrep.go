@@ -42,6 +42,6 @@ func (x *ErrRep) AppendErr(err error) *ErrRep {
 	return x
 }
 
-func (x *ErrRep) Warp(err error) *WarpErrRep {
-	return &WarpErrRep{*x, err}
+func (x *ErrRep) Wrap(err error) *WrapErrRep {
+	return &WrapErrRep{*x, err}
 }
