@@ -14,12 +14,12 @@ func NewAny(v interface{}) (RawJson, error) {
 	return data, nil
 }
 
-func BytesToJsonAny(b []byte) RawJson {
+func BytesToRawJson(b []byte) RawJson {
 	b = append([]byte{'"'}, b...)
 	return append(b, '"')
 }
 
-func StringToJsonAny(s string) RawJson {
+func StringToRawJson(s string) RawJson {
 	return []byte("\"" + s + "\"")
 }
 

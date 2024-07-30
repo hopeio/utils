@@ -2,7 +2,10 @@ package errcode
 
 const (
 	// SysErr ErrCode = -1
-	Success ErrCode = 0
+	Success         ErrCode = 0
+	Canceled        ErrCode = 1
+	Unknown         ErrCode = 2
+	InvalidArgument ErrCode = 3
 )
 
 var codeMap = make(map[ErrCode]string)
@@ -13,5 +16,7 @@ func RegisterErrCode(code ErrCode, msg string) {
 }
 
 func init() {
-	RegisterErrCode(Success, "OK")
+	RegisterErrCode(Canceled, "Canceled")
+	RegisterErrCode(Unknown, "Unknown")
+	RegisterErrCode(InvalidArgument, "InvalidArgument")
 }

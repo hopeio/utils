@@ -19,7 +19,7 @@ type WrapErrRep struct {
 }
 
 func (e *WrapErrRep) Error() string {
-	return e.Message
+	return e.Msg
 }
 
 func (e *WrapErrRep) Unwrap() error {

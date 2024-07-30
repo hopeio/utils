@@ -14,13 +14,13 @@ func CommonResponse[RES any]() client.ResponseBodyCheck {
 
 func (res *ResponseBody[RES]) CheckError() error {
 	if res.Code != 0 {
-		return fmt.Errorf("code: %d, message: %s", res.Code, res.Message)
+		return fmt.Errorf("code: %d, msg: %s", res.Code, res.Msg)
 	}
 	return nil
 }
 
 func (res *ResponseBody[RES]) GetData() *RES {
-	return &res.Details
+	return &res.Data
 }
 
 type ResponseBody2[RES any] struct {

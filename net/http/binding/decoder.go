@@ -472,7 +472,7 @@ func (e ConversionError) Error() string {
 	}
 
 	if e.Err != nil {
-		output = fmt.Sprintf("%s. Details: %s", output, e.Err)
+		output = fmt.Sprintf("%s. error: %s", output, e.Err)
 	}
 
 	return output

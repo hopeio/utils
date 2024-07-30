@@ -32,7 +32,7 @@ func HttpError(ctx *gin.Context, err error) {
 	contentType := jsonpb.JsonPb.ContentType(nil)
 	ctx.Header(httpi.HeaderContentType, contentType)
 
-	se := &errcode.ErrRep{Code: errcode.ErrCode(s.Code()), Message: s.Message()}
+	se := &errcode.ErrRep{Code: errcode.ErrCode(s.Code()), Msg: s.Message()}
 
 	buf, merr := jsonpb.JsonPb.Marshal(se)
 	if merr != nil {

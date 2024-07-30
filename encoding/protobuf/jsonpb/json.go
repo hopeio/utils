@@ -23,9 +23,7 @@ func (j *JSONPb) Marshal(v any) ([]byte, error) {
 		v = msg.Value
 	}
 	return json.Marshal(&responsei.ResAnyData{
-		Code:    0,
-		Message: "OK",
-		Details: v,
+		Data: v,
 	})
 }
 
@@ -40,7 +38,6 @@ func (j *JSONPb) Unmarshal(data []byte, v interface{}) error {
 func (j *JSONPb) Delimiter() []byte {
 	return []byte("\n")
 }
-
 
 func (j *JSONPb) ContentTypeFromMessage(v interface{}) string {
 	return j.ContentType(v)

@@ -8,20 +8,20 @@ import (
 type ResponseBody httpi.ResAnyData
 
 func CommonResponse(response interface{}) ResponseBodyCheck {
-	return &ResponseBody{Details: response}
+	return &ResponseBody{Data: response}
 }
 
 func (res *ResponseBody) CheckError() error {
 	if res.Code != 0 {
-		return fmt.Errorf("code: %d, message: %s", res.Code, res.Message)
+		return fmt.Errorf("code: %d, msg: %s", res.Code, res.Msg)
 	}
 	return nil
 }
 
 type ResponseBody2 struct {
-	Code int    `json:"code"`
-	Data any    `json:"data"`
-	Msg  string `json:"msg"`
+	Status int    `json:"status"`
+	Msg    string `json:"msg"`
+	Data   any    `json:"data"`
 }
 
 func CommonResponse2(response interface{}) ResponseBodyCheck {
@@ -29,8 +29,8 @@ func CommonResponse2(response interface{}) ResponseBodyCheck {
 }
 
 func (res *ResponseBody2) CheckError() error {
-	if res.Code != 0 {
-		return fmt.Errorf("status:%d,message:%s", res.Code, res.Msg)
+	if res.Status != 0 {
+		return fmt.Errorf("status:%d,msg:%s", res.Status, res.Msg)
 	}
 	return nil
 }
@@ -39,20 +39,3 @@ var (
 	ErrNotFound            = fmt.Errorf("not found")
 	ErrRangeNotSatisfiable = fmt.Errorf("range not satisfiable")
 )
-
-type ResponseBody3 struct {
-	Status  int    `json:"status"`
-	Data    any    `json:"data"`
-	Message string `json:"message"`
-}
-
-func CommonResponse3(response interface{}) ResponseBodyCheck {
-	return &ResponseBody3{Data: response}
-}
-
-func (res *ResponseBody3) CheckError() error {
-	if res.Status != 0 {
-		return fmt.Errorf("status:%d,message:%s", res.Status, res.Message)
-	}
-	return nil
-}

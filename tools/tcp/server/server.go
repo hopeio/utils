@@ -48,7 +48,7 @@ func tcpPipe(conn *net.TCPConn) {
 			break
 		}
 
-		fmt.Println(string(message))
+		fmt.Println(message)
 
 		time.Sleep(time.Second * 3)
 

@@ -36,7 +36,7 @@ func TestClient(t *testing.T) {
 	}
 	res := &OperatorPublicList{}
 	err := NewRequest(http.MethodPost, `http://test.xyz/api/list`).
-		AddHeader("Auth", "e30=").Do(req, CommonResponse3(res))
+		AddHeader("Auth", "e30=").Do(req, CommonResponse(res))
 	if err != nil {
 		t.Fatal(err)
 	}

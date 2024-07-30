@@ -1,47 +1,52 @@
 package errcode
 
 import (
-	"github.com/gin-gonic/gin/render"
 	stringsi "github.com/hopeio/utils/strings"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"net/http"
 	"strconv"
 )
 
 type ErrRep struct {
-	Code    ErrCode `json:"code"`
-	Message string  `json:"message,omitempty"`
+	Code ErrCode `json:"code"`
+	Msg  string  `json:"msg,omitempty"`
 }
 
 func NewErrRep(code ErrCode, msg string) *ErrRep {
 	return &ErrRep{
-		Code:    code,
-		Message: msg,
+		Code: code,
+		Msg:  msg,
 	}
 }
 
 func (x *ErrRep) Error() string {
-	return x.Message
+	return x.Msg
 }
 
-func (x *ErrRep) GrpcStatus() *status.Status {
-	return status.New(codes.Code(x.Code), x.Message)
+func (x *ErrRep) GRPCStatus() *status.Status {
+	return status.New(codes.Code(x.Code), x.Msg)
 }
 
 func (x *ErrRep) MarshalJSON() ([]byte, error) {
-	return stringsi.ToBytes(`{"code":` + strconv.Itoa(int(x.Code)) + `,"message":"` + x.Message + `"}`), nil
-}
-
-func (x *ErrRep) Response(w http.ResponseWriter) {
-	render.WriteJSON(w, x)
+	return stringsi.ToBytes(`{"code":` + strconv.Itoa(int(x.Code)) + `,"msg":"` + x.Msg + `"}`), nil
 }
 
 func (x *ErrRep) AppendErr(err error) *ErrRep {
-	x.Message += " " + err.Error()
+	x.Msg += " " + err.Error()
 	return x
 }
 
 func (x *ErrRep) Wrap(err error) *WrapErrRep {
 	return &WrapErrRep{*x, err}
+}
+
+func FromError(err error) (s *ErrRep, ok bool) {
+	if err == nil {
+		return nil, true
+	}
+	type errrep interface{ ErrRep() *ErrRep }
+	if se, ok := err.(errrep); ok {
+		return se.ErrRep(), true
+	}
+	return NewErrRep(Unknown, err.Error()), false
 }

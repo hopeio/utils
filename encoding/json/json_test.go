@@ -28,7 +28,7 @@ func TestJson(t *testing.T) {
 }
 
 func TestJson2(t *testing.T) {
-	data := []byte(`{"getUser":{"details":{"name":"","id":1,"gender":男,"phone":""}}}`)
+	data := []byte(`{"getUser":{"data":{"name":"","id":1,"gender":男,"phone":""}}}`)
 	var j = &graphql.Response{
 		Data: data,
 	}

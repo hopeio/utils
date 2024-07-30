@@ -10,8 +10,8 @@ func RespErrcode(ctx *gin.Context, code errcode.ErrCode) {
 	httpi.RespErrcode(ctx.Writer, code)
 }
 
-func SuccessRespMsg(ctx *gin.Context, msg string) {
-	httpi.SuccessRespMsg(ctx.Writer, msg)
+func RespSuccessMsg(ctx *gin.Context, msg string) {
+	httpi.RespSuccessMsg(ctx.Writer, msg)
 }
 
 func RespErrRep(ctx *gin.Context, rep *errcode.ErrRep) {
@@ -22,6 +22,6 @@ func Response(ctx *gin.Context, code errcode.ErrCode, msg string, data interface
 	httpi.Response(ctx.Writer, code, msg, data)
 }
 
-func SuccessResponse[T any](ctx *gin.Context, msg string, data T) {
-	httpi.SuccessResponse(ctx.Writer, msg, data)
+func RespSuccess[T any](ctx *gin.Context, msg string, data T) {
+	httpi.RespSuccess(ctx.Writer, msg, data)
 }

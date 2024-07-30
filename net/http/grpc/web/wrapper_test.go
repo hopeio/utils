@@ -357,7 +357,7 @@ func (s *GrpcWebWrapperTestSuite) TestPingList_NormalGrpcWorks() {
 	allExpectedHeaders := metadata.Join(
 		metadata.MD{
 			"content-type": []string{"application/grpc"},
-			"trailer":      []string{"Grpc-Status", "Grpc-Message", "Grpc-Status-Details-Bin"},
+			"trailer":      []string{"Grpc-Status", "Grpc-Msg", "Grpc-Status-Details-Bin"},
 		}, expectedHeaders)
 	assert.EqualValues(s.T(), allExpectedHeaders, recvHeaders, "expected headers must be received")
 	assert.EqualValues(s.T(), expectedTrailers, recvTrailers, "expected trailers must be received")
@@ -382,7 +382,7 @@ func (s *GrpcWebWrapperTestSuite) TestPingStream_NormalGrpcWorks() {
 	allExpectedHeaders := metadata.Join(
 		metadata.MD{
 			"content-type": []string{"application/grpc"},
-			"trailer":      []string{"Grpc-Status", "Grpc-Message", "Grpc-Status-Details-Bin"},
+			"trailer":      []string{"Grpc-Status", "Grpc-Msg", "Grpc-Status-Details-Bin"},
 		}, expectedHeaders)
 	assert.EqualValues(s.T(), allExpectedHeaders, recvHeaders, "expected headers must be received")
 	assert.EqualValues(s.T(), expectedTrailers, recvTrailers, "expected trailers must be received")

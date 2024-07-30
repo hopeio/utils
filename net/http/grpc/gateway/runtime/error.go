@@ -42,7 +42,7 @@ func CustomHttpError(ctx context.Context, mux *runtime.ServeMux, marshaler runti
 	w.Header().Set(httpi.HeaderContentType, contentType)
 	se, ok := err.(*errcode.ErrRep)
 	if !ok {
-		se = &errcode.ErrRep{Code: errcode.ErrCode(codes.Unknown), Message: err.Error()}
+		se = &errcode.ErrRep{Code: errcode.ErrCode(codes.Unknown), Msg: err.Error()}
 	}
 
 	md, ok := runtime.ServerMetadataFromContext(ctx)

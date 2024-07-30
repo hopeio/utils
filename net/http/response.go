@@ -12,10 +12,10 @@ import (
 type Body map[string]interface{}
 
 type ResData[T any] struct {
-	Code    errcode.ErrCode `json:"code"`
-	Message string          `json:"message,omitempty"`
+	Code errcode.ErrCode `json:"code"`
+	Msg  string          `json:"msg,omitempty"`
 	//验证码
-	Details T `json:"details,omitempty"`
+	Data T `json:"data,omitempty"`
 }
 
 func (res *ResData[T]) Response(w http.ResponseWriter, httpcode int) {
@@ -27,9 +27,9 @@ func (res *ResData[T]) Response(w http.ResponseWriter, httpcode int) {
 
 func NewResData[T any](code errcode.ErrCode, msg string, data T) *ResData[T] {
 	return &ResData[T]{
-		Code:    code,
-		Message: msg,
-		Details: data,
+		Code: code,
+		Msg:  msg,
+		Data: data,
 	}
 }
 
@@ -37,9 +37,9 @@ type ResAnyData = ResData[any]
 
 func NewResAnyData(code errcode.ErrCode, msg string, data any) *ResAnyData {
 	return &ResAnyData{
-		Code:    code,
-		Message: msg,
-		Details: data,
+		Code: code,
+		Msg:  msg,
+		Data: data,
 	}
 }
 
@@ -47,24 +47,24 @@ func RespErrcode(w http.ResponseWriter, code errcode.ErrCode) {
 	NewResData[any](code, code.Error(), nil).Response(w, http.StatusOK)
 }
 
-func SuccessRespMsg(w http.ResponseWriter, msg string) {
+func RespSuccess[T any](w http.ResponseWriter, msg string, data T) {
+	NewResData(errcode.Success, msg, data).Response(w, http.StatusOK)
+}
+
+func RespSuccessMsg(w http.ResponseWriter, msg string) {
 	NewResData[any](errcode.Success, msg, nil).Response(w, http.StatusOK)
 }
 
-func SuccessRespData(w http.ResponseWriter, data any) {
+func RespSuccessData(w http.ResponseWriter, data any) {
 	NewResData[any](errcode.Success, errcode.Success.String(), data).Response(w, http.StatusOK)
 }
 
 func RespErrRep(w http.ResponseWriter, rep *errcode.ErrRep) {
-	NewResData[any](rep.Code, rep.Message, nil).Response(w, http.StatusOK)
+	NewResData[any](rep.Code, rep.Msg, nil).Response(w, http.StatusOK)
 }
 
 func Response[T any](w http.ResponseWriter, code errcode.ErrCode, msg string, data T) {
 	NewResData(code, msg, data).Response(w, http.StatusOK)
-}
-
-func SuccessResponse[T any](w http.ResponseWriter, msg string, data T) {
-	NewResData(errcode.Success, msg, data).Response(w, http.StatusOK)
 }
 
 func StreamWriter(w http.ResponseWriter, writer func(w io.Writer) bool) {
@@ -90,7 +90,7 @@ func Stream(w http.ResponseWriter) {
 	i := 0
 	ints := []int{1, 2, 3, 5, 7, 9, 11, 13, 15, 17, 23, 29}
 	StreamWriter(w, func(w io.Writer) bool {
-		fmt.Fprintf(w, "Message number %d<br>", ints[i])
+		fmt.Fprintf(w, "Msg number %d<br>", ints[i])
 		time.Sleep(500 * time.Millisecond) // simulate delay.
 		if i == len(ints)-1 {
 			return false //关闭并刷新
@@ -100,17 +100,17 @@ func Stream(w http.ResponseWriter) {
 	})
 }
 
-var ResponseSysErr = []byte(`{"code":-1,"message":"system error"}`)
-var ResponseOk = []byte(`{"code":0,"message":"OK"}`)
+var ResponseSysErr = []byte(`{"code":-1,"msg":"system error"}`)
+var ResponseOk = []byte(`{"code":0}`)
 
 type ReceiveData = ResData[json.RawMessage]
 
 func NewReceiveData(code errcode.ErrCode, msg string, data any) *ReceiveData {
 	jsonBytes, _ := json.Marshal(data)
 	return &ReceiveData{
-		Code:    code,
-		Message: msg,
-		Details: jsonBytes,
+		Code: code,
+		Msg:  msg,
+		Data: jsonBytes,
 	}
 }
 
