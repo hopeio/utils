@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/gofiber/fiber/v3"
+	"github.com/hopeio/utils/io/fs"
 	"github.com/hopeio/utils/net/http/apidoc"
 	"html/template"
 	"net/http"
@@ -16,7 +17,7 @@ func Swagger(ctx fiber.Ctx) error {
 	prefixUri := apidoc.UriPrefix + "/" + apidoc.TypeSwagger + "/"
 	requestURI := string(ctx.Request().URI().RequestURI())
 	if requestURI[len(requestURI)-5:] == ".json" {
-		b, err := os.ReadFile(apidoc.ApiDocDir + requestURI[len(prefixUri):])
+		b, err := os.ReadFile(apidoc.Dir + requestURI[len(prefixUri):])
 		if err != nil {
 			return err
 		}
@@ -50,7 +51,7 @@ func Swagger(ctx fiber.Ctx) error {
 func Markdown(ctx fiber.Ctx) error {
 	prefixUri := apidoc.UriPrefix + "/" + apidoc.TypeMarkdown + "/"
 	mod := string(ctx.Request().URI().RequestURI()[len(prefixUri):])
-	b, err := os.ReadFile(apidoc.ApiDocDir + mod + "/" + mod + apidoc.MarkDownEXT)
+	b, err := os.ReadFile(apidoc.Dir + mod + "/" + mod + apidoc.MarkDownEXT)
 	if err != nil {
 		return err
 	}
@@ -61,7 +62,7 @@ func Markdown(ctx fiber.Ctx) error {
 }
 
 func DocList(ctx fiber.Ctx) error {
-	fileInfos, err := os.ReadDir(apidoc.ApiDocDir)
+	fileInfos, err := os.ReadDir(apidoc.Dir)
 	if err != nil {
 		return err
 	}
@@ -77,8 +78,17 @@ func DocList(ctx fiber.Ctx) error {
 	return nil
 }
 
-func OpenApi(mux *fiber.App, filePath string) {
-	apidoc.ApiDocDir = filePath
+func OpenApi(mux *fiber.App, uriPrefix, dir string) {
+	if uriPrefix != "" {
+		apidoc.UriPrefix = uriPrefix
+	}
+	if dir != "" {
+		if b := dir[len(dir)-1:]; b == "/" || b == "\\" {
+			apidoc.Dir = dir
+		} else {
+			apidoc.Dir = dir + fs.PathSeparator
+		}
+	}
 	mux.Get(apidoc.UriPrefix+"/markdown/", Markdown)
 	mux.Get(apidoc.UriPrefix, DocList)
 	mux.Get(apidoc.UriPrefix+"/swagger/", Swagger)

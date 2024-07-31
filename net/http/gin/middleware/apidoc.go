@@ -14,7 +14,7 @@ func (m ModName) ApiDocMiddle(ctx *gin.Context) {
 
 	var pathItem *spec.PathItem
 
-	doc := apidoc.GetDoc(apidoc.ApiDocDir, string(m))
+	doc := apidoc.GetDoc(apidoc.Dir, string(m))
 
 	if doc.Paths != nil && doc.Paths.Paths != nil {
 		if path, ok := doc.Paths.Paths[currentRouteName]; ok {
@@ -45,7 +45,7 @@ func (m ModName) ApiDocMiddle(ctx *gin.Context) {
 	}
 
 	if stop, _ := ctx.GetQuery("apidoc"); stop == "stop" {
-		defer apidoc.WriteToFile(apidoc.ApiDocDir, string(m))
+		defer apidoc.WriteToFile(apidoc.Dir, string(m))
 	}
 
 	var res spec.Responses
