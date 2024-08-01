@@ -18,7 +18,8 @@ func OpenApi(mux *gin.Engine, uriPrefix, dir string) {
 	if uriPrefix != "" {
 		apidoc.UriPrefix = uriPrefix
 	}
-	mux.GET(apidoc.UriPrefix+"/markdown/*file", Wrap(apidoc.Markdown))
+
 	mux.GET(apidoc.UriPrefix, Wrap(apidoc.DocList))
+	mux.GET(apidoc.UriPrefix+"/markdown/*file", Wrap(apidoc.Markdown))
 	mux.GET(apidoc.UriPrefix+"/swagger/*file", Wrap(apidoc.Swagger))
 }
