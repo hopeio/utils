@@ -58,3 +58,9 @@ func ExistsByFilterExprs(db *gorm.DB, tableName string, filters dbi.FilterExprs)
 	}
 	return exists, nil
 }
+
+func GetById[T any](db *gorm.DB, id any) (*T, error) {
+	t := new(T)
+	err := db.First(t, id).Error
+	return t, err
+}

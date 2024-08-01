@@ -13,9 +13,10 @@ func NewScope(field string, op dbi.Operation, args ...interface{}) func(*gorm.DB
 	}
 }
 
+// var dao ChainScope
+// dao.ById(1),ByName("a").Exec(db).First(v)
 type ChainScope []func(db *gorm.DB) *gorm.DB
 
-// db.Scope(ById(1),ByName("a")).First(v)
 func (c ChainScope) ById(id int) ChainScope {
 	if id > 0 {
 		return c.ByIdNoCheck(id)
