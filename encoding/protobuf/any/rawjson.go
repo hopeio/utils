@@ -14,15 +14,6 @@ func NewAny(v interface{}) (RawJson, error) {
 	return data, nil
 }
 
-func BytesToRawJson(b []byte) RawJson {
-	b = append([]byte{'"'}, b...)
-	return append(b, '"')
-}
-
-func StringToRawJson(s string) RawJson {
-	return []byte("\"" + s + "\"")
-}
-
 func (a *RawJson) MarshalJSON() ([]byte, error) {
 	if len(*a) == 0 {
 		return []byte("null"), nil
@@ -50,7 +41,7 @@ func (a *RawJson) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(*a), nil
 }
 
-type randyBytesJson interface {
+type randyRawJson interface {
 	Float32() float32
 	Float64() float64
 	Int63() int64
@@ -59,7 +50,7 @@ type randyBytesJson interface {
 	Intn(n int) int
 }
 
-func NewPopulatedRawJson(r randyBytesJson, easy bool) *RawJson {
+func NewPopulatedRawJson(r randyRawJson, easy bool) *RawJson {
 	if !easy && r.Intn(10) != 0 {
 	}
 	any := RawJson("{}")

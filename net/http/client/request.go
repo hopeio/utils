@@ -6,9 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/andybalholm/brotli"
 	httpi "github.com/hopeio/utils/net/http"
 	url2 "github.com/hopeio/utils/net/url"
 	stringsi "github.com/hopeio/utils/strings"
+	"github.com/hopeio/utils/strings/ascii"
+	"github.com/hopeio/utils/strings/unicode"
 	"io"
 	"net/http"
 	"strings"
@@ -238,7 +241,7 @@ Retry:
 			if err != nil {
 				return err
 			}
-			err = errors.New("status:" + resp.Status + " " + stringsi.ToUnicode(msg))
+			err = errors.New("status:" + resp.Status + " " + unicode.ToUnicode(msg))
 		}
 		return err
 	}
@@ -265,7 +268,15 @@ Retry:
 			reader = resp.Body
 		}*/
 
-	reader = resp.Body
+	if ascii.EqualFold(resp.Header.Get("Content-Encoding"), "br") {
+		reader = brotli.NewReader(resp.Body)
+		resp.Header.Del("Content-Encoding")
+		resp.Header.Del("Content-Length")
+		resp.ContentLength = -1
+		resp.Uncompressed = true
+	} else {
+		reader = resp.Body
+	}
 
 	if httpresp, ok := response.(*io.Reader); ok {
 		*httpresp = reader

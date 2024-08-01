@@ -40,14 +40,12 @@ type Logger interface {
 	Println(v ...interface{})
 }
 
-var defaultLog = DefaultLogger
-
 func DefaultLogger(method, url, auth string, reqBody, respBody *Body, status int, process time.Duration, err error) {
 	reqField, respField := zap.Skip(), zap.Skip()
 	if reqBody != nil {
-		key := "param"
+		key := "body"
 		if reqBody.IsJson() {
-			reqField = zap.Reflect(key, log.BytesJson(reqBody.Data))
+			reqField = zap.Reflect(key, log.RawJson(reqBody.Data))
 		} else if reqBody.IsProtobuf() {
 			reqField = zap.Binary(key, reqBody.Data)
 		} else {
@@ -57,7 +55,7 @@ func DefaultLogger(method, url, auth string, reqBody, respBody *Body, status int
 	if respBody != nil && respBody.Data != nil {
 		key := "result"
 		if respBody.IsJson() {
-			respField = zap.Reflect(key, log.BytesJson(respBody.Data))
+			respField = zap.Reflect(key, log.RawJson(respBody.Data))
 		} else if respBody.IsProtobuf() {
 			respField = zap.Binary(key, respBody.Data)
 		} else {
@@ -69,7 +67,7 @@ func DefaultLogger(method, url, auth string, reqBody, respBody *Body, status int
 		}
 	}
 
-	log.Default().Logger.Info("third-request", zap.String("url", url),
+	log.Default().Logger.Info("http request", zap.String("url", url),
 		zap.String("method", method),
 		reqField,
 		zap.Duration("processTime", process),

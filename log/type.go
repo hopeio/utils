@@ -5,19 +5,19 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type BytesJson json.RawMessage
+type RawJson json.RawMessage
 
-func (b BytesJson) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+func (b RawJson) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-func (b BytesJson) MarshalJSON() ([]byte, error) {
+func (b RawJson) MarshalJSON() ([]byte, error) {
 	if b == nil {
 		return []byte("null"), nil
 	}
 	return b, nil
 }
-func (b *BytesJson) UnmarshalJSON(raw []byte) error {
+func (b *RawJson) UnmarshalJSON(raw []byte) error {
 	*b = raw
 	return nil
 }

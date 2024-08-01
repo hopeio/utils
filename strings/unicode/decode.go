@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func DecodeString(source string) string {
+func Decode(source string) string {
 	var res = []string{""}
 	sUnicode := strings.Split(source, "\\u")
 	var context = ""

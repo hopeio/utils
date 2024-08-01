@@ -35,31 +35,6 @@ func newHttpClient() *http.Client {
 	}
 }
 
-func SetTimeout(timeout time.Duration) {
-	DefaultHttpClient.Timeout = timeout
-}
-
-func DisableLog() {
-	DefaultLogLevel = LogLevelSilent
-}
-
-func SetAccessLog(log AccessLog) {
-	defaultLog = log
-}
-
-func SetProxy(url string) {
-	purl, _ := stdurl.Parse(url)
-	setProxy(DefaultHttpClient, http.ProxyURL(purl))
-}
-
-func ResetProxy() {
-	DefaultHttpClient.Transport.(*http.Transport).Proxy = http.ProxyFromEnvironment
-}
-
-func SetHttpClient(client *http.Client) {
-	DefaultHttpClient = client
-}
-
 // Client ...
 type Client struct {
 
@@ -90,7 +65,7 @@ type Client struct {
 }
 
 func New() *Client {
-	return &Client{httpClient: DefaultHttpClient, logger: defaultLog, logLevel: DefaultLogLevel, retryInterval: 200 * time.Millisecond}
+	return &Client{httpClient: DefaultHttpClient, logger: DefaultLogger, logLevel: DefaultLogLevel, retryInterval: 200 * time.Millisecond}
 }
 
 func (c *Client) Header(header http.Header) *Client {
@@ -193,6 +168,14 @@ func (c *Client) Proxy(proxyUrl string) *Client {
 		purl, _ := stdurl.Parse(proxyUrl)
 		setProxy(c.httpClient, http.ProxyURL(purl))
 	}
+	return c
+}
+
+func (c *Client) ResetProxy() *Client {
+	if !c.newHttpClient {
+		return c
+	}
+	c.httpClient.Transport.(*http.Transport).Proxy = http.ProxyFromEnvironment
 	return c
 }
 

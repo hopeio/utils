@@ -1,7 +1,8 @@
-package strings
+package unicode
 
 import (
 	"github.com/hopeio/utils/slices"
+	"github.com/hopeio/utils/strings"
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -25,7 +26,7 @@ func HasHan(s string) bool {
 // The rules are different than for Go, so cannot use strconv.Unquote.
 func Unquote(s []byte) (t string, ok bool) {
 	s, ok = unquoteBytes(s)
-	t = BytesToString(s)
+	t = strings.BytesToString(s)
 	return
 }
 
@@ -168,7 +169,7 @@ func getu4(s []byte) rune {
 
 func ToUnicode(s []byte) string {
 	if len(s) < 6 {
-		return BytesToString(s)
+		return strings.BytesToString(s)
 	}
 	b := make([]byte, len(s)+2*utf8.UTFMax)
 	begin, bbegin := 0, 0
@@ -177,7 +178,7 @@ func ToUnicode(s []byte) string {
 			bbegin += copy(b[bbegin:], s[begin:i])
 			rr := getu4(s[i:])
 			if rr < 0 {
-				return BytesToString(s)
+				return strings.BytesToString(s)
 			}
 			i += 6
 			if utf16.IsSurrogate(rr) {
@@ -198,7 +199,7 @@ func ToUnicode(s []byte) string {
 		}
 	}
 	bbegin += copy(b[bbegin:], s[begin:])
-	return BytesToString(b[:bbegin])
+	return strings.BytesToString(b[:bbegin])
 }
 
 func ToLowerFirst(s string) string {

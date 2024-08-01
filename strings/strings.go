@@ -3,6 +3,7 @@ package strings
 import (
 	"bytes"
 	"github.com/hopeio/utils/slices"
+	"github.com/hopeio/utils/strings/ascii"
 	"math/rand"
 	"strings"
 	"unicode"
@@ -164,21 +165,21 @@ func SnakeToCamel[T ~string](s T) string {
 	// upper case letter. Digits are treated as words.
 	for ; i < len(s); i++ {
 		c := s[i]
-		if c == '_' && i+1 < len(s) && IsASCIILower(s[i+1]) {
+		if c == '_' && i+1 < len(s) && ascii.IsLower(s[i+1]) {
 			continue // Caller the underscore in s.
 		}
-		if IsASCIIDigit(c) {
+		if ascii.IsDigit(c) {
 			t = append(t, c)
 			continue
 		}
 		// Assume we have a letter now - if not, it's a bogus identifier.
 		// The next word is a sequence of characters that must start upper case.
-		if IsASCIILower(c) {
+		if ascii.IsLower(c) {
 			c ^= ' ' // Make it a capital letter.
 		}
 		t = append(t, c) // Guaranteed not lower case.
 		// Accept lower case sequence that follows.
-		for i+1 < len(s) && IsASCIILower(s[i+1]) {
+		for i+1 < len(s) && ascii.IsLower(s[i+1]) {
 			i++
 			t = append(t, s[i])
 		}
@@ -472,7 +473,7 @@ func CamelCase(s string) string {
 	for i := 0; i < len(s); i++ {
 		c := s[i]
 		switch {
-		case c == '.' && i+1 < len(s) && IsASCIILower(s[i+1]):
+		case c == '.' && i+1 < len(s) && ascii.IsLower(s[i+1]):
 			// Skip over '.' in ".{{lowercase}}".
 		case c == '.':
 			b = append(b, '_') // convert '.' to '_'
@@ -480,23 +481,33 @@ func CamelCase(s string) string {
 			// Convert initial '_' to ensure we start with a capital letter.
 			// Do the same for '_' after '.' to match historic behavior.
 			b = append(b, 'X') // convert '_' to 'X'
-		case c == '_' && i+1 < len(s) && IsASCIILower(s[i+1]):
+		case c == '_' && i+1 < len(s) && ascii.IsLower(s[i+1]):
 			// Skip over '_' in "_{{lowercase}}".
-		case IsASCIIDigit(c):
+		case ascii.IsDigit(c):
 			b = append(b, c)
 		default:
 			// Assume we have a letter now - if not, it's a bogus identifier.
 			// The next word is a sequence of characters that must start upper case.
-			if IsASCIILower(c) {
+			if ascii.IsLower(c) {
 				c ^= ' ' // convert lowercase to uppercase
 			}
 			b = append(b, c)
 
 			// Accept lower case sequence that follows.
-			for ; i+1 < len(s) && IsASCIILower(s[i+1]); i++ {
+			for ; i+1 < len(s) && ascii.IsLower(s[i+1]); i++ {
 				b = append(b, s[i+1])
 			}
 		}
 	}
 	return string(b)
+}
+
+// 有一个匹配成功就返回true
+func HasPrefixes(s string, prefixes []string) bool {
+	for _, prefix := range prefixes {
+		if len(s) >= len(prefix) && s[0:len(prefix)] == prefix {
+			return true
+		}
+	}
+	return false
 }
