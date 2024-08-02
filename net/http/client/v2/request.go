@@ -13,7 +13,7 @@ func NewRequest[RES any](method, url string) *Request[RES] {
 	return &Request[RES]{Method: method, Url: url}
 }
 
-func NewFromRequest[RES any](req *client.Request) *Request[RES] {
+func NewRequestFromV1[RES any](req *client.Request) *Request[RES] {
 	return (*Request[RES])(req)
 }
 
