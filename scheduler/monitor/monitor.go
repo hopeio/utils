@@ -10,8 +10,8 @@ import (
 // 一点都不优雅
 // 没什么优不优雅，这就像wg.Add(1)
 type Monitor struct {
-	context.Context
-	context.CancelFunc
+	ctx      context.Context
+	cancel   context.CancelFunc
 	run, end *atomic.Int32
 	callback func()
 }
@@ -22,11 +22,11 @@ func New(ctx context.Context, callback func()) *Monitor {
 	}
 	ctx, cancel := context.WithCancel(ctx)
 	return &Monitor{
-		Context:    ctx,
-		CancelFunc: cancel,
-		run:        atomic.NewInt32(0),
-		end:        atomic.NewInt32(0),
-		callback:   callback,
+		ctx:      ctx,
+		cancel:   cancel,
+		run:      atomic.NewInt32(0),
+		end:      atomic.NewInt32(0),
+		callback: callback,
 	}
 }
 
@@ -43,5 +43,5 @@ func (ng *Monitor) Run(fn func()) {
 }
 
 func (ng *Monitor) Cancel() {
-	ng.CancelFunc()
+	ng.cancel()
 }

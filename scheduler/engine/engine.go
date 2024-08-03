@@ -49,12 +49,12 @@ func (c *Config[KEY]) NewEngineWithContext(ctx context.Context) *Engine[KEY] {
 		cancel:           cancel,
 		taskChanProducer: make(chan *Task[KEY]),
 		taskChanConsumer: make(chan *Task[KEY]),
+		errTaskChan:      make(chan *Task[KEY]),
 		taskReadyHeap:    heap.Heap[*Task[KEY]]{},
 		monitorInterval:  c.MonitorInterval,
 		done:             cache,
 		errHandler:       func(task *Task[KEY]) { task.ErrLog() },
-		lock:             sync.RWMutex{},
-		taskErrChan:      make(chan *Task[KEY]),
+		mu:               sync.RWMutex{},
 		zeroKey:          *new(KEY),
 	}
 	return engine
@@ -101,24 +101,24 @@ type Engine[KEY Key] struct {
 	// workerGroup [][]*Worker[KEY] //TODO 工作组概念
 	taskChanProducer chan *Task[KEY]
 	taskChanConsumer chan *Task[KEY]
+	errTaskChan      chan *Task[KEY]
 	taskReadyHeap    heap.Heap[*Task[KEY]]
 	ctx              context.Context
 	cancel           context.CancelFunc // 手动停止执行
 	wg               sync.WaitGroup     // 控制确保所有任务执行完
+	mu               sync.RWMutex
 	speedLimit       time2.Ticker
 	rateLimiter      *rate.Limiter
 	//TODO
 	monitorInterval      time.Duration // 全局检测定时器间隔时间，任务的卡住检测，worker panic recover都可以用这个检测
 	workerFactoryRunning atomic.Bool
-	errHandleRunning     bool
+	errHandlerRunning    bool
 	enableTelemetry      bool
 	isRunning, isStopped bool
-	lock                 sync.RWMutex
 	EngineStatistics
 	done         *ristretto.Cache[KEY, struct{}]
 	kindHandlers []*KindHandler[KEY]
 	errHandler   func(task *Task[KEY])
-	taskErrChan  chan *Task[KEY]
 	onStop       []func(context.Context)
 	zeroKey      KEY // 泛型不够强大,又为了性能妥协的字段
 }
@@ -128,7 +128,7 @@ type KindHandler[KEY Key] struct {
 	speedLimit  time2.Ticker
 	rateLimiter *rate.Limiter
 	// TODO 指定Kind的Handler
-	HandleFun TaskFunc[KEY]
+	Handler TaskFunc[KEY]
 }
 
 func NewEngine[KEY Key](workerCount uint64) *Engine[KEY] {
@@ -139,10 +139,6 @@ func NewEngineWithContext[KEY Key](workerCount uint64, ctx context.Context) *Eng
 	conf := NewConfig[KEY]()
 	conf.WorkerCount = workerCount
 	return conf.NewEngineWithContext(ctx)
-}
-
-func (e *Engine[KEY]) Context() context.Context {
-	return e.ctx
 }
 
 func (e *Engine[KEY]) SkipKind(kinds ...Kind) *Engine[KEY] {
@@ -181,18 +177,18 @@ func (e *Engine[KEY]) ErrHandler(errHandler func(task *Task[KEY])) *Engine[KEY] 
 func (e *Engine[KEY]) ErrHandlerUtilSuccess() *Engine[KEY] {
 	log.Warn("ErrHandlerUtilSuccess will clear history exec log contains err")
 	return e.ErrHandler(func(task *Task[KEY]) {
-		task.ErrTimes = 0
+		task.errTimes = 0
 		task.reExecLogs = task.reExecLogs[:0]
-		e.AsyncAddOptionTasks(task.Context, task.Priority, task)
+		e.AsyncAddOptionTasks(task.ctx, task.Priority, task)
 	})
 }
 
 func (e *Engine[KEY]) ErrHandlerRetryTimes(times int) *Engine[KEY] {
 	return e.ErrHandler(func(task *Task[KEY]) {
-		if task.ReExecTimes < times {
-			task.ErrTimes = 0
+		if task.reExecTimes < times {
+			task.errTimes = 0
 			task.reExecLogs = task.reExecLogs[:0]
-			e.AsyncAddOptionTasks(task.Context, task.Priority, task)
+			e.AsyncAddOptionTasks(task.ctx, task.Priority, task)
 		} else {
 			task.ErrLog()
 		}

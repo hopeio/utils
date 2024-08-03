@@ -25,30 +25,43 @@ type execLog struct {
 }
 
 type TaskStatistics struct {
-	ReExecTimes int
-	ErrTimes    int
+	reExecTimes int
+	errTimes    int
+}
+
+func (t *TaskStatistics) ReExecTimes() int {
+	return t.reExecTimes
+}
+
+func (t *TaskStatistics) ErrTimes() int {
+	return t.errTimes
 }
 
 type Task[KEY Key] struct {
-	context.Context
-	Kind      Kind
-	Key       KEY
-	Priority  int
-	Describe  string
+	ctx      context.Context
+	Kind     Kind
+	Key      KEY
+	Priority int
+	Describe string
+	TaskStatistics
+	Run       TaskFunc[KEY]
 	id        uint64
 	createdAt time.Time
 	execLog
 	reExecLogs []*execLog // 多数任务只会执行一次
 	deadline   time.Time
 	timeout    time.Duration
-	TaskStatistics
-	TaskFunc[KEY]
 }
 
 func NewTask[KEY Key](task TaskFunc[KEY]) *Task[KEY] {
 	return &Task[KEY]{
-		TaskFunc: task,
+		Run: task,
 	}
+}
+
+func (t *Task[KEY]) SeContext(ctx context.Context) *Task[KEY] {
+	t.ctx = ctx
+	return t
 }
 
 func (t *Task[KEY]) SetPriority(priority int) *Task[KEY] {
@@ -107,8 +120,16 @@ func (t *Task[KEY]) ErrLog() {
 	log.Error(builder.String())
 }
 
-type TaskInterface[KEY Key] interface {
+type TaskRun[KEY Key] interface {
+	Run(ctx context.Context) ([]*Task[KEY], error)
+}
+
+type TasDo[KEY Key] interface {
 	Do(ctx context.Context) ([]*Task[KEY], error)
+}
+
+type TasExec[KEY Key] interface {
+	Exec(ctx context.Context) ([]*Task[KEY], error)
 }
 
 type Tasks[KEY Key] []*Task[KEY]
@@ -123,10 +144,16 @@ type ErrHandle func(context.Context, error)
 
 type TaskFunc[KEY Key] func(ctx context.Context) ([]*Task[KEY], error)
 
-func (t TaskFunc[KEY]) Do(ctx context.Context) ([]*Task[KEY], error) {
+func (t TaskFunc[KEY]) Run(ctx context.Context) ([]*Task[KEY], error) {
 	return t(ctx)
 }
 
+func (t TaskFunc[KEY]) Do(ctx context.Context) ([]*Task[KEY], error) {
+	return t(ctx)
+}
+func (t TaskFunc[KEY]) Exec(ctx context.Context) ([]*Task[KEY], error) {
+	return t(ctx)
+}
 func emptyTaskFunc[KEY Key](ctx context.Context) ([]*Task[KEY], error) {
 	return nil, nil
 }

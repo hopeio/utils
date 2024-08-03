@@ -12,28 +12,28 @@ import (
 )
 
 func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
-	e.lock.Lock()
+	e.mu.Lock()
 	if e.isRunning {
 		if len(tasks) > 0 {
 			e.AddTasks(tasks...)
 		}
-		e.lock.Unlock()
+		e.mu.Unlock()
 		return
 	}
-	if !e.errHandleRunning {
+	if !e.errHandlerRunning {
 		go func() {
 			for {
 				select {
 				case <-e.ctx.Done():
 					return
-				case task := <-e.taskErrChan:
+				case task := <-e.errTaskChan:
 					e.taskErrHandleCount++
 					e.errHandler(task)
 					e.wg.Done()
 				}
 			}
 		}()
-		e.errHandleRunning = true
+		e.errHandlerRunning = true
 	}
 	e.addWorker()
 	if !e.isRunning {
@@ -68,7 +68,7 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 				case <-timer.C:
 					//检测任务是否已空
 					if uint(e.workingWorkerCount) == 0 && len(e.taskReadyHeap) == 0 {
-						e.lock.Lock()
+						e.mu.Lock()
 						counter, _ := synci.WaitGroupState(&e.wg)
 						if counter == 1 {
 							emptyTimes++
@@ -76,11 +76,11 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 								log.GetNoCallerLogger().Debug("the task is about to end.")
 								e.wg.Done()
 								e.isRunning = false
-								e.lock.Unlock()
+								e.mu.Unlock()
 								break loop
 							}
 						}
-						e.lock.Unlock()
+						e.mu.Unlock()
 					}
 					fmt.Printf("\r[Running] task:D:%d/T:%d/S:%d/H:%d/F:%d/E:%d,worker: %d/%d", e.taskDoneCount, e.taskTotalCount, e.taskSkipCount, e.taskErrHandleCount, e.taskFailedCount, e.taskErrorTimes, e.workingWorkerCount, e.currentWorkerCount)
 					timer.Reset(e.monitorInterval)
@@ -95,7 +95,7 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 		}()
 	}
 
-	e.lock.Unlock()
+	e.mu.Unlock()
 	if len(tasks) > 0 {
 		e.AddTasks(tasks...)
 	}
@@ -170,12 +170,12 @@ func (e *Engine[KEY]) addTasks(ctx context.Context, priority int, tasks ...*Task
 	atomic.AddUint64(&e.taskTotalCount, uint64(l))
 	e.wg.Add(l)
 	for _, task := range tasks {
-		if task == nil || task.TaskFunc == nil {
+		if task == nil || task.Run == nil {
 			atomic.AddUint64(&e.taskTotalCount, ^uint64(0))
 			continue
 		}
 		if ctx != nil {
-			task.Context = ctx
+			task.ctx = ctx
 		}
 		task.Priority += priority
 		task.id = id2.NewOrderID()
@@ -268,7 +268,7 @@ func (e *Engine[KEY]) AddFixedTasks(workerId int, generation int, tasks ...*Task
 	atomic.AddUint64(&e.taskTotalCount, uint64(l))
 	e.wg.Add(l)
 	for _, task := range tasks {
-		if task == nil || task.TaskFunc == nil {
+		if task == nil || task.Run == nil {
 			atomic.AddUint64(&e.taskTotalCount, ^uint64(0))
 			continue
 		}
@@ -308,7 +308,7 @@ func (e *Engine[KEY]) execTask(task *Task[KEY]) bool {
 	}
 
 	if e.rateLimiter != nil {
-		e.rateLimiter.Wait(task.Context)
+		e.rateLimiter.Wait(task.ctx)
 	}
 
 	var kindHandler *KindHandler[KEY]
@@ -326,19 +326,19 @@ func (e *Engine[KEY]) execTask(task *Task[KEY]) bool {
 			kindHandler.speedLimit.Wait()
 		}
 		if kindHandler.rateLimiter != nil {
-			_ = kindHandler.rateLimiter.Wait(task.Context)
+			_ = kindHandler.rateLimiter.Wait(task.ctx)
 		}
 	}
 
-	if task.ReExecTimes > 0 {
+	if task.reExecTimes > 0 {
 		task.reExecLogs = append(task.reExecLogs, &execLog{
 			execBeginAt: time.Now(),
 		})
 	} else {
 		task.execBeginAt = time.Now()
 	}
-	tasks, err := task.TaskFunc.Do(task.Context)
-	if task.ReExecTimes > 0 {
+	tasks, err := task.Run.Run(task.ctx)
+	if task.reExecTimes > 0 {
 		task.reExecLogs[len(task.reExecLogs)-1].execEndAt = time.Now()
 	} else {
 		task.execEndAt = time.Now()
@@ -346,20 +346,20 @@ func (e *Engine[KEY]) execTask(task *Task[KEY]) bool {
 
 	if err != nil {
 		atomic.AddUint64(&e.taskErrorTimes, 1)
-		task.ErrTimes++
-		if task.ReExecTimes > 0 {
+		task.errTimes++
+		if task.reExecTimes > 0 {
 			task.reExecLogs[len(task.reExecLogs)-1].err = err
 		} else {
 			task.err = err
 		}
 
-		if task.ErrTimes < 5 {
-			task.ReExecTimes++
-			log.Warnf("%v执行失败:%v,将第%d次执行", task.Key, err, task.ReExecTimes)
+		if task.errTimes < 5 {
+			task.reExecTimes++
+			log.Warnf("%v执行失败:%v,将第%d次执行", task.Key, err, task.reExecTimes)
 			e.reTryTasks(task)
 		} else {
 			log.Warn(task.Key, "多次执行失败:", err, "将执行错误处理")
-			e.taskErrChan <- task
+			e.errTaskChan <- task
 		}
 
 		return false
@@ -368,7 +368,7 @@ func (e *Engine[KEY]) execTask(task *Task[KEY]) bool {
 		e.done.SetWithTTL(task.Key, struct{}{}, 1, time.Hour)
 	}
 	if len(tasks) > 0 {
-		e.AsyncAddOptionTasks(task.Context, task.Priority+1, tasks...)
+		e.AsyncAddOptionTasks(task.ctx, task.Priority+1, tasks...)
 	}
 	atomic.AddUint64(&e.taskDoneCount, 1)
 	return true

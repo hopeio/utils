@@ -31,7 +31,7 @@ func taskSourceFunc(e *Engine[int]) {
 func genTask(id int) *Task[int] {
 	return &Task[int]{
 		Key: id,
-		TaskFunc: func(ctx context.Context) ([]*Task[int], error) {
+		Run: func(ctx context.Context) ([]*Task[int], error) {
 			fmt.Println("task1:", id)
 			return []*Task[int]{genTask2(id + 100)}, nil
 		},
@@ -41,7 +41,7 @@ func genTask(id int) *Task[int] {
 func genTask2(id int) *Task[int] {
 	return &Task[int]{
 		Key: id,
-		TaskFunc: func(ctx context.Context) ([]*Task[int], error) {
+		Run: func(ctx context.Context) ([]*Task[int], error) {
 			fmt.Println("task2:", id)
 			time.Sleep(time.Millisecond * 200)
 			return nil, nil
@@ -68,7 +68,7 @@ func TestEngineConcurrencyRun(t *testing.T) {
 func genTask3(typ string, id int) *Task[int] {
 	return &Task[int]{
 		Key: id,
-		TaskFunc: func(ctx context.Context) ([]*Task[int], error) {
+		Run: func(ctx context.Context) ([]*Task[int], error) {
 			fmt.Println("task:", typ, id)
 			var tasks []*Task[int]
 			for i := 0; i < 5; i++ {
