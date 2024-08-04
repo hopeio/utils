@@ -146,8 +146,7 @@ func FindFiles2(path string, deep int8, num int) ([]string, error) {
 	return files, nil
 }
 
-func subDirFiles2(dir, path, exclude string, file chan string, deep, step int8, ctx *monitor.Monitor) error {
-
+func subDirFiles2(dir, path, exclude string, file chan string, deep, step int8, mi *monitor.Monitor) error {
 	step += 1
 	if step-1 == deep {
 		return nil
@@ -156,6 +155,7 @@ func subDirFiles2(dir, path, exclude string, file chan string, deep, step int8, 
 	if err != nil {
 		return err
 	}
+	ctx := mi.Context()
 	for i := range fileInfos {
 		if fileInfos[i].IsDir() {
 			if exclude != "" && fileInfos[i].Name() == exclude {
@@ -173,10 +173,10 @@ func subDirFiles2(dir, path, exclude string, file chan string, deep, step int8, 
 				}
 			}
 
-			ctx.Run(func() {
+			mi.Run(func() {
 				//TODO: subDirFiles2(filepath.Join(dir, fileInfos[i].Name()), path, "", file, deep, step, ctx) 这种语句有问题,不清楚原因,i会错乱?
 				// 还是go1.22之前的问题，升级go mod go 标签到1.22
-				err := subDirFiles2(filepath.Join(dir, fileInfos[i].Name()), path, "", file, deep, step, ctx)
+				err := subDirFiles2(filepath.Join(dir, fileInfos[i].Name()), path, "", file, deep, step, mi)
 				if err != nil {
 					log.Error(err)
 				}
@@ -187,7 +187,7 @@ func subDirFiles2(dir, path, exclude string, file chan string, deep, step int8, 
 	return nil
 }
 
-func supDirFiles2(dir, path string, file chan string, deep, step int8, ctx *monitor.Monitor) error {
+func supDirFiles2(dir, path string, file chan string, deep, step int8, mi *monitor.Monitor) error {
 	step += 1
 	if step-1 == deep {
 		return nil
@@ -197,6 +197,7 @@ func supDirFiles2(dir, path string, file chan string, deep, step int8, ctx *moni
 		return err
 	}
 	filepath1 := filepath.Join(dir, path)
+	ctx := mi.Context()
 	if _, err := os.Stat(filepath1); !os.IsNotExist(err) {
 		select {
 		case <-ctx.Done():
@@ -205,14 +206,14 @@ func supDirFiles2(dir, path string, file chan string, deep, step int8, ctx *moni
 		}
 	}
 
-	ctx.Run(func() {
-		err := subDirFiles2(dir, path, dirName, file, deep, 0, ctx)
+	mi.Run(func() {
+		err := subDirFiles2(dir, path, dirName, file, deep, 0, mi)
 		if err != nil {
 			log.Error(err)
 		}
 	})
-	ctx.Run(func() {
-		err := supDirFiles2(dir, path, file, deep, step, ctx)
+	mi.Run(func() {
+		err := supDirFiles2(dir, path, file, deep, step, mi)
 		if err != nil {
 			log.Error(err)
 		}

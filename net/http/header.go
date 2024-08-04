@@ -63,7 +63,7 @@ func CopyHttpHeader(src, dst http.Header) {
 	}
 }
 
-func copyHeader(dst, src http.Header) {
+func copyHeader(src, dst http.Header) {
 	for k, vv := range src {
 		for _, v := range vv {
 			dst.Add(k, v)

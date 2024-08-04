@@ -42,6 +42,10 @@ func (ng *Monitor) Run(fn func()) {
 	}()
 }
 
+func (ng *Monitor) Context() context.Context {
+	return ng.ctx
+}
+
 func (ng *Monitor) Cancel() {
 	ng.cancel()
 }

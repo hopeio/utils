@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	httpi "github.com/hopeio/utils/net/http"
 	"github.com/hopeio/utils/net/http/client"
 )
 
@@ -34,6 +35,10 @@ func (r *Request[RES]) Origin() *client.Request {
 	return (*client.Request)(r)
 }
 
+func (req *Request[RES]) Header(header httpi.Header) *Request[RES] {
+	(*client.Request)(req).Header(header)
+	return req
+}
 func (req *Request[RES]) AddHeader(k, v string) *Request[RES] {
 	(*client.Request)(req).AddHeader(k, v)
 	return req

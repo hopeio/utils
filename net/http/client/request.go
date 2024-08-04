@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"errors"
@@ -54,6 +55,11 @@ func (req *Request) Client() *Client {
 	req.client = New()
 	req.client.req = req
 	return req.client
+}
+
+func (req *Request) Header(header httpi.Header) *Request {
+	req.header = header
+	return req
 }
 
 func (req *Request) AddHeader(k, v string) *Request {
@@ -144,6 +150,9 @@ func (req *Request) Do(param, response any) error {
 	}
 	if req.ctx == nil {
 		req.ctx = context.Background()
+	}
+	if req.client == nil {
+		req.client = DefaultClient
 	}
 	c := req.client
 	var body io.Reader
@@ -258,17 +267,18 @@ Retry:
 
 	var reader io.Reader
 	// net/http会自动处理gzip
-	/*	if resp.Header.Get(httpi.HeaderContentEncoding) == "gzip" {
-			reader, err = gzip.NewReader(resp.Body)
-			if err != nil {
-				resp.Body.Close()
-				return err
-			}
-		} else {
-			reader = resp.Body
-		}*/
-
-	if ascii.EqualFold(resp.Header.Get("Content-Encoding"), "br") {
+	// go1.22 发现没有处理
+	if resp.Header.Get(httpi.HeaderContentEncoding) == "gzip" {
+		reader, err = gzip.NewReader(resp.Body)
+		resp.Header.Del("Content-Encoding")
+		resp.Header.Del("Content-Length")
+		resp.ContentLength = -1
+		resp.Uncompressed = true
+		if err != nil {
+			resp.Body.Close()
+			return err
+		}
+	} else if ascii.EqualFold(resp.Header.Get("Content-Encoding"), "br") {
 		reader = brotli.NewReader(resp.Body)
 		resp.Header.Del("Content-Encoding")
 		resp.Header.Del("Content-Length")
