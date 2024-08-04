@@ -219,68 +219,100 @@ func ErrorSw(msg string, fields ...zap.Field) {
 
 // no caller
 
-func DebugN(args ...any) {
+func DebugNC(args ...any) {
 	if ce := noCallerLogger.Check(zap.DebugLevel, trimLineBreak(fmt.Sprintln(args...))); ce != nil {
 		ce.Write()
 	}
 }
 
-func InfoN(args ...any) {
+func InfoNC(args ...any) {
 	if ce := noCallerLogger.Check(zap.InfoLevel, trimLineBreak(fmt.Sprintln(args...))); ce != nil {
 		ce.Write()
 	}
 }
 
-func WarnN(args ...any) {
+func WarnNC(args ...any) {
 	if ce := noCallerLogger.Check(zap.WarnLevel, trimLineBreak(fmt.Sprintln(args...))); ce != nil {
 		ce.Write()
 	}
 }
 
-func ErrorN(args ...any) {
+func ErrorNC(args ...any) {
 	if ce := noCallerLogger.Check(zap.ErrorLevel, trimLineBreak(fmt.Sprintln(args...))); ce != nil {
 		ce.Write()
 	}
 }
 
-func PanicN(args ...any) {
+func PanicNC(args ...any) {
 	if ce := noCallerLogger.Check(zap.PanicLevel, trimLineBreak(fmt.Sprintln(args...))); ce != nil {
 		ce.Write()
 	}
 }
 
-func FatalN(args ...any) {
+func FatalNC(args ...any) {
 	if ce := noCallerLogger.Check(zap.FatalLevel, trimLineBreak(fmt.Sprintln(args...))); ce != nil {
 		ce.Write()
 	}
 }
 
-func ErrorNf(template string, args ...any) {
+func ErrorNCf(template string, args ...any) {
 	if ce := noCallerLogger.Check(zap.ErrorLevel, fmt.Sprintf(template, args...)); ce != nil {
 		ce.Write()
 	}
 }
 
-func FatalNf(template string, args ...any) {
+func FatalNCf(template string, args ...any) {
 	if ce := noCallerLogger.Check(zap.FatalLevel, fmt.Sprintf(template, args...)); ce != nil {
 		ce.Write()
 	}
 }
 
-func ErrorNw(msg string, fields ...zap.Field) {
+func ErrorNCw(msg string, fields ...zap.Field) {
 	if ce := noCallerLogger.Check(zap.ErrorLevel, msg); ce != nil {
 		ce.Write(fields...)
 	}
 }
 
-func PanicNw(msg string, fields ...zap.Field) {
+func PanicNCw(msg string, fields ...zap.Field) {
 	if ce := noCallerLogger.Check(zap.PanicLevel, msg); ce != nil {
 		ce.Write(fields...)
 	}
 }
 
-func FatalNw(msg string, fields ...zap.Field) {
+func FatalNCw(msg string, fields ...zap.Field) {
 	if ce := noCallerLogger.Check(zap.FatalLevel, msg); ce != nil {
 		ce.Write(fields...)
 	}
+}
+
+func Check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
+	return defaultLogger.Check(lvl, msg)
+}
+
+func DebugCE(args ...any) *zapcore.CheckedEntry {
+	return defaultLogger.Check(zap.DebugLevel, trimLineBreak(fmt.Sprintln(args...)))
+}
+
+func InfoCE(args ...any) *zapcore.CheckedEntry {
+	return defaultLogger.Check(zap.InfoLevel, trimLineBreak(fmt.Sprintln(args...)))
+}
+
+func WarnCE(args ...any) *zapcore.CheckedEntry {
+	return defaultLogger.Check(zap.WarnLevel, trimLineBreak(fmt.Sprintln(args...)))
+}
+
+func ErrorCE(args ...any) *zapcore.CheckedEntry {
+	return defaultLogger.Check(zap.ErrorLevel, trimLineBreak(fmt.Sprintln(args...)))
+}
+
+func DPanicCE(args ...any) *zapcore.CheckedEntry {
+	return defaultLogger.Check(zap.DPanicLevel, trimLineBreak(fmt.Sprintln(args...)))
+}
+
+func PanicCE(args ...any) *zapcore.CheckedEntry {
+	return defaultLogger.Check(zap.PanicLevel, trimLineBreak(fmt.Sprintln(args...)))
+}
+
+func FatalCE(args ...any) *zapcore.CheckedEntry {
+	return defaultLogger.Check(zap.FatalLevel, trimLineBreak(fmt.Sprintln(args...)))
 }

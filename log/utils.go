@@ -33,6 +33,17 @@ func trimLineBreak(path string) string {
 	return path[:len(path)-1]
 }
 
+func TrimLineBreak(path string) string {
+	if b := path[len(path)-1]; b == '\n' {
+		return path[:len(path)-1]
+	}
+	return path
+}
+
+func Sprintln(a ...any) string {
+	return trimLineBreak(fmt.Sprintln(a...))
+}
+
 func getMessage(fmtArgs []interface{}) string {
 	msg := fmt.Sprintln(fmtArgs...)
 	return msg[:len(msg)-1]

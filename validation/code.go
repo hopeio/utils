@@ -1,8 +1,7 @@
 package validation
 
 import (
-	"math/rand"
-	"time"
+	"math/rand/v2"
 )
 
 var code = []byte{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
@@ -10,7 +9,6 @@ var code = []byte{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C
 	'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
 
 func GenerateCode() string {
-	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(code), func(i, j int) {
 		code[i], code[j] = code[j], code[i]
 	})
