@@ -1,8 +1,8 @@
 package ffmpeg
 
 import (
+	"github.com/hopeio/utils/log"
 	execi "github.com/hopeio/utils/os/exec"
-	"log"
 )
 
 // doc: https://ffmpeg.org/ffmpeg-codecs.html
@@ -21,13 +21,12 @@ func SetExecPath(path string) {
 }
 
 func ffmpegCmd(cmd string) error {
-	cmd = execPath
-	log.Println(cmd)
+	cmd = execPath + " " + cmd
+	log.Debug("exec:", cmd)
 	err := execi.ContainQuotedStdoutCMD(cmd)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		return err
 	}
-	//log.Println(res)
 	return nil
 }
