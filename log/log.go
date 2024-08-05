@@ -72,12 +72,6 @@ func Sync() error {
 	return defaultLogger.Sync()
 }
 
-func Print(args ...any) {
-	if ce := defaultLogger.Check(zap.InfoLevel, trimLineBreak(fmt.Sprintln(args...))); ce != nil {
-		ce.Write()
-	}
-}
-
 func Debug(args ...any) {
 	if ce := defaultLogger.Check(zap.DebugLevel, trimLineBreak(fmt.Sprintln(args...))); ce != nil {
 		ce.Write()
@@ -192,12 +186,6 @@ func Fatalw(msg string, fields ...zap.Field) {
 	}
 }
 
-func Println(args ...any) {
-	if ce := defaultLogger.Check(zap.InfoLevel, trimLineBreak(fmt.Sprintln(args...))); ce != nil {
-		ce.Write()
-	}
-}
-
 // with stack
 func ErrorS(args ...any) {
 	if ce := stackLogger.Check(zap.ErrorLevel, trimLineBreak(fmt.Sprintln(args...))); ce != nil {
@@ -281,6 +269,24 @@ func PanicNCw(msg string, fields ...zap.Field) {
 
 func FatalNCw(msg string, fields ...zap.Field) {
 	if ce := noCallerLogger.Check(zap.FatalLevel, msg); ce != nil {
+		ce.Write(fields...)
+	}
+}
+
+func Log(lvl zapcore.Level, msg string) {
+	if ce := defaultLogger.Check(lvl, msg); ce != nil {
+		ce.Write()
+	}
+}
+
+func Logf(lvl zapcore.Level, msg string, args ...any) {
+	if ce := defaultLogger.Check(lvl, fmt.Sprintf(msg, args...)); ce != nil {
+		ce.Write()
+	}
+}
+
+func Logw(lvl zapcore.Level, msg string, fields ...zapcore.Field) {
+	if ce := defaultLogger.Check(lvl, msg); ce != nil {
 		ce.Write(fields...)
 	}
 }

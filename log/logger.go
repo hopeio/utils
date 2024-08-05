@@ -29,7 +29,7 @@ func (l *Logger) With(fields ...zap.Field) *Logger {
 }
 
 // Sugar wrap the zap Sugar.
-func (l *Logger) ZapLogger() *zap.Logger {
+func (l *Logger) Zap() *zap.Logger {
 	return l.Logger
 }
 

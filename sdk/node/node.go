@@ -56,14 +56,14 @@ func WatchRun(scriptFile string) {
 					return
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write {
-					log.Println("Modified file:", event.Name)
+					log.Info("Modified file:", event.Name)
 					runNodeScript(scriptFile)
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
 				}
-				log.Println("Error:", err)
+				log.Error("Error:", err)
 			}
 		}
 	}()

@@ -92,7 +92,7 @@ func main() {
 	}
 
 	if *useWebsockets {
-		log.Println("using websockets")
+		log.Info("using websockets")
 		options = append(
 			options,
 			web.WithWebsockets(true),
