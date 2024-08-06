@@ -29,6 +29,8 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 			for {
 				select {
 				case <-e.ctx.Done():
+					close(e.errTaskChan)
+					e.errHandlerRunning = false
 					return
 				case task := <-e.errTaskChan:
 					e.taskErrHandleCount++
@@ -86,6 +88,7 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 					if err := e.ctx.Err(); err != nil {
 						log.Error(err)
 					}
+					close(e.taskChanConsumer)
 					break loop
 				}
 

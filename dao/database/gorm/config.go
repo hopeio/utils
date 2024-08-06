@@ -2,7 +2,7 @@ package gorm
 
 import (
 	dbi "github.com/hopeio/utils/dao/database"
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/utils/validation"
 	"gorm.io/gorm/schema"
 	"gorm.io/plugin/prometheus"
 	"time"
@@ -58,7 +58,7 @@ func (c *Config) Init() {
 	if c.Type == "" {
 		c.Type = dbi.Postgres
 	}
-	log.DurationNotify("SlowThreshold", c.Logger.SlowThreshold, 10*time.Millisecond)
+	validation.DurationNotify("SlowThreshold", c.Logger.SlowThreshold, 10*time.Millisecond)
 	if c.TimeZone == "" {
 		c.TimeZone = "Asia/Shanghai"
 	}

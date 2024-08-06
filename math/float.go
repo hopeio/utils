@@ -2,6 +2,7 @@ package math
 
 import (
 	"math"
+	"strconv"
 )
 
 func DecimalPlaces(value float64, prec int) float64 {
@@ -13,4 +14,8 @@ func DecimalPlaces(value float64, prec int) float64 {
 func DecimalPlacesRound(value float64, rank int) float64 {
 	multiplier := math.Pow(10, float64(rank))
 	return math.Round(value*multiplier) / multiplier
+}
+
+func FormatFloat(num float64) string {
+	return strconv.FormatFloat(num, 'f', -1, 64)
 }

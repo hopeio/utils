@@ -1,7 +1,7 @@
-package modelutil
+package sql
 
 import (
-	"github.com/hopeio/utils/dao/database/modelutil"
+	"github.com/hopeio/utils/dao/database/sql"
 	"github.com/hopeio/utils/types/model"
 	"gorm.io/gorm"
 )
@@ -16,5 +16,5 @@ func GetCursor(db *gorm.DB, typ string) (*model.Cursor, error) {
 }
 
 func EndCallback(db *gorm.DB, typ string) {
-	db.Exec(modelutil.EndCallbackSQL(typ))
+	db.Exec(sql.EndCallbackSQL(typ))
 }

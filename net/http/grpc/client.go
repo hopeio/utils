@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"github.com/hopeio/utils/errors/multierr"
 	httpi "github.com/hopeio/utils/net/http"
-	"github.com/hopeio/utils/net/http/grpc/stats"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -33,7 +32,7 @@ func (cs clientConns) Close() error {
 func NewClient(addr string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 
 	// Set up a connection to the server.
-	conn, err := grpc.NewClient(addr, append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithStatsHandler(&stats.InternalClientHandler{}))...)
+	conn, err := grpc.NewClient(addr, append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))...)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +42,7 @@ func NewClient(addr string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 
 func NewTLSClient(addr string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	// Set up a connection to the server.
-	conn, err := grpc.NewClient(addr, append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{ServerName: strings.Split(addr, ":")[0], InsecureSkipVerify: true})), grpc.WithStatsHandler(&stats.InternalClientHandler{}))...)
+	conn, err := grpc.NewClient(addr, append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{ServerName: strings.Split(addr, ":")[0], InsecureSkipVerify: true})))...)
 	if err != nil {
 		return nil, err
 	}

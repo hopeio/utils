@@ -92,8 +92,22 @@ func (l *Logger) Trace(ctx context.Context, begin time.Time, fc func() (string, 
 	sqlField := zap.String("sql", sql)
 	rowsField := zap.Int64("rows", rows)
 	caller := zap.String("caller", utils.FileWithLineNum())
-	fields := []zap.Field{elapsedms, sqlField, rowsField, caller, logi.TraceIdField(ctx), field}
+	traceId := TraceId(ctx)
+	fields := []zap.Field{elapsedms, sqlField, rowsField, caller, zap.String(logi.FieldTraceId, traceId), field}
 	entry := l.Check(zapcore.Level(4-level), msg)
 	// entry.Caller = zapcore.NewEntryCaller(0, "", 0, false) utils.FileWithLineNum() or 获取到gorm的gormSourceDir
 	entry.Write(fields...)
+}
+
+func TraceId(ctx context.Context) string {
+	if traceId, ok := ctx.Value(traceIdKey{}).(string); ok {
+		return traceId
+	}
+	return "unknown"
+}
+
+type traceIdKey struct{}
+
+func SetTranceId(ctx context.Context, traceId string) context.Context {
+	return context.WithValue(ctx, traceIdKey{}, traceId)
 }

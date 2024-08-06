@@ -2,7 +2,7 @@ package math
 
 import (
 	"fmt"
-	reflect2 "github.com/hopeio/utils/reflect"
+	"github.com/hopeio/utils/types/constraints"
 	"reflect"
 	"strconv"
 	"strings"
@@ -43,17 +43,11 @@ func ViewBin(v any) {
 	fmt.Println(strings.Join(out, " "), " ", v)
 }
 
-//go:nosplit
-func Int16FromBytes(v []byte) int16 {
-	return *(*int16)((*reflect2.Slice)(unsafe.Pointer(&v)).Ptr)
+func ToBytes[T constraints.Number](t T) []byte {
+	size := unsafe.Sizeof(t)
+	return unsafe.Slice((*byte)(unsafe.Pointer(&t)), size)
 }
 
-//go:nosplit
-func Int32FromBytes(v []byte) int32 {
-	return *(*int32)((*reflect2.Slice)(unsafe.Pointer(&v)).Ptr)
-}
-
-//go:nosplit
-func Int64FromBytes(v []byte) int64 {
-	return *(*int64)((*reflect2.Slice)(unsafe.Pointer(&v)).Ptr)
+func FromBytes[T constraints.Number](bytes []byte) T {
+	return *(*T)(unsafe.Pointer(unsafe.SliceData(bytes)))
 }

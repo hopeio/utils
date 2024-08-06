@@ -5,8 +5,8 @@ import (
 	"sort"
 )
 
-// Calculate the median of a slice of floats
-func median(data []float64) float64 {
+// Calculate the Median of a slice of floats
+func Median(data []float64) float64 {
 	sort.Float64s(data)
 	n := len(data)
 	if n%2 == 0 {
@@ -15,8 +15,8 @@ func median(data []float64) float64 {
 	return data[n/2]
 }
 
-// Calculate the mean of a slice of floats
-func mean(data []float64) float64 {
+// Calculate the Mean of a slice of floats
+func Mean(data []float64) float64 {
 	sum := 0.0
 	for _, value := range data {
 		sum += value
@@ -24,22 +24,22 @@ func mean(data []float64) float64 {
 	return sum / float64(len(data))
 }
 
-// Remove outliers using the MAD method and calculate the mean of the remaining data
-func removeOutliersAndMean(data []float64) float64 {
+// Remove outliers using the MAD method and calculate the Mean of the remaining data
+func RemoveOutliersAndMean(data []float64) float64 {
 	if len(data) == 0 {
 		return 0
 	}
 
-	med := median(data)
+	med := Median(data)
 
-	// Calculate absolute deviations from the median
+	// Calculate absolute deviations from the Median
 	absDevs := make([]float64, len(data))
 	for i, value := range data {
 		absDevs[i] = math.Abs(value - med)
 	}
 
-	// Calculate the median of the absolute deviations
-	mad := median(absDevs)
+	// Calculate the Median of the absolute deviations
+	mad := Median(absDevs)
 
 	// Define a threshold using the MAD; here we use 3 times the MAD
 	threshold := 3.0 * mad
@@ -52,6 +52,6 @@ func removeOutliersAndMean(data []float64) float64 {
 		}
 	}
 
-	// Calculate the mean of the remaining data
-	return mean(filteredData)
+	// Calculate the Mean of the remaining data
+	return Mean(filteredData)
 }

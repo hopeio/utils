@@ -10,4 +10,5 @@ const (
 	Protobuf Format = "protobuf"
 	Xml      Format = "xml"
 	Text     Format = "text"
+	Base64   Format = "base64"
 )
