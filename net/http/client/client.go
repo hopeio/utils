@@ -247,6 +247,14 @@ func (c *Client) GetX(url string, response any) error {
 	return NewRequest(http.MethodGet, url).WithClient(c).Do(nil, response)
 }
 
+func (c *Client) GetRaw(url string, param any) (RawBytes, error) {
+	return NewRequest(http.MethodGet, url).WithClient(c).DoRaw(param)
+}
+
+func (c *Client) GetRawX(url string) (RawBytes, error) {
+	return NewRequest(http.MethodGet, url).WithClient(c).DoRaw(nil)
+}
+
 func (c *Client) GetStream(url string, param any) (io.ReadCloser, error) {
 	return NewRequest(http.MethodGet, url).DoStream(param)
 }

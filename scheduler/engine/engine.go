@@ -22,7 +22,6 @@ type Key interface {
 
 type Config[KEY Key] struct {
 	WorkerCount     uint64
-	WaitTaskCount   uint64
 	MonitorInterval time.Duration // 全局检测定时器间隔时间，任务的卡住检测，worker panic recover都可以用这个检测
 	DoneCache       ristretto.Config[KEY, struct{}]
 	EnableTelemetry bool
@@ -44,13 +43,11 @@ func (c *Config[KEY]) NewEngineWithContext(ctx context.Context) *Engine[KEY] {
 	})
 	engine := &Engine[KEY]{
 		workerCount:      c.WorkerCount,
-		waitTaskCount:    c.WaitTaskCount,
 		ctx:              ctx,
 		cancel:           cancel,
-		taskChanProducer: make(chan *Task[KEY]),
 		taskChanConsumer: make(chan *Task[KEY]),
 		errTaskChan:      make(chan *Task[KEY]),
-		taskReadyHeap:    heap.Heap[*Task[KEY]]{},
+		readyTaskHeap:    heap.Heap[*Task[KEY]]{},
 		monitorInterval:  c.MonitorInterval,
 		done:             cache,
 		errHandler:       func(task *Task[KEY]) { task.ErrLog() },
@@ -82,7 +79,6 @@ func (c *Config[KEY]) Init() {
 func NewConfig[KEY Key]() *Config[KEY] {
 	return &Config[KEY]{
 		WorkerCount:     10,
-		WaitTaskCount:   50,
 		MonitorInterval: 5 * time.Second,
 		DoneCache: ristretto.Config[KEY, struct{}]{
 			NumCounters:        1e4,   // number of keys to track frequency of (10M).
@@ -99,10 +95,10 @@ type Engine[KEY Key] struct {
 	waitTaskCount                                       uint64
 	workers                                             []*Worker[KEY]
 	// workerGroup [][]*Worker[KEY] //TODO 工作组概念
-	taskChanProducer chan *Task[KEY]
 	taskChanConsumer chan *Task[KEY]
 	errTaskChan      chan *Task[KEY]
-	taskReadyHeap    heap.Heap[*Task[KEY]]
+	readyTaskHeap    heap.Heap[*Task[KEY]]
+	readyTaskMu      sync.RWMutex
 	ctx              context.Context
 	cancel           context.CancelFunc // 手动停止执行
 	wg               sync.WaitGroup     // 控制确保所有任务执行完
@@ -179,7 +175,7 @@ func (e *Engine[KEY]) ErrHandlerUtilSuccess() *Engine[KEY] {
 	return e.ErrHandler(func(task *Task[KEY]) {
 		task.errTimes = 0
 		task.reExecLogs = task.reExecLogs[:0]
-		e.AsyncAddOptionTasks(task.ctx, task.Priority, task)
+		e.AddOptionTasks(task.ctx, task.Priority, task)
 	})
 }
 
@@ -188,7 +184,7 @@ func (e *Engine[KEY]) ErrHandlerRetryTimes(times int) *Engine[KEY] {
 		if task.reExecTimes < times {
 			task.errTimes = 0
 			task.reExecLogs = task.reExecLogs[:0]
-			e.AsyncAddOptionTasks(task.ctx, task.Priority, task)
+			e.AddOptionTasks(task.ctx, task.Priority, task)
 		} else {
 			task.ErrLog()
 		}

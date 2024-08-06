@@ -19,6 +19,10 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 		}
 		e.mu.Unlock()
 		return
+	} else {
+		if len(tasks) > 0 {
+			e.AddTasks(tasks...)
+		}
 	}
 	if !e.errHandlerRunning {
 		go func() {
@@ -45,29 +49,22 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 			var emptyTimes uint
 			var readyTaskCh chan *Task[KEY]
 			var readyTask *Task[KEY]
-			taskChan := e.taskChanProducer
+
 		loop:
 			for {
-				if len(e.taskReadyHeap) > 0 && readyTask == nil {
-					readyTask, _ = e.taskReadyHeap.Pop()
+				if len(e.readyTaskHeap) > 0 && readyTask == nil {
+					e.readyTaskMu.Lock()
+					readyTask, _ = e.readyTaskHeap.Pop()
+					e.readyTaskMu.Unlock()
 					readyTaskCh = e.taskChanConsumer
 				}
-
-				// go 无法动态的设置case,但是可以动态的把channel置为nil
-				if len(e.taskReadyHeap) >= int(e.waitTaskCount) {
-					taskChan = nil
-				} else {
-					taskChan = e.taskChanProducer
-				}
 				select {
-				case readyTaskTmp := <-taskChan:
-					e.taskReadyHeap.Push(readyTaskTmp)
 				case readyTaskCh <- readyTask:
 					readyTaskCh = nil
 					readyTask = nil
 				case <-timer.C:
 					//检测任务是否已空
-					if uint(e.workingWorkerCount) == 0 && len(e.taskReadyHeap) == 0 {
+					if uint(e.workingWorkerCount) == 0 && len(e.readyTaskHeap) == 0 {
 						e.mu.Lock()
 						counter, _ := synci.WaitGroupState(&e.wg)
 						if counter == 1 {
@@ -82,7 +79,8 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 						}
 						e.mu.Unlock()
 					}
-					fmt.Printf("\r[Running] task:D:%d/T:%d/S:%d/H:%d/F:%d/E:%d,worker: %d/%d", e.taskDoneCount, e.taskTotalCount, e.taskSkipCount, e.taskErrHandleCount, e.taskFailedCount, e.taskErrorTimes, e.workingWorkerCount, e.currentWorkerCount)
+					fmt.Printf("[Running] task:R:%d,D:%d/T:%d/S:%d/H:%d/F:%d/E:%d,worker: %d/%d\r", len(e.readyTaskHeap),
+						e.taskDoneCount, e.taskTotalCount, e.taskSkipCount, e.taskErrHandleCount, e.taskFailedCount, e.taskErrorTimes, e.workingWorkerCount, e.currentWorkerCount)
 					timer.Reset(e.monitorInterval)
 				case <-e.ctx.Done():
 					if err := e.ctx.Err(); err != nil {
@@ -96,9 +94,7 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 	}
 
 	e.mu.Unlock()
-	if len(tasks) > 0 {
-		e.AddTasks(tasks...)
-	}
+
 	e.wg.Wait()
 	log.GetNoCallerLogger().Infof("[END] task:D:%d/T:%d/S:%d/H:%d/F:%d/E:%d", e.taskDoneCount, e.taskTotalCount, e.taskSkipCount, e.taskErrHandleCount, e.taskFailedCount, e.taskErrorTimes)
 }
@@ -153,7 +149,7 @@ func (e *Engine[KEY]) addWorker() {
 					e.newWorker(readyTask)
 				} else {
 					log.Info("worker count is full")
-					e.taskChanProducer <- readyTask
+					e.readyTaskHeap.Push(readyTask)
 					e.workerFactoryRunning.Store(false)
 					return
 				}
@@ -169,9 +165,12 @@ func (e *Engine[KEY]) addTasks(ctx context.Context, priority int, tasks ...*Task
 	l := len(tasks)
 	atomic.AddUint64(&e.taskTotalCount, uint64(l))
 	e.wg.Add(l)
+	e.readyTaskMu.Lock()
+	defer e.readyTaskMu.Unlock()
 	for _, task := range tasks {
 		if task == nil || task.Run == nil {
 			atomic.AddUint64(&e.taskTotalCount, ^uint64(0))
+			e.wg.Done()
 			continue
 		}
 		if ctx != nil {
@@ -179,8 +178,9 @@ func (e *Engine[KEY]) addTasks(ctx context.Context, priority int, tasks ...*Task
 		}
 		task.Priority += priority
 		task.id = id2.NewOrderID()
-		e.taskChanProducer <- task
+		e.readyTaskHeap.Push(task)
 	}
+
 }
 
 func (e *Engine[KEY]) AddOptionTasks(ctx context.Context, priority int, tasks ...*Task[KEY]) {
@@ -189,29 +189,6 @@ func (e *Engine[KEY]) AddOptionTasks(ctx context.Context, priority int, tasks ..
 
 func (e *Engine[KEY]) AddTasks(tasks ...*Task[KEY]) {
 	e.addTasks(nil, 0, tasks...)
-}
-
-func (e *Engine[KEY]) AsyncAddTasks(tasks ...*Task[KEY]) {
-	if len(tasks) > 0 {
-		go e.addTasks(nil, 0, tasks...)
-	}
-}
-
-func (e *Engine[KEY]) AsyncAddOptionTasks(ctx context.Context, priority int, tasks ...*Task[KEY]) {
-	if len(tasks) > 0 {
-		go e.addTasks(ctx, priority, tasks...)
-	}
-}
-
-func (e *Engine[KEY]) reTryTasks(tasks ...*Task[KEY]) {
-	if len(tasks) > 0 {
-		go func() {
-			for _, task := range tasks {
-				task.Priority++
-				e.taskChanProducer <- task
-			}
-		}()
-	}
 }
 
 func (e *Engine[KEY]) AddWorker(num int) {
@@ -270,6 +247,7 @@ func (e *Engine[KEY]) AddFixedTasks(workerId int, generation int, tasks ...*Task
 	for _, task := range tasks {
 		if task == nil || task.Run == nil {
 			atomic.AddUint64(&e.taskTotalCount, ^uint64(0))
+			e.wg.Done()
 			continue
 		}
 		task.Priority += generation
@@ -308,7 +286,10 @@ func (e *Engine[KEY]) execTask(task *Task[KEY]) bool {
 	}
 
 	if e.rateLimiter != nil {
-		e.rateLimiter.Wait(task.ctx)
+		err := e.rateLimiter.Wait(task.ctx)
+		if err != nil {
+			log.Warnf("rate limit err:%v", err)
+		}
 	}
 
 	var kindHandler *KindHandler[KEY]
@@ -326,7 +307,10 @@ func (e *Engine[KEY]) execTask(task *Task[KEY]) bool {
 			kindHandler.speedLimit.Wait()
 		}
 		if kindHandler.rateLimiter != nil {
-			_ = kindHandler.rateLimiter.Wait(task.ctx)
+			err := kindHandler.rateLimiter.Wait(task.ctx)
+			if err != nil {
+				log.Warnf("kind rate limit err:%v", err)
+			}
 		}
 	}
 
@@ -356,7 +340,8 @@ func (e *Engine[KEY]) execTask(task *Task[KEY]) bool {
 		if task.errTimes < 5 {
 			task.reExecTimes++
 			log.Warnf("%v执行失败:%v,将第%d次执行", task.Key, err, task.reExecTimes)
-			e.reTryTasks(task)
+			task.Priority++
+			e.readyTaskHeap.Push(task)
 		} else {
 			log.Warn(task.Key, "多次执行失败:", err, "将执行错误处理")
 			e.errTaskChan <- task
@@ -368,7 +353,7 @@ func (e *Engine[KEY]) execTask(task *Task[KEY]) bool {
 		e.done.SetWithTTL(task.Key, struct{}{}, 1, time.Hour)
 	}
 	if len(tasks) > 0 {
-		e.AsyncAddOptionTasks(task.ctx, task.Priority+1, tasks...)
+		e.AddOptionTasks(task.ctx, task.Priority+1, tasks...)
 	}
 	atomic.AddUint64(&e.taskDoneCount, 1)
 	return true

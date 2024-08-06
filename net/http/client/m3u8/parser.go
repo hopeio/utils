@@ -25,7 +25,7 @@ func FromURL(link string) (*Result, error) {
 	}
 	link = u.String()
 	var body client.RawBytes
-	err = reqClient.Get(link, nil, &body)
+	err = reqClient.GetX(link, &body)
 	if err != nil {
 		return nil, fmt.Errorf("request m3u8 URL failed: %s", err.Error())
 	}
@@ -78,8 +78,7 @@ func (r *Result) Download(segIndex int) ([]byte, error) {
 
 	tsUrl := url2.ResolveURL(r.URL, sf.URI)
 
-	var bytes client.RawBytes
-	err := reqClient.Get(tsUrl, nil, &bytes)
+	bytes, err := reqClient.GetRawX(tsUrl)
 	if err != nil {
 		return nil, fmt.Errorf("request %s, %s", tsUrl, err.Error())
 	}

@@ -14,8 +14,32 @@ import (
 )
 
 var reqClient = client.DefaultHeaderClient().RetryTimes(20).DisableLog()
-var reqClient2 = reqClient.Clone()
-var reqClient3 = reqClient.Clone()
+var reqClient2 = reqClient.Clone().ResponseHandler(func(response *http.Response) (retry bool, data []byte, err error) {
+	data, err = io.ReadAll(response.Body)
+	if err != nil {
+		return false, nil, err
+	}
+	if bytesp.HasPrefix(data, []byte("<html>")) {
+		return true, nil, nil
+	}
+	if len(data) == 0 {
+		return false, nil, fmt.Errorf("no key")
+	}
+	return false, data, err
+})
+var reqClient3 = reqClient.Clone().ResponseHandler(func(response *http.Response) (retry bool, data []byte, err error) {
+	data, err = io.ReadAll(response.Body)
+	if err != nil {
+		return false, nil, err
+	}
+	if len(data) == 0 {
+		return false, data, errors.New("empty response body")
+	}
+	if bytesp.HasPrefix(data, []byte("<html>")) {
+		return true, nil, nil
+	}
+	return false, data, err
+})
 
 type Result struct {
 	URL  *url.URL
@@ -43,7 +67,7 @@ func FromURL(link string) (*Result, error) {
 		return FromURL(url2.ResolveURL(u, sf.URI))
 	}
 	if len(m3u8.Segments) == 0 {
-		return nil, errors.New("can not found any TS file description")
+		return nil, errors.New("can not found any ts file description")
 	}
 	result := &Result{
 		URL:  u,
@@ -60,19 +84,7 @@ func FromURL(link string) (*Result, error) {
 			keyURL := key.URI
 			keyURL = url2.ResolveURL(u, keyURL)
 			var keyByte client.RawBytes
-			err = reqClient2.ResponseHandler(func(response *http.Response) (retry bool, data []byte, err error) {
-				data, err = io.ReadAll(response.Body)
-				if err != nil {
-					return false, nil, err
-				}
-				if bytesp.HasPrefix(data, []byte("<html>")) {
-					return true, nil, nil
-				}
-				if len(data) == 0 {
-					return false, nil, fmt.Errorf("no key")
-				}
-				return false, data, err
-			}).Get(keyURL, nil, &keyByte)
+			err = reqClient2.Get(keyURL, nil, &keyByte)
 			if err != nil {
 				return nil, fmt.Errorf("request m3u8 URL failed: %s", err.Error())
 			}
@@ -94,20 +106,7 @@ func (r *Result) Download(segIndex int) ([]byte, error) {
 
 	tsUrl := url2.ResolveURL(r.URL, sf.URI)
 
-	var bytes client.RawBytes
-	err := reqClient3.ResponseHandler(func(response *http.Response) (retry bool, data []byte, err error) {
-		data, err = io.ReadAll(response.Body)
-		if err != nil {
-			return false, nil, err
-		}
-		if len(data) == 0 {
-			return false, data, errors.New("empty response body")
-		}
-		if bytesp.HasPrefix(data, []byte("<html>")) {
-			return true, nil, nil
-		}
-		return false, data, err
-	}).Get(tsUrl, nil, &bytes)
+	bytes, err := reqClient3.GetRawX(tsUrl)
 	if err != nil {
 		return nil, fmt.Errorf("request %s, %s", tsUrl, err.Error())
 	}
