@@ -13,11 +13,11 @@ import (
 
 func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 	e.mu.Lock()
+	defer e.mu.Unlock()
 	if e.isRunning {
 		if len(tasks) > 0 {
 			e.AddTasks(tasks...)
 		}
-		e.mu.Unlock()
 		return
 	} else {
 		if len(tasks) > 0 {
@@ -54,12 +54,12 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 
 		loop:
 			for {
+				e.mu.Lock()
 				if len(e.readyTaskHeap) > 0 && readyTask == nil {
-					e.readyTaskMu.Lock()
 					readyTask, _ = e.readyTaskHeap.Pop()
-					e.readyTaskMu.Unlock()
 					readyTaskCh = e.taskChanConsumer
 				}
+				e.mu.Unlock()
 				select {
 				case readyTaskCh <- readyTask:
 					readyTaskCh = nil
@@ -95,9 +95,6 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 			}
 		}()
 	}
-
-	e.mu.Unlock()
-
 	e.wg.Wait()
 	log.GetNoCallerLogger().Infof("[END] task:D:%d/T:%d/S:%d/H:%d/F:%d/E:%d", e.taskDoneCount, e.taskTotalCount, e.taskSkipCount, e.taskErrHandleCount, e.taskFailedCount, e.taskErrorTimes)
 }
@@ -152,7 +149,9 @@ func (e *Engine[KEY]) addWorker() {
 					e.newWorker(readyTask)
 				} else {
 					log.Info("worker count is full")
+					e.mu.Lock()
 					e.readyTaskHeap.Push(readyTask)
+					e.mu.Unlock()
 					e.workerFactoryRunning.Store(false)
 					return
 				}
@@ -168,8 +167,8 @@ func (e *Engine[KEY]) addTasks(ctx context.Context, priority int, tasks ...*Task
 	l := len(tasks)
 	atomic.AddUint64(&e.taskTotalCount, uint64(l))
 	e.wg.Add(l)
-	e.readyTaskMu.Lock()
-	defer e.readyTaskMu.Unlock()
+	e.mu.Lock()
+	defer e.mu.Unlock()
 	for _, task := range tasks {
 		if task == nil || task.Run == nil {
 			atomic.AddUint64(&e.taskTotalCount, ^uint64(0))
@@ -179,7 +178,7 @@ func (e *Engine[KEY]) addTasks(ctx context.Context, priority int, tasks ...*Task
 		if ctx != nil {
 			task.ctx = ctx
 		}
-		task.Priority += priority
+		task.Priority = priority
 		task.id = id2.NewOrderID()
 		e.readyTaskHeap.Push(task)
 	}
@@ -344,7 +343,9 @@ func (e *Engine[KEY]) execTask(task *Task[KEY]) bool {
 			task.reExecTimes++
 			log.Warnf("%v执行失败:%v,将第%d次执行", task.Key, err, task.reExecTimes)
 			task.Priority++
+			e.mu.Lock()
 			e.readyTaskHeap.Push(task)
+			e.mu.Unlock()
 		} else {
 			log.Warn(task.Key, "多次执行失败:", err, "将执行错误处理")
 			e.errTaskChan <- task

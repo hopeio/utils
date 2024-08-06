@@ -98,7 +98,6 @@ type Engine[KEY Key] struct {
 	taskChanConsumer chan *Task[KEY]
 	errTaskChan      chan *Task[KEY]
 	readyTaskHeap    heap.Heap[*Task[KEY]]
-	readyTaskMu      sync.RWMutex
 	ctx              context.Context
 	cancel           context.CancelFunc // 手动停止执行
 	wg               sync.WaitGroup     // 控制确保所有任务执行完
