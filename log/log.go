@@ -273,8 +273,8 @@ func FatalNCw(msg string, fields ...zap.Field) {
 	}
 }
 
-func Log(lvl zapcore.Level, msg string) {
-	if ce := defaultLogger.Check(lvl, msg); ce != nil {
+func Log(lvl zapcore.Level, args ...any) {
+	if ce := defaultLogger.Check(lvl, trimLineBreak(fmt.Sprintln(args...))); ce != nil {
 		ce.Write()
 	}
 }
