@@ -13,11 +13,11 @@ import (
 
 func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 	e.mu.Lock()
-	defer e.mu.Unlock()
 	if e.isRunning {
 		if len(tasks) > 0 {
 			e.AddTasks(tasks...)
 		}
+		e.mu.Unlock()
 		return
 	} else {
 		if len(tasks) > 0 {
@@ -95,6 +95,7 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 			}
 		}()
 	}
+	e.mu.Unlock()
 	e.wg.Wait()
 	log.GetNoCallerLogger().Infof("[END] task:D:%d/T:%d/S:%d/H:%d/F:%d/E:%d", e.taskDoneCount, e.taskTotalCount, e.taskSkipCount, e.taskErrHandleCount, e.taskFailedCount, e.taskErrorTimes)
 }

@@ -51,8 +51,6 @@ func (c *Config[KEY]) NewEngineWithContext(ctx context.Context) *Engine[KEY] {
 		monitorInterval:  c.MonitorInterval,
 		done:             cache,
 		errHandler:       func(task *Task[KEY]) { task.ErrLog() },
-		mu:               sync.RWMutex{},
-		zeroKey:          *new(KEY),
 	}
 	return engine
 }
