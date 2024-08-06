@@ -208,7 +208,7 @@ func (d *Downloader) FfmpegConcatFile() (string, error) {
 }
 
 func (d *Downloader) Finished() bool {
-	return d.finish == int32(d.segLen)
+	return atomic.LoadInt32(&d.finish) == int32(d.segLen)
 }
 
 func (d *Downloader) RemoveTmp() error {
