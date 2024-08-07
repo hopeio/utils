@@ -140,7 +140,7 @@ func findReflectRtypeItab() *Itab {
 	return (*Iface)(unsafe.Pointer(&v)).Itab
 }
 
-func AssertI2I2(t *Type, i Iface) (r Iface) {
+func AssertI2I(t *Type, i Iface) (r Iface) {
 	inter := IfaceType(t)
 	tab := i.Itab
 	if tab == nil {

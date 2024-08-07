@@ -19,7 +19,7 @@ import (
 // adpter postgres
 type IntArray[T constraints.Integer] []T
 
-func (d *IntArray[T]) Scan(value interface{}) error {
+func (d *IntArray[T]) Scan(value any) error {
 	str, ok := value.(string)
 	if !ok {
 		data, ok := value.([]byte)
@@ -59,7 +59,7 @@ func (d IntArray[T]) Value() (driver.Value, error) {
 
 type FloatArray[T constraints.Float] []T
 
-func (d *FloatArray[T]) Scan(value interface{}) error {
+func (d *FloatArray[T]) Scan(value any) error {
 	str, ok := value.(string)
 	if !ok {
 		data, ok := value.([]byte)
@@ -99,7 +99,7 @@ func (d FloatArray[T]) Value() (driver.Value, error) {
 
 type StringArray []string
 
-func (d *StringArray) Scan(value interface{}) error {
+func (d *StringArray) Scan(value any) error {
 	str, ok := value.(string)
 	if !ok {
 		data, ok := value.([]byte)
@@ -256,7 +256,7 @@ func (d Array[T]) Value() (driver.Value, error) {
 
 type TimeArray []time.Time
 
-func (d *TimeArray) Scan(value interface{}) error {
+func (d *TimeArray) Scan(value any) error {
 	str, ok := value.(string)
 	if !ok {
 		data, ok := value.([]byte)
