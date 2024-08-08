@@ -34,12 +34,6 @@ func (b *Body) IsProtobuf() bool {
 
 type AccessLog func(method, url, auth string, reqBody, respBody *Body, status int, process time.Duration, err error)
 
-type Logger interface {
-	SetPrefix(string)
-	Printf(format string, v ...interface{})
-	Println(v ...interface{})
-}
-
 func DefaultLogger(method, url, auth string, reqBody, respBody *Body, status int, process time.Duration, err error) {
 	reqField, respField := zap.Skip(), zap.Skip()
 	if reqBody != nil {

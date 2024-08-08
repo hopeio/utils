@@ -322,3 +322,9 @@ func PanicCE(args ...any) *zapcore.CheckedEntry {
 func FatalCE(args ...any) *zapcore.CheckedEntry {
 	return defaultLogger.Check(zap.FatalLevel, trimLineBreak(fmt.Sprintln(args...)))
 }
+
+func Println(args ...any) {
+	if ce := defaultLogger.Check(zap.InfoLevel, trimLineBreak(fmt.Sprintln(args...))); ce != nil {
+		ce.Write()
+	}
+}
