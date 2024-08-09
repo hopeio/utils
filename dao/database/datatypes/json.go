@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hopeio/utils/strings"
 )
 
 type JsonB []byte
@@ -104,7 +105,7 @@ func (j *JsonStr) Scan(value interface{}) error {
 		*j = JsonStr(bytes)
 		return nil
 	case string:
-		*j = JsonStr(bytes)
+		*j = JsonStr(strings.ToBytes(bytes))
 		return nil
 	default:
 		return errors.New(fmt.Sprint("failed to scan JsonStr value:", value))
@@ -116,7 +117,7 @@ func (j JsonStr) Value() (driver.Value, error) {
 	if len(j) == 0 {
 		return []byte("null"), nil
 	}
-	return string(j), nil
+	return []byte(j), nil
 }
 
 func (*JsonStr) GormDataType() string {
@@ -132,10 +133,10 @@ func (j *JsonT[T]) Scan(value interface{}) error {
 	switch bytes := value.(type) {
 	case []byte:
 		j.Data = new(T)
-		return json.Unmarshal(bytes, j)
+		return json.Unmarshal(bytes, j.Data)
 	case string:
 		j.Data = new(T)
-		return json.Unmarshal([]byte(bytes), j)
+		return json.Unmarshal(strings.ToBytes(bytes), j.Data)
 	default:
 		return errors.New(fmt.Sprint("failed to scan Value value:", value))
 	}
@@ -146,7 +147,7 @@ func (j JsonT[T]) Value() (driver.Value, error) {
 	if j.Data == nil {
 		return []byte("null"), nil
 	}
-	return json.Marshal(j)
+	return json.Marshal(j.Data)
 }
 
 func (*JsonT[T]) GormDataType() string {

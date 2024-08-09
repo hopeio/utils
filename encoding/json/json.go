@@ -28,7 +28,7 @@ func MarshalToString(v any) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.ToString(data), nil
+	return strings.FromBytes(data), nil
 }
 
 func UnmarshalFromString(str string, v any) error {

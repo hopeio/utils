@@ -1,13 +1,18 @@
-package sql
+package model
 
 import (
-	"github.com/hopeio/utils/dao/database/sql"
+	model1 "github.com/hopeio/utils/dao/database/model"
 	"github.com/hopeio/utils/types/model"
 	"gorm.io/gorm"
 )
 
-func GetCursor(db *gorm.DB, typ string) (*model.Cursor, error) {
-	var cursor model.Cursor
+type Cursor struct {
+	model.Cursor
+	ModelTime
+}
+
+func GetCursor(db *gorm.DB, typ string) (*Cursor, error) {
+	var cursor Cursor
 	err := db.Where(`type = ?`, typ).First(&cursor).Error
 	if err != nil {
 		return nil, err
@@ -16,5 +21,5 @@ func GetCursor(db *gorm.DB, typ string) (*model.Cursor, error) {
 }
 
 func EndCallback(db *gorm.DB, typ string) {
-	db.Exec(sql.EndCallbackSQL(typ))
+	db.Exec(model1.EndCallbackSQL(typ))
 }

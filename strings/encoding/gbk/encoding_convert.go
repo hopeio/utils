@@ -16,7 +16,7 @@ func GBKToUTF8(s string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings2.ToString(b), nil
+	return strings2.FromBytes(b), nil
 }
 
 func GBKBytesToUTF8(s []byte) ([]byte, error) {
@@ -32,7 +32,7 @@ func UTF8ToGBK(s string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings2.ToString(b), nil
+	return strings2.FromBytes(b), nil
 }
 
 func UTF8BytesToGBK(s []byte) ([]byte, error) {

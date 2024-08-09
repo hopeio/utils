@@ -1,0 +1,24 @@
+package model
+
+import (
+	"github.com/hopeio/utils/types/model"
+	"gorm.io/gorm"
+)
+
+type Dict struct {
+	model.Dict
+	ModelTime
+}
+
+func GetValue(db *gorm.DB, typ int, key string) (string, error) {
+	var value string
+	err := db.Table(`dict`).Select(`value`).Where(`type = ? AND key=?`, typ, key).Scan(&value).Error
+	if err != nil {
+		return "", err
+	}
+	return value, nil
+}
+
+func SetValue(db *gorm.DB, typ int, key, value string) error {
+	return db.Table(`dict`).Where(`type = ? AND key=?`, typ, key).UpdateColumn("value", value).Error
+}

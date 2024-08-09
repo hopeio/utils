@@ -16,6 +16,6 @@ func ToBytes(s string) []byte {
 	return unsafe.Slice(unsafe.StringData(s), len(s))
 }
 
-func ToString(b []byte) string {
+func FromBytes(b []byte) string {
 	return unsafe.String(unsafe.SliceData(b), len(b))
 }

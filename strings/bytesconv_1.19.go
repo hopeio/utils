@@ -27,7 +27,7 @@ func ToBytes(s string) []byte {
 	))
 }
 
-func ToString(b []byte) string {
+func FromBytes(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 

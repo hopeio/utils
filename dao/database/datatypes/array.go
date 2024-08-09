@@ -26,7 +26,7 @@ func (d *IntArray[T]) Scan(value any) error {
 		if !ok {
 			return errors.New(fmt.Sprint("failed to scan int array value:", value))
 		}
-		str = string(data)
+		str = stringsi.FromBytes(data)
 	}
 	strs := strings.Split(str[1:len(str)-1], ",")
 	var arr []T
@@ -106,12 +106,12 @@ func (d *StringArray) Scan(value any) error {
 		if !ok {
 			return errors.New(fmt.Sprint("failed to scan string array value:", value))
 		}
-		str = string(data)
+		str = stringsi.FromBytes(data)
 	}
 	strs := strings.Split(str[1:len(str)-1], ",")
 	var arr []string
 	for _, elem := range strs {
-		arr = append(arr, elem)
+		arr = append(arr, stringsi.Unquote(elem))
 	}
 	*d = arr
 	return nil
@@ -123,19 +123,22 @@ func (d StringArray) Value() (driver.Value, error) {
 	}
 	var buf bytes.Buffer
 	buf.WriteByte('{')
+	buf.WriteByte('"')
 	for i, str := range d {
 		buf.WriteString(str)
 		if i != len(d)-1 {
+			buf.WriteByte('"')
 			buf.WriteByte(',')
 		}
 	}
+	buf.WriteByte('"')
 	buf.WriteByte('}')
 	return buf.String(), nil
 }
 
 // Array represents a PostgreSQL array for T. It implements the ArrayGetter and ArraySetter interfaces. It preserves
 // PostgreSQL dimensions and custom lower bounds. Use FlatArray if these are not needed.
-// 只支持一维数组,unsupported box
+// only support number
 type Array[T any] []T
 
 func (d *Array[T]) Scan(value any) error {
@@ -199,7 +202,7 @@ func str2value[T any](str string) (T, error) {
 		itv, ok = ap.(encoding.TextUnmarshaler)
 	}
 	if ok {
-		err := itv.UnmarshalText([]byte(str))
+		err := itv.UnmarshalText(stringsi.UnquoteToBytes(str))
 		if err != nil {
 			return t, err
 		}
@@ -214,12 +217,15 @@ func str2value[T any](str string) (T, error) {
 }
 
 func (d Array[T]) Value() (driver.Value, error) {
-	if d == nil {
+	if len(d) == 0 {
 		return nil, nil
 	}
 	var buf bytes.Buffer
 	buf.WriteByte('{')
 	for i, v := range d {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
 		a, ap := any(v), any(&v)
 		ivv, ok := a.(driver.Valuer)
 		if !ok {
@@ -242,13 +248,10 @@ func (d Array[T]) Value() (driver.Value, error) {
 			if err != nil {
 				return nil, err
 			}
-			buf.Write(v)
+			buf.WriteString(strconv.Quote(stringsi.FromBytes(v)))
 			continue
 		}
 		buf.WriteString(reflecti.StringFor(v))
-		if i != len(d)-1 {
-			buf.WriteByte(',')
-		}
 	}
 	buf.WriteByte('}')
 	return buf.String(), nil
@@ -263,12 +266,12 @@ func (d *TimeArray) Scan(value any) error {
 		if !ok {
 			return errors.New(fmt.Sprint("failed to scan string array value:", value))
 		}
-		str = string(data)
+		str = stringsi.FromBytes(data)
 	}
 	strs := strings.Split(str[1:len(str)-1], ",")
 	var arr []time.Time
 	for _, elem := range strs {
-		t, err := time.Parse(time.RFC3339Nano, elem)
+		t, err := time.Parse(time.RFC3339Nano, stringsi.Unquote(elem))
 		if err != nil {
 			return err
 		}
@@ -284,12 +287,15 @@ func (d TimeArray) Value() (driver.Value, error) {
 	}
 	var buf bytes.Buffer
 	buf.WriteByte('{')
+	buf.WriteByte('"')
 	for i, t := range d {
 		buf.WriteString(t.Format(time.RFC3339Nano))
 		if i != len(d)-1 {
+			buf.WriteByte('"')
 			buf.WriteByte(',')
 		}
 	}
+	buf.WriteByte('"')
 	buf.WriteByte('}')
 	return buf.String(), nil
 }

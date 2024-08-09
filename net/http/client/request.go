@@ -250,7 +250,7 @@ Retry:
 			if err != nil {
 				return err
 			}
-			err = errors.New("status:" + resp.Status + " " + unicode.ToUnicode(msg))
+			err = errors.New("status:" + resp.Status + " " + unicode.ToUtf8(msg))
 		}
 		return err
 	}
