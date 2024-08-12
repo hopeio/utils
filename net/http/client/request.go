@@ -140,7 +140,10 @@ func (req *Request) addHeader(request *http.Request, c *Client) string {
 
 // Do create a HTTP request
 // param: 请求参数 目前只支持编码为json 或 Url-encoded
-func (req *Request) Do(param, response any) error {
+func (req *Request) Do(param, response any, opts ...RequestOption) error {
+	for _, opt := range opts {
+		opt(req)
+	}
 	if req.Method == "" {
 		return errors.New("没有设置请求方法")
 	}

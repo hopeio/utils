@@ -2,8 +2,8 @@ package redis
 
 import "github.com/google/uuid"
 
-func Lock() string {
-	value := uuid.New()
-	cmd := "SETNX " + value.String() + " EXPIRE 100000"
-	return cmd
+func Lock() (uuid.UUID, string) {
+	id := uuid.New()
+	cmd := "SETNX " + id.String() + " EXPIRE 100000"
+	return id, cmd
 }

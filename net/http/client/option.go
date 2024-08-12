@@ -41,3 +41,5 @@ func setRequest(p any, req *http.Request) {
 
 type HttpClientOption func(client *http.Client)
 type ResponseHandler func(client *http.Response)
+
+type RequestOption func(req *Request) *Request

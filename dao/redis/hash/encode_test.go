@@ -1,4 +1,4 @@
-package strarray
+package hash
 
 import (
 	"reflect"

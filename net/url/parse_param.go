@@ -3,7 +3,7 @@ package url
 import (
 	"github.com/hopeio/utils/math"
 	stringsi "github.com/hopeio/utils/strings"
-	"net/url"
+	stdurl "net/url"
 	"path"
 	"reflect"
 	"strconv"
@@ -16,7 +16,7 @@ func SetTag(t string) {
 	tag = t
 }
 
-func ResolveURL(u *url.URL, p string) string {
+func ResolveURL(u *stdurl.URL, p string) string {
 	if strings.HasPrefix(p, "https://") || strings.HasPrefix(p, "http://") {
 		return p
 	}
@@ -38,12 +38,15 @@ func QueryParamByTag(param any, tag string) string {
 	if param == nil {
 		return ""
 	}
-	query := url.Values{}
+	if url, ok := param.(stdurl.Values); ok {
+		return url.Encode()
+	}
+	query := stdurl.Values{}
 	parseParamByTag(param, query, tag)
 	return query.Encode()
 }
 
-func parseParamByTag(param any, query url.Values, tag string) {
+func parseParamByTag(param any, query stdurl.Values, tag string) {
 	v := reflect.ValueOf(param)
 	kind := v.Kind()
 	if kind == reflect.Interface || kind == reflect.Ptr {
@@ -101,9 +104,11 @@ func getFieldValue(v reflect.Value) string {
 	case reflect.Float32, reflect.Float64:
 		return math.FormatFloat(v.Float())
 	case reflect.String:
-		return v.String()
+		return stdurl.QueryEscape(v.String())
 	case reflect.Interface, reflect.Ptr, reflect.Struct:
 		panic("unsupported kind " + v.Kind().String())
+	default:
+		panic("unhandled default case")
 	}
 	return ""
 }
@@ -113,14 +118,16 @@ func AppendQueryParamByTag(url string, param interface{}, tag string) string {
 		return url
 	}
 	sep := "?"
-	if strings.Contains(url, sep) {
+	if strings.LastIndex(url, sep) >= 0 {
 		sep = "&"
 	}
 	switch paramt := param.(type) {
+	case stdurl.Values:
+		url += sep + paramt.Encode()
 	case string:
 		url += sep + paramt
 	case []byte:
-		url += sep + stringsi.BytesToString(paramt)
+		url += sep + stringsi.FromBytes(paramt)
 	default:
 		params := QueryParamByTag(param, tag)
 		url += sep + params
