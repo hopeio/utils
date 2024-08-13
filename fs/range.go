@@ -2,9 +2,12 @@ package fs
 
 import (
 	"github.com/hopeio/utils/errors/multierr"
+	"iter"
+
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 )
 
 type RangeCallback = func(dir string, entry os.DirEntry) error
@@ -149,4 +152,12 @@ func Walk(root string, fn filepath.WalkFunc) error {
 
 func WalkDir(root string, fn fs.WalkDirFunc) error {
 	return filepath.WalkDir(root, fn)
+}
+
+func All(path string) (iter.Seq[os.DirEntry], error) {
+	dirs, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+	return slices.Values(dirs), nil
 }

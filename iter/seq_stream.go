@@ -2,6 +2,7 @@ package iter
 
 import (
 	iteri "github.com/hopeio/utils/iter/pull"
+	"github.com/hopeio/utils/types"
 	"iter"
 )
 
@@ -55,6 +56,24 @@ type Stream[T any] interface {
 	Fold(initVal T, acc BinaryOperator[T]) T
 	First() (T, bool)
 	Count() int64
+}
+
+func StreamOf[T any](seq iter.Seq[T]) Stream[T] {
+	return Seq[T](seq)
+}
+
+func Seq2ToSeq[K, V any](s iter.Seq2[K, V]) iter.Seq[types.Pair[K, V]] {
+	return func(yield func(types.Pair[K, V]) bool) {
+		for k, v := range s {
+			if !yield(types.PairOf(k, v)) {
+				return
+			}
+		}
+	}
+}
+
+func Stream2Of[K, V any](seq iter.Seq2[K, V]) Stream[types.Pair[K, V]] {
+	return StreamOf(Seq2ToSeq(seq))
 }
 
 type Seq[T any] iter.Seq[T]
