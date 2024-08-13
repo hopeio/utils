@@ -57,7 +57,9 @@ func (p *Parallel) Run() {
 							}
 						}
 					}
-					log.Error(err)
+					if err != nil {
+						log.Error(err)
+					}
 				}
 				p.wg.Done()
 			}

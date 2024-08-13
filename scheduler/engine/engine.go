@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/dgraph-io/ristretto"
-	"github.com/hopeio/utils/io/fs"
+	"github.com/hopeio/utils/fs"
 	"github.com/hopeio/utils/log"
 	"github.com/hopeio/utils/slices"
 	"github.com/hopeio/utils/structure/heap"

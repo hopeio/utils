@@ -77,10 +77,6 @@ func (opt *Option[T]) IfNone(action func()) {
 	}
 }
 
-func (opt *Option[T]) Next() *Option[T] {
-	return opt
-}
-
 func (opt *Option[T]) MarshalJSON() ([]byte, error) {
 	if opt.ok {
 		return json.Marshal(opt.value)
@@ -97,95 +93,91 @@ func (opt *Option[T]) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, &opt.value)
 }
 
-type OptionP[T any] struct {
-	value T
+type OptionPtr[T any] struct {
+	value *T
 }
 
-func SomeP[T any](v T) *OptionP[T] {
-	return &OptionP[T]{value: v}
+func SomePtr[T any](v *T) OptionPtr[T] {
+	return OptionPtr[T]{value: v}
 }
 
-func NoneP[T any]() *OptionP[T] {
-	return nil
+func NonePtr[T any]() OptionPtr[T] {
+	return OptionPtr[T]{}
 }
-func NilP[T any]() *OptionP[T] {
-	return nil
+func NilPtr[T any]() OptionPtr[T] {
+	return OptionPtr[T]{}
 }
 
-func (opt *OptionP[T]) Val() (T, bool) {
-	if opt == nil {
-		return *new(T), false
+func (opt OptionPtr[T]) Val() (*T, bool) {
+	if opt.value == nil {
+		return nil, false
 	}
 	return opt.value, true
 }
 
-func (opt *OptionP[T]) Get() (T, bool) {
-	if opt == nil {
-		return *new(T), false
+func (opt OptionPtr[T]) Get() (*T, bool) {
+	if opt.value == nil {
+		return nil, false
 	}
 	return opt.value, true
 }
 
-func (opt *OptionP[T]) IsNone() bool {
-	return opt == nil
+func (opt OptionPtr[T]) IsNone() bool {
+	return opt.value == nil
 }
 
-func (opt *OptionP[T]) IsSome() bool {
-	return opt != nil
+func (opt OptionPtr[T]) IsSome() bool {
+	return opt.value != nil
 }
 
-func (opt *OptionP[T]) Unwrap() T {
+func (opt OptionPtr[T]) Unwrap() *T {
 	if opt.IsNone() {
-		panic("Attempted to unwrap an empty OptionP.")
+		panic("Attempted to unwrap an empty OptionPtr.")
 	}
 	return opt.value
 }
 
-func (opt *OptionP[T]) UnwrapOr(def T) T {
+func (opt OptionPtr[T]) UnwrapOr(def *T) *T {
 	if opt.IsSome() {
 		return opt.Unwrap()
 	}
 	return def
 }
 
-func (opt *OptionP[T]) UnwrapOrElse(fn func() T) T {
+func (opt OptionPtr[T]) UnwrapOrElse(fn func() *T) *T {
 	if opt.IsSome() {
 		return opt.Unwrap()
 	}
 	return fn()
 }
 
-func MapOptionP[T any, R any](opt *OptionP[T], fn func(T) R) *OptionP[R] {
+func MapOptionPtr[T any, R any](opt OptionPtr[T], fn func(*T) *R) OptionPtr[R] {
 	if !opt.IsSome() {
-		return NoneP[R]()
+		return NonePtr[R]()
 	}
-	return SomeP(fn(opt.Unwrap()))
+	return SomePtr(fn(opt.Unwrap()))
 }
 
-func (opt *OptionP[T]) IfSome(action func(value T)) {
+func (opt OptionPtr[T]) IfSome(action func(value *T)) {
 	if opt.IsSome() {
 		action(opt.value)
 	}
 }
 
-func (opt *OptionP[T]) IfNone(action func()) {
+func (opt OptionPtr[T]) IfNone(action func()) {
 	if opt.IsNone() {
 		action()
 	}
 }
 
-func (opt *OptionP[T]) Next() *OptionP[T] {
-	return opt
-}
-
-func (opt *OptionP[T]) MarshalJSON() ([]byte, error) {
+func (opt OptionPtr[T]) MarshalJSON() ([]byte, error) {
 	if opt.IsSome() {
 		return json.Marshal(opt.value)
 	}
 	return []byte("null"), nil
 }
 
-func (opt *OptionP[T]) UnmarshalJSON(data []byte) error {
+func (opt *OptionPtr[T]) UnmarshalJSON(data []byte) error {
 	if len(data) < 5 && string(data) == "null" {
 		return nil
 	}

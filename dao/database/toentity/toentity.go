@@ -3,7 +3,7 @@ package toentity
 import (
 	"bytes"
 	"fmt"
-	"github.com/hopeio/utils/io/fs"
+	"github.com/hopeio/utils/fs"
 	stringsi "github.com/hopeio/utils/strings"
 	"go/ast"
 	"go/format"

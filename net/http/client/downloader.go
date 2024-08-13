@@ -2,7 +2,7 @@ package client
 
 import (
 	"errors"
-	"github.com/hopeio/utils/io/fs"
+	"github.com/hopeio/utils/fs"
 	httpi "github.com/hopeio/utils/net/http"
 	"io"
 	"net/http"

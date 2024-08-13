@@ -7,6 +7,7 @@ import (
 	"sort"
 )
 
+// Dont'use please use types.Pair And Seq
 func Filter2[K, V any](seq iter.Seq2[K, V], test Predicate2[K, V]) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		for k, v := range seq {
@@ -239,8 +240,8 @@ func Count2[K, V any](seq iter.Seq2[K, V]) (count int64) {
 	return
 }
 
-func Enumerate2[K, V any](seq iter.Seq2[K, V]) iter.Seq2[int, *types.Pair[K, V]] {
-	return func(yield func(int, *types.Pair[K, V]) bool) {
+func Enumerate2[K, V any](seq iter.Seq2[K, V]) iter.Seq2[int, types.Pair[K, V]] {
+	return func(yield func(int, types.Pair[K, V]) bool) {
 		var count int
 		for k, v := range seq {
 			if !yield(count, types.PairOf(k, v)) {

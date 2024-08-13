@@ -1,11 +1,7 @@
 package types
 
-func PairOf[T1 any, T2 any](f T1, s T2) *Pair[T1, T2] {
-	return &Pair[T1, T2]{f, s}
-}
-
-func PairEmpty[T1 any, T2 any]() *Pair[T1, T2] {
-	return &Pair[T1, T2]{}
+func PairOf[T1 any, T2 any](f T1, s T2) Pair[T1, T2] {
+	return Pair[T1, T2]{f, s}
 }
 
 type Pair[T1 any, T2 any] struct {
@@ -15,6 +11,10 @@ type Pair[T1 any, T2 any] struct {
 
 func (a *Pair[T1, T2]) Val() (T1, T2) {
 	return a.First, a.Second
+}
+
+func PairPtrOf[T1 any, T2 any](f T1, s T2) *Pair[T1, T2] {
+	return &Pair[T1, T2]{f, s}
 }
 
 func TupleOf[T1 any, T2 any, T3 any](f T1, s T2, t T3) *Tuple[T1, T2, T3] {

@@ -2,7 +2,7 @@ package ffmpeg
 
 import (
 	"fmt"
-	"github.com/hopeio/utils/io/fs"
+	"github.com/hopeio/utils/fs"
 	execi "github.com/hopeio/utils/os/exec"
 	"path/filepath"
 )

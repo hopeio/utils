@@ -5,6 +5,7 @@ import (
 	"iter"
 )
 
+// Dont'use please use types.Pair And Seq
 // Supplier 产生一个元素
 type Supplier2[K, V any] func() (K, V)
 
@@ -32,9 +33,12 @@ type Comparator2[K, V any] func(K, V, K, V) bool
 type Consumer2[K, V any] func(K, V)
 
 type Stream2[K, V any] interface {
+	Seq() iter.Seq[types.Pair[K, V]]
 	Seq2() iter.Seq2[K, V]
 
 	Filter(Predicate2[K, V]) Stream2[K, V]
+	Map(Function2[K, V, V]) Stream2[K, V]                   //同类型转换,没啥意义
+	FlatMap(Function2[K, V, iter.Seq2[K, V]]) Stream2[K, V] //同Map
 	Peek(Consumer2[K, V]) Stream2[K, V]
 
 	Distinct(Function2[K, V, int]) Stream2[K, V]
@@ -55,8 +59,8 @@ type Stream2[K, V any] interface {
 
 type Seq2[K, V any] iter.Seq2[K, V]
 
-func (s Seq2[K, V]) Seq() iter.Seq[*types.Pair[K, V]] {
-	return func(yield func(*types.Pair[K, V]) bool) {
+func (s Seq2[K, V]) Seq() iter.Seq[types.Pair[K, V]] {
+	return func(yield func(types.Pair[K, V]) bool) {
 		for k, v := range s {
 			if !yield(types.PairOf(k, v)) {
 				return
@@ -65,8 +69,8 @@ func (s Seq2[K, V]) Seq() iter.Seq[*types.Pair[K, V]] {
 	}
 }
 
-func Seq2Seq[K, V any](seq2 iter.Seq2[K, V]) iter.Seq[*types.Pair[K, V]] {
-	return func(yield func(*types.Pair[K, V]) bool) {
+func Seq2Seq[K, V any](seq2 iter.Seq2[K, V]) iter.Seq[types.Pair[K, V]] {
+	return func(yield func(types.Pair[K, V]) bool) {
 		for k, v := range seq2 {
 			if !yield(types.PairOf(k, v)) {
 				return

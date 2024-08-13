@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/gofiber/fiber/v3"
-	"github.com/hopeio/utils/io/fs"
+	"github.com/hopeio/utils/fs"
 	"github.com/hopeio/utils/net/http/apidoc"
 	"html/template"
 	"net/http"

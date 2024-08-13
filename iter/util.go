@@ -47,8 +47,8 @@ func SliceBackward2[T any](input []T) Seq2[int, T] {
 	}
 }
 
-func HashMapAll[K comparable, V any](m map[K]V) Seq[*types.Pair[K, V]] {
-	return func(yield func(*types.Pair[K, V]) bool) {
+func HashMapAll[K comparable, V any](m map[K]V) Seq[types.Pair[K, V]] {
+	return func(yield func(types.Pair[K, V]) bool) {
 		for k, v := range m {
 			if !yield(types.PairOf(k, v)) {
 				return

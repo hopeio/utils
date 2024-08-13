@@ -229,13 +229,13 @@ type zipStream[T any, U any] struct {
 	last  Iterator[U]
 }
 
-func (a *zipStream[T, U]) Next() (*types.Pair[T, U], bool) {
+func (a *zipStream[T, U]) Next() (types.Pair[T, U], bool) {
 	if v1, ok1 := a.first.Next(); ok1 {
 		if v2, ok2 := a.last.Next(); ok2 {
 			return types.PairOf(v1, v2), true
 		}
 	}
-	return &types.Pair[T, U]{}, false
+	return types.Pair[T, U]{}, false
 }
 
 type IterStream[T any] struct {

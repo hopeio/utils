@@ -2,7 +2,7 @@ package gin
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/hopeio/utils/io/fs"
+	"github.com/hopeio/utils/fs"
 	"github.com/hopeio/utils/net/http/apidoc"
 	_ "github.com/ugorji/go"
 )

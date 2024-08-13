@@ -500,7 +500,8 @@ func (p *Processor) Write(w io.Writer) error {
 			b = []byte(fmt.Sprintf(`<circle cx="%s" cy="%s" r="%s" fill="%s" %s/>`, p.x(d.X), p.y(d.Y), p.m(d.Radius), d.Fill, attr(d.Attr)))
 		case Rectangle:
 			w, h := p.m(d.Width), p.m(d.Height)
-			b = []byte(fmt.Sprintf(`<rect x="%s" y="%s" width="%s" height="%s" rx="%s" ry="%s" fill="%s" %s/>`, p.x(d.X), p.y(d.Y), w, h, p.m(d.RX), p.m(d.RY), d.Fill, attr(d.Attr)))
+			b = []byte(fmt.Sprintf(`<rect x="%s" y="%s" width="%s" height="%s" rx="%s" ry="%s" fill="%s" transform
+="rotate(%.1f)" %s/>`, p.x(d.X), p.y(d.Y), w, h, p.m(d.RX), p.m(d.RY), d.Fill, d.Rotation, attr(d.Attr)))
 		case Path:
 			var err error
 			b, err = p.pathBytes(d)

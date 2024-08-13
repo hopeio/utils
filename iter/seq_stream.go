@@ -1,5 +1,3 @@
-//go:build goexperiment.rangefunc
-
 package iter
 
 import (

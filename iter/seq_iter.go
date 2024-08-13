@@ -1,5 +1,3 @@
-//go:build goexperiment.rangefunc
-
 package iter
 
 import (
@@ -259,8 +257,8 @@ func CountForEach[T any](seq iter.Seq[T], accept Consumer[T]) (count int64) {
 	return
 }
 
-func Enumerate[T any](seq iter.Seq[T]) iter.Seq[*types.Pair[int, T]] {
-	return func(yield func(*types.Pair[int, T]) bool) {
+func Enumerate[T any](seq iter.Seq[T]) iter.Seq[types.Pair[int, T]] {
+	return func(yield func(types.Pair[int, T]) bool) {
 		var count int
 		for v := range seq {
 			if !yield(types.PairOf(count, v)) {

@@ -3,7 +3,7 @@ package ffmpeg
 import (
 	"bytes"
 	"fmt"
-	fs2 "github.com/hopeio/utils/io/fs"
+	fs2 "github.com/hopeio/utils/fs"
 	execi "github.com/hopeio/utils/os/exec"
 	"log"
 	"os"

@@ -5,8 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	fs2 "github.com/hopeio/utils/fs"
 	ioi "github.com/hopeio/utils/io"
-	"github.com/hopeio/utils/io/fs"
 	"github.com/hopeio/utils/log"
 	httpi "github.com/hopeio/utils/net/http"
 	urli "github.com/hopeio/utils/net/url"
@@ -161,7 +161,7 @@ func (c *DownloadReq) GetReader() (io.ReadCloser, error) {
 }
 
 func (c *DownloadReq) Download(filepath string) error {
-	if c.mode&DModeOverwrite == 0 && fs.Exist(filepath) {
+	if c.mode&DModeOverwrite == 0 && fs2.Exist(filepath) {
 		return nil
 	}
 	if c.downloader.retryTimes == 0 {
@@ -177,7 +177,7 @@ func (c *DownloadReq) Download(filepath string) error {
 		if err != nil {
 			return err
 		}
-		err = fs.Download(filepath, reader)
+		err = fs2.Download(filepath, reader)
 		reader.Close()
 		if err == nil {
 			return nil
@@ -188,7 +188,7 @@ func (c *DownloadReq) Download(filepath string) error {
 }
 
 func (c *DownloadReq) ContinuationDownload(filepath string) error {
-	f, err := fs.OpenFile(filepath+DownloadKey, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := fs2.OpenFile(filepath+DownloadKey, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return err
 	}
@@ -232,7 +232,7 @@ const defaultRange = "bytes=0-8388608" // 1024*1024*8
 
 // TODO: 利用简单任务调度实现
 func (c *DownloadReq) ConcurrencyDownload(filepath string, url string, concurrencyNum int) error {
-	if c.mode&DModeOverwrite == 0 && fs.Exist(filepath) {
+	if c.mode&DModeOverwrite == 0 && fs2.Exist(filepath) {
 		return nil
 	}
 	panic("TODO")
@@ -265,7 +265,7 @@ func DownloadImage(filepath, url string) error {
 	if err != nil {
 		return err
 	}
-	return fs.Download(filepath, reader)
+	return fs2.Download(filepath, reader)
 }
 
 func ImageOption(req *http.Request) {
@@ -273,5 +273,5 @@ func ImageOption(req *http.Request) {
 }
 
 func DownloadToDir(dir, url string) error {
-	return NewDownloadReq(url).Download(dir + fs.PathSeparator + urli.PathBase(url))
+	return NewDownloadReq(url).Download(dir + fs2.PathSeparator + urli.PathBase(url))
 }
