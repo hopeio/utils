@@ -64,19 +64,6 @@ func (slice MapSlice[T, V]) Map(fn func(T) V) []V {
 	return ret
 }
 
-// 学学kotlin的定义
-type Array[S, T any] []S
-
-//type Function[T any] func[T]()
-
-func (a Array[S, T]) Map(fn func(S) T) []T {
-	ret := make([]T, 0, len(a))
-	for _, s := range a {
-		ret = append(ret, fn(s))
-	}
-	return ret
-}
-
 type ComparableSlice[T comparable] []T
 
 // 去重

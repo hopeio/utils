@@ -2,6 +2,7 @@ package parallel
 
 import (
 	"github.com/hopeio/utils/errors/multierr"
+	"github.com/hopeio/utils/log"
 	"github.com/hopeio/utils/types/funcs"
 	"sync"
 )
@@ -27,24 +28,38 @@ func Run(tasks []funcs.FuncWithErr) error {
 }
 
 type Parallel struct {
-	taskCh  chan funcs.FuncWithErr
-	workNum int
-	wg      sync.WaitGroup
+	taskCh     chan funcs.FuncWithErr
+	workNum    int
+	wg         sync.WaitGroup
+	retryTimes int
 }
 
-func New(workNum int) *Parallel {
-	return &Parallel{taskCh: make(chan funcs.FuncWithErr, workNum), workNum: workNum, wg: sync.WaitGroup{}}
+func New(workNum int, opts ...Option) *Parallel {
+	return &Parallel{taskCh: make(chan funcs.FuncWithErr, workNum), workNum: workNum}
+}
+
+func (p *Parallel) RetryTimes(retryTimes int) *Parallel {
+	p.retryTimes = retryTimes
+	return p
 }
 
 func (p *Parallel) Run() {
-	for i := 0; i < p.workNum; i++ {
+	for _ = range p.workNum {
 		go func() {
 			for task := range p.taskCh {
 				err := task()
-				p.wg.Done()
 				if err != nil {
-					go p.AddTask(task)
+					if p.retryTimes > 0 {
+						for _ = range p.retryTimes - 1 {
+							err = task()
+							if err == nil {
+								break
+							}
+						}
+					}
+					log.Error(err)
 				}
+				p.wg.Done()
 			}
 		}()
 	}
@@ -55,6 +70,15 @@ func (p *Parallel) AddTask(task funcs.FuncWithErr) {
 	p.taskCh <- task
 }
 
-func (p *Parallel) Wait() {
+func (p *Parallel) Stop() {
 	p.wg.Wait()
+	close(p.taskCh)
+}
+
+type Option func(p *Parallel)
+
+func RetryTimes(retryTimes int) Option {
+	return func(p *Parallel) {
+		p.retryTimes = retryTimes
+	}
 }

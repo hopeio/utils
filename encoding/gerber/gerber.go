@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// fork: github.com/fumin/gerber
 // A Processor performs Gerber graphic operations.
 
 type Processor interface {
