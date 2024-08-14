@@ -41,8 +41,6 @@ func (p *Processor) UnmarshalJSON(b []byte) error {
 			p.MinY, residue, err = decodeInt(residue)
 		case "MaxY":
 			p.MaxY, residue, err = decodeInt(residue)
-		case "Decimal":
-			p.Decimal, residue, err = decodeFloat(residue)
 		case "PolarityDark":
 			p.PolarityDark, residue, err = decodeString(residue)
 		case "PolarityClear":

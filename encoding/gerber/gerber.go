@@ -15,9 +15,6 @@ import (
 // A Processor performs Gerber graphic operations.
 
 type Processor interface {
-	// SetDecimal sets the multiplier to convert from millimeters to Gerber units..
-	SetDecimal(decimal float64)
-
 	// Circle draws a circle.
 	Circle(lineIdx, x, y, diameter int, polarity bool)
 
@@ -525,6 +522,13 @@ const (
 	templateNameObround   = "O"
 )
 
+type Unit string
+
+const (
+	UnitMillimeter Unit = "mm"
+	UnitInch       Unit = "inch"
+)
+
 type commandProcessor struct {
 	pc        Processor
 	templates map[string]template
@@ -532,6 +536,7 @@ type commandProcessor struct {
 	rp        *regionParser
 
 	decimal       float64
+	unit          Unit
 	interpolation Interpolation
 	x             int
 	y             int
@@ -799,8 +804,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 					f(&pm, p.ap.Params[i])
 				}
 			}
-			p.pc.Rectangle(lineIdx, p.x+p.u(pm.CenterX+pm.Width/2), p.y+p.u(pm.CenterY+pm.Height/2), p.u(pm.Width),
-				p.u(pm.Height), p.polarity, pm.Rotation)
+			p.pc.Rectangle(lineIdx, p.x, p.y, p.u(pm.Width), p.u(pm.Height), p.polarity, pm.Rotation)
 		default:
 			return errors.Errorf("%d %+v", i, p)
 		}
@@ -991,7 +995,6 @@ func (p *commandProcessor) processFS(lineIdx int, word string) error {
 		return errors.Wrap(err, "")
 	}
 	p.decimal = math.Pow(10, float64(decimal))
-	p.pc.SetDecimal(p.decimal)
 	return nil
 }
 
@@ -1006,8 +1009,10 @@ func (p *commandProcessor) processMO(lineIdx int, word string) error {
 	unit := word[2:]
 	switch unit {
 	case "MM":
+		p.unit = UnitMillimeter
 		return nil
 	case "IN":
+		p.unit = UnitInch
 		return nil
 	default:
 		return errors.Errorf("%s", unit)

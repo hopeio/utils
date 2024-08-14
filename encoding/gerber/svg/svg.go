@@ -267,10 +267,6 @@ type Processor struct {
 	MinY int
 	MaxY int
 
-	// Decimal is the multiplier to convert millimeters to coordinates.
-	// It is defined in the gerber file.
-	Decimal float64
-
 	// Color for Gerber polarities, defaults to black and white.
 	PolarityDark  string
 	PolarityClear string
@@ -577,10 +573,6 @@ func (p *Processor) y(y int) string {
 
 func (p *Processor) m(f int) string {
 	return strconv.FormatFloat(float64(f)*p.Scale, 'f', -1, 64)
-}
-
-func (p *Processor) SetDecimal(decimal float64) {
-	p.Decimal = decimal
 }
 
 // SVG parses Gerber input into SVG.
