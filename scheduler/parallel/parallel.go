@@ -72,6 +72,10 @@ func (p *Parallel) AddTask(task funcs.FuncWithErr) {
 	p.taskCh <- task
 }
 
+func (p *Parallel) Wait() {
+	p.wg.Wait()
+}
+
 func (p *Parallel) Stop() {
 	p.wg.Wait()
 	close(p.taskCh)

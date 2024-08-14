@@ -15,13 +15,13 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 	e.mu.Lock()
 	if e.isRunning {
 		if len(tasks) > 0 {
-			e.AddTasks(tasks...)
+			e.addTasks(e.ctx, 0, tasks...)
 		}
 		e.mu.Unlock()
 		return
 	} else {
 		if len(tasks) > 0 {
-			e.AddTasks(tasks...)
+			e.addTasks(e.ctx, 0, tasks...)
 		}
 	}
 	if !e.errHandlerRunning {
@@ -168,8 +168,6 @@ func (e *Engine[KEY]) addTasks(ctx context.Context, priority int, tasks ...*Task
 	l := len(tasks)
 	atomic.AddUint64(&e.taskTotalCount, uint64(l))
 	e.wg.Add(l)
-	e.mu.Lock()
-	defer e.mu.Unlock()
 	for _, task := range tasks {
 		if task == nil || task.Run == nil {
 			atomic.AddUint64(&e.taskTotalCount, ^uint64(0))
@@ -187,10 +185,14 @@ func (e *Engine[KEY]) addTasks(ctx context.Context, priority int, tasks ...*Task
 }
 
 func (e *Engine[KEY]) AddOptionTasks(ctx context.Context, priority int, tasks ...*Task[KEY]) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
 	e.addTasks(ctx, priority, tasks...)
 }
 
 func (e *Engine[KEY]) AddTasks(tasks ...*Task[KEY]) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
 	e.addTasks(nil, 0, tasks...)
 }
 
