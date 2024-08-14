@@ -68,13 +68,3 @@ func (s Seq2[K, V]) Seq() iter.Seq[types.Pair[K, V]] {
 		}
 	}
 }
-
-func Seq2Seq[K, V any](seq2 iter.Seq2[K, V]) iter.Seq[types.Pair[K, V]] {
-	return func(yield func(types.Pair[K, V]) bool) {
-		for k, v := range seq2 {
-			if !yield(types.PairOf(k, v)) {
-				return
-			}
-		}
-	}
-}

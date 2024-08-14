@@ -62,7 +62,7 @@ func StreamOf[T any](seq iter.Seq[T]) Stream[T] {
 	return Seq[T](seq)
 }
 
-func Seq2ToSeq[K, V any](s iter.Seq2[K, V]) iter.Seq[types.Pair[K, V]] {
+func Seq2Seq[K, V any](s iter.Seq2[K, V]) iter.Seq[types.Pair[K, V]] {
 	return func(yield func(types.Pair[K, V]) bool) {
 		for k, v := range s {
 			if !yield(types.PairOf(k, v)) {
@@ -72,8 +72,24 @@ func Seq2ToSeq[K, V any](s iter.Seq2[K, V]) iter.Seq[types.Pair[K, V]] {
 	}
 }
 
-func Stream2Of[K, V any](seq iter.Seq2[K, V]) Stream[types.Pair[K, V]] {
-	return StreamOf(Seq2ToSeq(seq))
+func Seq2Keys[K, V any](s iter.Seq2[K, V]) iter.Seq[K] {
+	return func(yield func(K) bool) {
+		for k, _ := range s {
+			if !yield(k) {
+				return
+			}
+		}
+	}
+}
+
+func Seq2Values[K, V any](s iter.Seq2[K, V]) iter.Seq[V] {
+	return func(yield func(V) bool) {
+		for _, v := range s {
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
 
 type Seq[T any] iter.Seq[T]

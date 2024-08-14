@@ -22,7 +22,7 @@ func Run(tasks []funcs.FuncWithErr) error {
 		}
 	}
 	if errs.HasErrors() {
-		return &errs
+		return errs
 	}
 	return nil
 }

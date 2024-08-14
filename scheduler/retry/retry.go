@@ -3,16 +3,14 @@ package retry
 import "github.com/hopeio/utils/errors/multierr"
 
 func ReTry(times int, f func() error) error {
-	var errs multierr.MultiError
+	var err error
 	for i := 0; i < times; i++ {
-		err := f()
-		if err == nil {
+		err1 := f()
+		if err1 == nil {
 			return nil
 		}
-		errs.Append(err)
+		err = multierr.Append(err, err1)
 	}
-	if errs.HasErrors() {
-		return &errs
-	}
-	return nil
+
+	return err
 }

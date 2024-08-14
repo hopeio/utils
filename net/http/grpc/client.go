@@ -16,17 +16,11 @@ var Internal = &metadata.MD{httpi.HeaderInternal: []string{"true"}}
 type clientConns map[string]*grpc.ClientConn
 
 func (cs clientConns) Close() error {
-	var multiErr multierr.MultiError
+	var err error
 	for _, conn := range cs {
-		err := conn.Close()
-		if err != nil {
-			multiErr.Append(err)
-		}
+		err = multierr.Append(err, conn.Close())
 	}
-	if multiErr.HasErrors() {
-		return &multiErr
-	}
-	return nil
+	return err
 }
 
 func NewClient(addr string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {

@@ -1,13 +1,12 @@
 package fs
 
 import (
+	"errors"
 	"github.com/hopeio/utils/errors/multierr"
-	"iter"
-
 	"io/fs"
+	"iter"
 	"os"
 	"path/filepath"
-	"slices"
 )
 
 type RangeCallback = func(dir string, entry os.DirEntry) error
@@ -18,23 +17,15 @@ func Range(dir string, callback RangeCallback) error {
 	if err != nil {
 		return err
 	}
-	errs := multierr.New()
+
 	for _, entry := range entries {
 		if entry.IsDir() {
-			err = RangeFile(dir+PathSeparator+entry.Name(), callback)
-			if err != nil {
-				errs.Append(err)
-			}
+			err = multierr.Append(err, RangeFile(dir+PathSeparator+entry.Name(), callback))
 		}
-		err = callback(dir, entry)
-		if err != nil {
-			errs.Append(err)
-		}
+		err = multierr.Append(err, callback(dir, entry))
 	}
-	if errs.HasErrors() {
-		return errs
-	}
-	return nil
+
+	return err
 }
 
 // 指定遍历深度,0为只遍历一层,-1为无限遍历
@@ -43,23 +34,15 @@ func RangeDeep(dir string, callback RangeCallback, deep int) error {
 	if err != nil {
 		return err
 	}
-	errs := multierr.New()
+
 	for _, entry := range entries {
 		if entry.IsDir() && deep != 0 {
-			err = RangeDeep(dir+PathSeparator+entry.Name(), callback, deep-1)
-			if err != nil {
-				errs.Append(err)
-			}
+			err = multierr.Append(err, RangeDeep(dir+PathSeparator+entry.Name(), callback, deep-1))
 		}
-		err = callback(dir, entry)
-		if err != nil {
-			errs.Append(err)
-		}
+		err = multierr.Append(err, callback(dir, entry))
 	}
-	if errs.HasErrors() {
-		return errs
-	}
-	return nil
+
+	return err
 }
 
 // 遍历根目录中的每个文件，为每个文件调用callback,不包括文件夹,与filepath.WalkDir不同的是回调函数的参数不同,filepath.WalkDir的第一个参数是文件完整路径,RangeFile是文件所在目录的路径
@@ -68,24 +51,16 @@ func RangeFile(dir string, callback RangeCallback) error {
 	if err != nil {
 		return err
 	}
-	errs := multierr.New()
+
 	for _, entry := range entries {
 		if entry.IsDir() {
-			err = RangeFile(dir+PathSeparator+entry.Name(), callback)
-			if err != nil {
-				errs.Append(err)
-			}
+			err = multierr.Append(err, RangeFile(dir+PathSeparator+entry.Name(), callback))
 		} else {
-			err = callback(dir, entry)
-			if err != nil {
-				errs.Append(err)
-			}
+			err = multierr.Append(err, callback(dir, entry))
 		}
 	}
-	if errs.HasErrors() {
-		return errs
-	}
-	return nil
+
+	return err
 }
 
 // 指定遍历深度,0为只遍历一层,-1为无限遍历
@@ -94,24 +69,15 @@ func RangeFileDeep(dir string, callback RangeCallback, deep int) error {
 	if err != nil {
 		return err
 	}
-	errs := multierr.New()
 	for _, entry := range entries {
 		if entry.IsDir() && deep != 0 {
-			err = RangeFileDeep(dir+PathSeparator+entry.Name(), callback, deep-1)
-			if err != nil {
-				errs.Append(err)
-			}
+			err = multierr.Append(err, RangeFileDeep(dir+PathSeparator+entry.Name(), callback, deep-1))
+
 		} else {
-			err = callback(dir, entry)
-			if err != nil {
-				errs.Append(err)
-			}
+			err = multierr.Append(err, callback(dir, entry))
 		}
 	}
-	if errs.HasErrors() {
-		return errs
-	}
-	return nil
+	return err
 }
 
 // RangeDir 遍历根目录中的每个文件夹，为文件夹中所有文件和目录的切片(os.ReadDir的返回)调用callback
@@ -122,24 +88,15 @@ func RangeDir(dir string, callback func(dir string, entries []os.DirEntry) ([]os
 	if err != nil {
 		return err
 	}
-	errs := multierr.New()
 
-	dirs, err := callback(dir, entries)
-	if err != nil {
-		errs.Append(err)
-	}
+	dirs, err1 := callback(dir, entries)
+	err = multierr.Append(err, err1)
 	for _, entry := range dirs {
 		if entry.IsDir() {
-			err = RangeDir(dir+PathSeparator+entry.Name(), callback)
-			if err != nil {
-				errs.Append(err)
-			}
+			err = multierr.Append(err, RangeDir(dir+PathSeparator+entry.Name(), callback))
 		}
 	}
-	if errs.HasErrors() {
-		return errs
-	}
-	return nil
+	return err
 }
 
 func WalkDirFS(fsys fs.FS, root string, fn fs.WalkDirFunc) error {
@@ -154,10 +111,29 @@ func WalkDir(root string, fn fs.WalkDirFunc) error {
 	return filepath.WalkDir(root, fn)
 }
 
-func All(path string) (iter.Seq[os.DirEntry], error) {
+func All(path string) (iter.Seq[os.DirEntry], *multierr.MultiError) {
+	errs := multierr.New()
 	dirs, err := os.ReadDir(path)
 	if err != nil {
-		return nil, err
+		return nil, errs
 	}
-	return slices.Values(dirs), nil
+	return func(yield func(os.DirEntry) bool) {
+		for _, dir := range dirs {
+			if dir.IsDir() {
+				it, err := All(path + PathSeparator + dir.Name())
+				if err.HasErrors() {
+					errs.Append(err)
+				}
+				errs.Append(errors.New("test"))
+				for entry := range it {
+					if !yield(entry) {
+						return
+					}
+				}
+			}
+			if !yield(dir) {
+				return
+			}
+		}
+	}, errs
 }

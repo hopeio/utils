@@ -144,8 +144,6 @@ import (
 	"io"
 	"strings"
 	"sync"
-
-	"go.uber.org/atomic"
 )
 
 var (
@@ -222,10 +220,7 @@ func Errors(err error) []error {
 //
 // MultiError formats to a semi-colon delimited list of error messages with
 // %v and with a more readable multi-line format with %+v.
-type MultiError struct {
-	copyNeeded atomic.Bool
-	errors     []error
-}
+type MultiError []error
 
 func New() *MultiError {
 	return &MultiError{}
@@ -236,16 +231,12 @@ var _ errorGroup = (*MultiError)(nil)
 // Errors returns the list of underlying errors.
 //
 // This slice MUST NOT be modified.
-func (merr *MultiError) Errors() []error {
-	errors.Join()
-	if merr == nil {
-		return nil
-	}
-	return merr.errors
+func (merr MultiError) Errors() []error {
+	return merr
 }
 
-func (merr *MultiError) HasErrors() bool {
-	return merr != nil && len(merr.errors) > 0
+func (merr MultiError) HasErrors() bool {
+	return merr != nil && len(merr) > 0
 }
 
 // As attempts to find the first error in the error list that matches the type
@@ -253,7 +244,7 @@ func (merr *MultiError) HasErrors() bool {
 //
 // This function allows errors.As to traverse the values stored on the
 // multierr error.
-func (merr *MultiError) As(target interface{}) bool {
+func (merr MultiError) As(target interface{}) bool {
 	for _, err := range merr.Errors() {
 		if errors.As(err, target) {
 			return true
@@ -266,7 +257,7 @@ func (merr *MultiError) As(target interface{}) bool {
 //
 // This function allows errors.Is to traverse the values stored on the
 // multierr error.
-func (merr *MultiError) Is(target error) bool {
+func (merr MultiError) Is(target error) bool {
 	for _, err := range merr.Errors() {
 		if errors.Is(err, target) {
 			return true
@@ -275,7 +266,7 @@ func (merr *MultiError) Is(target error) bool {
 	return false
 }
 
-func (merr *MultiError) Error() string {
+func (merr MultiError) Error() string {
 	if merr == nil {
 		return ""
 	}
@@ -298,9 +289,9 @@ func (merr *MultiError) Format(f fmt.State, c rune) {
 	}
 }
 
-func (merr *MultiError) writeSingleline(w io.Writer) {
+func (merr MultiError) writeSingleline(w io.Writer) {
 	first := true
-	for _, item := range merr.errors {
+	for _, item := range merr {
 		if first {
 			first = false
 		} else {
@@ -310,20 +301,16 @@ func (merr *MultiError) writeSingleline(w io.Writer) {
 	}
 }
 
-func (merr *MultiError) writeMultiline(w io.Writer) {
+func (merr MultiError) writeMultiline(w io.Writer) {
 	w.Write(_multilinePrefix)
-	for _, item := range merr.errors {
+	for _, item := range merr {
 		w.Write(_multilineSeparator)
 		writePrefixLine(w, _multilineIndent, fmt.Sprintf("%+v", item))
 	}
 }
 
 func (merr *MultiError) Append(err error) {
-	if !merr.copyNeeded.Swap(true) {
-		// Common case where the error on the left is constantly being
-		// appended to.
-		merr.errors = append(merr.errors, err)
-	}
+	*merr = append(*merr, err)
 }
 
 // Writes s to the writer with the given prefix added before each line after
@@ -377,8 +364,8 @@ func inspect(errors []error) (res inspectResult) {
 			res.FirstErrorIdx = i
 		}
 
-		if merr, ok := err.(*MultiError); ok {
-			res.Capacity += len(merr.errors)
+		if merr, ok := err.(MultiError); ok {
+			res.Capacity += len(merr)
 			res.ContainsMultiError = true
 		} else {
 			res.Capacity++
@@ -399,7 +386,7 @@ func fromSlice(errors []error) error {
 	case len(errors):
 		if !res.ContainsMultiError {
 			// already flat
-			return &MultiError{errors: errors}
+			return MultiError(errors)
 		}
 	}
 
@@ -409,14 +396,14 @@ func fromSlice(errors []error) error {
 			continue
 		}
 
-		if nested, ok := err.(*MultiError); ok {
-			nonNilErrs = append(nonNilErrs, nested.errors...)
+		if nested, ok := err.(MultiError); ok {
+			nonNilErrs = append(nonNilErrs, nested...)
 		} else {
 			nonNilErrs = append(nonNilErrs, err)
 		}
 	}
 
-	return &MultiError{errors: nonNilErrs}
+	return MultiError(nonNilErrs)
 }
 
 // Combine combines the passed errors into a single error.
@@ -477,15 +464,15 @@ func Append(left error, right error) error {
 		return left
 	}
 
-	if _, ok := right.(*MultiError); !ok {
-		if l, ok := left.(*MultiError); ok && !l.copyNeeded.Swap(true) {
+	if _, ok := right.(MultiError); !ok {
+		if l, ok := left.(MultiError); ok {
 			// Common case where the error on the left is constantly being
 			// appended to.
-			errs := append(l.errors, right)
-			return &MultiError{errors: errs}
+			errs := append(l, right)
+			return MultiError(errs)
 		} else if !ok {
 			// Both errors are single errors.
-			return &MultiError{errors: []error{left, right}}
+			return MultiError([]error{left, right})
 		}
 	}
 
