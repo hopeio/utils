@@ -6,16 +6,16 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"github.com/hopeio/utils/encoding/gerber"
 	"strconv"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 )
 
 func (p *Processor) UnmarshalJSON(b []byte) error {
 	// Skip '{'.
 	if len(b) < 1 {
-		return errors.Errorf("%d", len(b))
+		return fmt.Errorf("%d", len(b))
 	}
 	residue := b[1:]
 
@@ -25,7 +25,7 @@ func (p *Processor) UnmarshalJSON(b []byte) error {
 		}
 		closingK := bytes.Index(residue[1:], []byte(`":`))
 		if closingK == -1 {
-			return errors.Errorf("\"%s\" %#v", residue, residue)
+			return fmt.Errorf("\"%s\" %#v", residue, residue)
 		}
 		key := string(residue[1 : 1+closingK])
 		residue = residue[1+closingK+2:]
@@ -54,10 +54,10 @@ func (p *Processor) UnmarshalJSON(b []byte) error {
 		case "PanZoom":
 			p.PanZoom, residue, err = decodeBool(residue)
 		default:
-			err = errors.Errorf("\"%s\"", key)
+			err = fmt.Errorf("\"%s\"", key)
 		}
 		if err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 	}
 	return nil
@@ -66,66 +66,66 @@ func (p *Processor) UnmarshalJSON(b []byte) error {
 func (p *Processor) UnmarshalJSON_1(b []byte) error {
 	pmap := make(map[string]interface{})
 	if err := json.Unmarshal(b, &pmap); err != nil {
-		return errors.Wrap(err, "")
+		return err
 	}
 
 	if err := mapstructure.Decode(pmap, p); err != nil {
-		return errors.Wrap(err, "")
+		return err
 	}
 
 	data := make([]interface{}, 0, len(p.Data))
 	for i, d := range p.Data {
 		m, ok := d.(map[string]interface{})
 		if !ok {
-			return errors.Errorf("%d %+v", i, d)
+			return fmt.Errorf("%d %+v", i, d)
 		}
 		eType, ok := m["Type"].(string)
 		if !ok {
-			return errors.Errorf("%d %+v", i, d)
+			return fmt.Errorf("%d %+v", i, d)
 		}
 		switch ElementType(eType) {
 		case ElementTypeCircle:
 			e := Circle{}
 			if err := mapstructure.Decode(m, &e); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("%d %+v", i, d))
+				return fmt.Errorf("%d %+v %w", i, d, err)
 			}
 			data = append(data, e)
 		case ElementTypeRectangle:
 			e := Rectangle{}
 			if err := mapstructure.Decode(m, &e); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("%d %+v", i, d))
+				return fmt.Errorf("%d %+v %w", i, d, err)
 			}
 			data = append(data, e)
 		case ElementTypePath:
 			e := Path{}
 			if err := mapstructure.Decode(m, &e); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("%d %+v", i, d))
+				return fmt.Errorf("%d %+v %w", i, d, err)
 			}
 			cmds := make([]interface{}, 0, len(e.Commands))
 			for j, cj := range e.Commands {
 				c, ok := cj.(map[string]interface{})
 				if !ok {
-					return errors.Errorf("%d %d %+v %+v", i, j, cj, d)
+					return fmt.Errorf("%d %d %+v %+v", i, j, cj, d)
 				}
 				cType, ok := c["Type"].(string)
 				if !ok {
-					return errors.Errorf("%d %d %+v %+v", i, j, cj, d)
+					return fmt.Errorf("%d %d %+v %+v", i, j, cj, d)
 				}
 				switch ElementType(cType) {
 				case ElementTypeLine:
 					cmd := PathLine{}
 					if err := mapstructure.Decode(c, &cmd); err != nil {
-						return errors.Errorf("%d %d %+v %+v", i, j, c, d)
+						return fmt.Errorf("%d %d %+v %+v", i, j, c, d)
 					}
 					cmds = append(cmds, cmd)
 				case ElementTypeArc:
 					cmd := PathArc{}
 					if err := mapstructure.Decode(c, &cmd); err != nil {
-						return errors.Errorf("%d %d %+v %+v", i, j, c, d)
+						return fmt.Errorf("%d %d %+v %+v", i, j, c, d)
 					}
 					cmds = append(cmds, cmd)
 				default:
-					return errors.Errorf("%d %d %+v %+v", i, j, c, d)
+					return fmt.Errorf("%d %d %+v %+v", i, j, c, d)
 				}
 			}
 			e.Commands = cmds
@@ -133,17 +133,17 @@ func (p *Processor) UnmarshalJSON_1(b []byte) error {
 		case ElementTypeLine:
 			e := Line{}
 			if err := mapstructure.Decode(m, &e); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("%d %+v", i, d))
+				return fmt.Errorf("%d %+v %w", i, d, err)
 			}
 			data = append(data, e)
 		case ElementTypeArc:
 			e := Arc{}
 			if err := mapstructure.Decode(m, &e); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("%d %+v", i, d))
+				return fmt.Errorf("%d %+v %w", i, d, err)
 			}
 			data = append(data, e)
 		default:
-			return errors.Errorf("%d %+v", i, m)
+			return fmt.Errorf("%d %+v", i, m)
 		}
 	}
 	p.Data = data
@@ -163,17 +163,17 @@ func (p *Processor) decodeData(b []byte) ([]byte, error) {
 
 	// Opening '['.
 	if len(b) < 1 {
-		return b, errors.Errorf("%d", len(b))
+		return b, fmt.Errorf("%d", len(b))
 	}
 	b = b[1:]
 
 	for {
 		segment, err := findSegment(b)
 		if err != nil {
-			return b, errors.Wrap(err, "")
+			return b, err
 		}
 		if err := p.decodeSegment(segment); err != nil {
-			return b, errors.Wrap(err, "")
+			return b, err
 		}
 		if b[len(segment)] == ']' {
 			b = b[len(segment)+1:]
@@ -183,7 +183,7 @@ func (p *Processor) decodeData(b []byte) ([]byte, error) {
 			break
 		}
 		if len(segment)+1 >= len(b) {
-			return b, errors.Errorf("%d %d \"%s\"", len(segment)+1, len(b), segment)
+			return b, fmt.Errorf("%d %d \"%s\"", len(segment)+1, len(b), segment)
 		}
 		b = b[len(segment)+1:]
 	}
@@ -208,7 +208,7 @@ Loop:
 		}
 	}
 	if end == -1 {
-		return nil, errors.Errorf("not closed")
+		return nil, fmt.Errorf("not closed")
 	}
 	return bs[:end+1], nil
 }
@@ -216,41 +216,41 @@ Loop:
 func (p *Processor) decodeSegment(b []byte) error {
 	elmType, err := findElementType(b)
 	if err != nil {
-		return errors.Wrap(err, "")
+		return err
 	}
 	switch elmType {
 	case ElementTypeCircle:
 		var c Circle
 		if err := decodeCircle(b, &c); err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 		p.Data = append(p.Data, c)
 	case ElementTypeRectangle:
 		var r Rectangle
 		if err := decodeRectangle(b, &r); err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 		p.Data = append(p.Data, r)
 	case ElementTypePath:
 		var ph Path
 		if err := decodePath(b, &ph); err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 		p.Data = append(p.Data, ph)
 	case ElementTypeLine:
 		var l Line
 		if err := decodeLine(b, &l); err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 		p.Data = append(p.Data, l)
 	case ElementTypeArc:
 		var a Arc
 		if err := decodeArc(b, &a); err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 		p.Data = append(p.Data, a)
 	default:
-		return errors.Errorf("\"%s\"", elmType)
+		return fmt.Errorf("\"%s\"", elmType)
 	}
 	return nil
 }
@@ -276,18 +276,18 @@ func findElementType(bs []byte) (ElementType, error) {
 			}
 			endIdx := bytes.IndexByte(bs[i+2:], '"')
 			if endIdx == -1 {
-				return "", errors.Errorf("not closed")
+				return "", fmt.Errorf("not closed")
 			}
 			return ElementType(bs[i+2 : i+2+endIdx]), nil
 		}
 	}
-	return "", errors.Errorf("not found")
+	return "", fmt.Errorf("not found")
 }
 
 func decodeCircle(b []byte, elm *Circle) error {
 	// Skip '{'.
 	if len(b) < 1 {
-		return errors.Errorf("%d", len(b))
+		return fmt.Errorf("%d", len(b))
 	}
 	residue := b[1:]
 
@@ -297,7 +297,7 @@ func decodeCircle(b []byte, elm *Circle) error {
 		}
 		closingK := bytes.Index(residue[1:], []byte(`":`))
 		if closingK == -1 {
-			return errors.Errorf("\"%s\"", residue)
+			return fmt.Errorf("\"%s\"", residue)
 		}
 		key := string(residue[1 : 1+closingK])
 		residue = residue[1+closingK+2:]
@@ -313,18 +313,18 @@ func decodeCircle(b []byte, elm *Circle) error {
 			elm.X, residue, err = decodeInt(residue)
 		case "Y":
 			elm.Y, residue, err = decodeInt(residue)
-		case "Radius":
-			elm.Radius, residue, err = decodeInt(residue)
+		case "Diameter":
+			elm.Diameter, residue, err = decodeInt(residue)
 		case "Fill":
 			elm.Fill, residue, err = decodeString(residue)
 		case "Attr":
 			// Attr is expected to be always null.
 			residue = residue[5:]
 		default:
-			err = errors.Errorf("\"%s\"", key)
+			err = fmt.Errorf("\"%s\"", key)
 		}
 		if err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 	}
 	return nil
@@ -333,7 +333,7 @@ func decodeCircle(b []byte, elm *Circle) error {
 func decodeRectangle(b []byte, elm *Rectangle) error {
 	// Skip '{'.
 	if len(b) < 1 {
-		return errors.Errorf("%d", len(b))
+		return fmt.Errorf("%d", len(b))
 	}
 	residue := b[1:]
 
@@ -343,7 +343,7 @@ func decodeRectangle(b []byte, elm *Rectangle) error {
 		}
 		closingK := bytes.Index(residue[1:], []byte(`":`))
 		if closingK == -1 {
-			return errors.Errorf("\"%s\"", residue)
+			return fmt.Errorf("\"%s\"", residue)
 		}
 		key := string(residue[1 : 1+closingK])
 		residue = residue[1+closingK+2:]
@@ -375,10 +375,10 @@ func decodeRectangle(b []byte, elm *Rectangle) error {
 			// Attr is expected to be always null.
 			residue = residue[5:]
 		default:
-			err = errors.Errorf("\"%s\"", key)
+			err = fmt.Errorf("\"%s\"", key)
 		}
 		if err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 	}
 	return nil
@@ -387,7 +387,7 @@ func decodeRectangle(b []byte, elm *Rectangle) error {
 func decodePath(b []byte, elm *Path) error {
 	// Skip '{'.
 	if len(b) < 1 {
-		return errors.Errorf("%d", len(b))
+		return fmt.Errorf("%d", len(b))
 	}
 	residue := b[1:]
 
@@ -397,7 +397,7 @@ func decodePath(b []byte, elm *Path) error {
 		}
 		closingK := bytes.Index(residue[1:], []byte(`":`))
 		if closingK == -1 {
-			return errors.Errorf("\"%s\"", residue)
+			return fmt.Errorf("\"%s\"", residue)
 		}
 		key := string(residue[1 : 1+closingK])
 		residue = residue[1+closingK+2:]
@@ -421,10 +421,10 @@ func decodePath(b []byte, elm *Path) error {
 			// Attr is expected to be always null.
 			residue = residue[5:]
 		default:
-			err = errors.Errorf("\"%s\"", key)
+			err = fmt.Errorf("\"%s\"", key)
 		}
 		if err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 	}
 	return nil
@@ -433,7 +433,7 @@ func decodePath(b []byte, elm *Path) error {
 func decodeLine(b []byte, elm *Line) error {
 	// Skip '{'.
 	if len(b) < 1 {
-		return errors.Errorf("%d", len(b))
+		return fmt.Errorf("%d", len(b))
 	}
 	residue := b[1:]
 
@@ -443,7 +443,7 @@ func decodeLine(b []byte, elm *Line) error {
 		}
 		closingK := bytes.Index(residue[1:], []byte(`":`))
 		if closingK == -1 {
-			return errors.Errorf("\"%s\"", residue)
+			return fmt.Errorf("\"%s\"", residue)
 		}
 		key := string(residue[1 : 1+closingK])
 		residue = residue[1+closingK+2:]
@@ -454,29 +454,31 @@ func decodeLine(b []byte, elm *Line) error {
 			elmType, residue, err = decodeString(residue)
 			elm.Type = ElementType(elmType)
 		case "Line":
-			elm.Line, residue, err = decodeInt(residue)
-		case "X1":
-			elm.X1, residue, err = decodeInt(residue)
-		case "Y1":
-			elm.Y1, residue, err = decodeInt(residue)
-		case "X2":
-			elm.X2, residue, err = decodeInt(residue)
-		case "Y2":
-			elm.Y2, residue, err = decodeInt(residue)
-		case "StrokeWidth":
-			elm.StrokeWidth, residue, err = decodeInt(residue)
+			elm.Line.Line, residue, err = decodeInt(residue)
+		case "XStart":
+			elm.XStart, residue, err = decodeInt(residue)
+		case "YStart":
+			elm.YStart, residue, err = decodeInt(residue)
+		case "XEnd":
+			elm.XEnd, residue, err = decodeInt(residue)
+		case "YEnd":
+			elm.YEnd, residue, err = decodeInt(residue)
+		case "Width":
+			elm.Width, residue, err = decodeInt(residue)
 		case "Cap":
-			elm.Cap, residue, err = decodeString(residue)
+			var lineCap string
+			lineCap, residue, err = decodeString(residue)
+			elm.Cap = gerber.LineCap(lineCap)
 		case "Stroke":
 			elm.Stroke, residue, err = decodeString(residue)
 		case "Attr":
 			// Attr is expected to be always null.
 			residue = residue[5:]
 		default:
-			err = errors.Errorf("\"%s\"", key)
+			err = fmt.Errorf("\"%s\"", key)
 		}
 		if err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 	}
 	return nil
@@ -485,7 +487,7 @@ func decodeLine(b []byte, elm *Line) error {
 func decodeArc(b []byte, elm *Arc) error {
 	// Skip '{'.
 	if len(b) < 1 {
-		return errors.Errorf("%d", len(b))
+		return fmt.Errorf("%d", len(b))
 	}
 	residue := b[1:]
 
@@ -495,7 +497,7 @@ func decodeArc(b []byte, elm *Arc) error {
 		}
 		closingK := bytes.Index(residue[1:], []byte(`":`))
 		if closingK == -1 {
-			return errors.Errorf("\"%s\"", residue)
+			return fmt.Errorf("\"%s\"", residue)
 		}
 		key := string(residue[1 : 1+closingK])
 		residue = residue[1+closingK+2:]
@@ -507,10 +509,10 @@ func decodeArc(b []byte, elm *Arc) error {
 			elm.Type = ElementType(elmType)
 		case "Line":
 			elm.Line, residue, err = decodeInt(residue)
-		case "XS":
-			elm.XS, residue, err = decodeInt(residue)
-		case "YS":
-			elm.YS, residue, err = decodeInt(residue)
+		case "XStart":
+			elm.XStart, residue, err = decodeInt(residue)
+		case "YStart":
+			elm.YStart, residue, err = decodeInt(residue)
 		case "RadiusX":
 			elm.RadiusX, residue, err = decodeInt(residue)
 		case "RadiusY":
@@ -519,26 +521,26 @@ func decodeArc(b []byte, elm *Arc) error {
 			elm.LargeArc, residue, err = decodeInt(residue)
 		case "Sweep":
 			elm.Sweep, residue, err = decodeInt(residue)
-		case "XE":
-			elm.XE, residue, err = decodeInt(residue)
-		case "YE":
-			elm.YE, residue, err = decodeInt(residue)
-		case "StrokeWidth":
-			elm.StrokeWidth, residue, err = decodeInt(residue)
-		case "CenterX":
-			elm.CenterX, residue, err = decodeInt(residue)
-		case "CenterY":
-			elm.CenterY, residue, err = decodeInt(residue)
+		case "XEnd":
+			elm.XEnd, residue, err = decodeInt(residue)
+		case "YEnd":
+			elm.YEnd, residue, err = decodeInt(residue)
+		case "Width":
+			elm.Width, residue, err = decodeInt(residue)
+		case "XCenter":
+			elm.XCenter, residue, err = decodeInt(residue)
+		case "YCenter":
+			elm.YCenter, residue, err = decodeInt(residue)
 		case "Stroke":
 			elm.Stroke, residue, err = decodeString(residue)
 		case "Attr":
 			// Attr is expected to be always null.
 			residue = residue[5:]
 		default:
-			err = errors.Errorf("\"%s\"", key)
+			err = fmt.Errorf("\"%s\"", key)
 		}
 		if err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 	}
 	return nil
@@ -547,7 +549,7 @@ func decodeArc(b []byte, elm *Arc) error {
 func decodePathLine(b []byte, elm *PathLine) error {
 	// Skip '{'.
 	if len(b) < 1 {
-		return errors.Errorf("%d", len(b))
+		return fmt.Errorf("%d", len(b))
 	}
 	residue := b[1:]
 
@@ -557,7 +559,7 @@ func decodePathLine(b []byte, elm *PathLine) error {
 		}
 		closingK := bytes.Index(residue[1:], []byte(`":`))
 		if closingK == -1 {
-			return errors.Errorf("\"%s\"", residue)
+			return fmt.Errorf("\"%s\"", residue)
 		}
 		key := string(residue[1 : 1+closingK])
 		residue = residue[1+closingK+2:]
@@ -572,10 +574,10 @@ func decodePathLine(b []byte, elm *PathLine) error {
 		case "Y":
 			elm.Y, residue, err = decodeInt(residue)
 		default:
-			err = errors.Errorf("\"%s\"", key)
+			err = fmt.Errorf("\"%s\"", key)
 		}
 		if err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 	}
 	return nil
@@ -584,7 +586,7 @@ func decodePathLine(b []byte, elm *PathLine) error {
 func decodePathArc(b []byte, elm *PathArc) error {
 	// Skip '{'.
 	if len(b) < 1 {
-		return errors.Errorf("%d", len(b))
+		return fmt.Errorf("%d", len(b))
 	}
 	residue := b[1:]
 
@@ -594,7 +596,7 @@ func decodePathArc(b []byte, elm *PathArc) error {
 		}
 		closingK := bytes.Index(residue[1:], []byte(`":`))
 		if closingK == -1 {
-			return errors.Errorf("\"%s\"", residue)
+			return fmt.Errorf("\"%s\"", residue)
 		}
 		key := string(residue[1 : 1+closingK])
 		residue = residue[1+closingK+2:]
@@ -616,15 +618,15 @@ func decodePathArc(b []byte, elm *PathArc) error {
 			elm.X, residue, err = decodeInt(residue)
 		case "Y":
 			elm.Y, residue, err = decodeInt(residue)
-		case "CenterX":
+		case "XCenter":
 			elm.CenterX, residue, err = decodeInt(residue)
-		case "CenterY":
+		case "YCenter":
 			elm.CenterY, residue, err = decodeInt(residue)
 		default:
-			err = errors.Errorf("\"%s\"", key)
+			err = fmt.Errorf("\"%s\"", key)
 		}
 		if err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 	}
 	return nil
@@ -633,17 +635,17 @@ func decodePathArc(b []byte, elm *PathArc) error {
 func decodePathCommands(ph *Path, b []byte) ([]byte, error) {
 	// Opening '['.
 	if len(b) < 1 {
-		return b, errors.Errorf("%d", len(b))
+		return b, fmt.Errorf("%d", len(b))
 	}
 	b = b[1:]
 
 	for {
 		segment, err := findSegment(b)
 		if err != nil {
-			return b, errors.Wrap(err, "")
+			return b, err
 		}
 		if err := decodePathSegment(ph, segment); err != nil {
-			return b, errors.Wrap(err, "")
+			return b, err
 		}
 		if b[len(segment)] == ']' {
 			b = b[len(segment)+1:]
@@ -653,7 +655,7 @@ func decodePathCommands(ph *Path, b []byte) ([]byte, error) {
 			break
 		}
 		if len(segment)+1 >= len(b) {
-			return b, errors.Errorf("%d %d \"%s\"", len(segment)+1, len(b), segment)
+			return b, fmt.Errorf("%d %d \"%s\"", len(segment)+1, len(b), segment)
 		}
 		b = b[len(segment)+1:]
 	}
@@ -664,23 +666,23 @@ func decodePathCommands(ph *Path, b []byte) ([]byte, error) {
 func decodePathSegment(ph *Path, b []byte) error {
 	elmType, err := findElementType(b)
 	if err != nil {
-		return errors.Wrap(err, "")
+		return err
 	}
 	switch elmType {
 	case ElementTypeLine:
 		var l PathLine
 		if err := decodePathLine(b, &l); err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 		ph.Commands = append(ph.Commands, l)
 	case ElementTypeArc:
 		var a PathArc
 		if err := decodePathArc(b, &a); err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 		ph.Commands = append(ph.Commands, a)
 	default:
-		return errors.Errorf("\"%s\"", elmType)
+		return fmt.Errorf("\"%s\"", elmType)
 	}
 	return nil
 }
@@ -690,12 +692,12 @@ func decodeInt(b []byte) (int, []byte, error) {
 	if idx == -1 {
 		idx = bytes.IndexByte(b, '}')
 		if idx == -1 {
-			return -1, b, errors.Errorf("no comma")
+			return -1, b, fmt.Errorf("no comma")
 		}
 	}
 	i, err := strconv.Atoi(string(b[:idx]))
 	if err != nil {
-		return -1, b, errors.Wrap(err, "")
+		return -1, b, err
 	}
 	return i, b[idx+1:], nil
 }
@@ -705,12 +707,12 @@ func decodeFloat(b []byte) (float64, []byte, error) {
 	if idx == -1 {
 		idx = bytes.IndexByte(b, '}')
 		if idx == -1 {
-			return -1, b, errors.Errorf("no comma")
+			return -1, b, fmt.Errorf("no comma")
 		}
 	}
 	f, err := strconv.ParseFloat(string(b[:idx]), 64)
 	if err != nil {
-		return -1, b, errors.Wrap(err, "")
+		return -1, b, err
 	}
 	return f, b[idx+1:], nil
 }
@@ -720,12 +722,12 @@ func decodeString(b []byte) (string, []byte, error) {
 	if idx == -1 {
 		idx = bytes.IndexByte(b, '}')
 		if idx == -1 {
-			return "", b, errors.Errorf("no comma")
+			return "", b, fmt.Errorf("no comma")
 		}
 	}
 	// Opening '"'
 	if len(b) < 1 {
-		return "", b, errors.Errorf("%d", len(b))
+		return "", b, fmt.Errorf("%d", len(b))
 	}
 	s := string(b[1:idx])
 	return s, b[idx+2:], nil
@@ -736,12 +738,12 @@ func decodeBool(b []byte) (bool, []byte, error) {
 	if idx == -1 {
 		idx = bytes.IndexByte(b, '}')
 		if idx == -1 {
-			return false, b, errors.Errorf("no comma")
+			return false, b, fmt.Errorf("no comma")
 		}
 	}
 	bol, err := strconv.ParseBool(string(b[:idx]))
 	if err != nil {
-		return false, b, errors.Wrap(err, "")
+		return false, b, err
 	}
 	return bol, b[idx+1:], nil
 }

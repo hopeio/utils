@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 )
 
 // An ElementType is a SVG element type.
@@ -30,17 +29,15 @@ const (
 
 // A Circle is a circle.
 type Circle struct {
-	Type   ElementType
-	Line   int
-	X      int
-	Y      int
-	Radius int
-	Fill   string
-	Attr   map[string]string
+	Type ElementType
+	gerber.Circle
+	Fill string
+	Attr map[string]string
 }
 
 func (e Circle) Bounds() image.Rectangle {
-	return image.Rect(e.X-e.Radius, e.Y-e.Radius, e.X+e.Radius, e.Y+e.Radius)
+	radius := e.Diameter / 2
+	return image.Rect(e.X-radius, e.Y-radius, e.X+radius, e.Y+radius)
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -60,11 +57,11 @@ func (e Circle) SetAttr(k, v string) Circle {
 func marshalByMap(e interface{}) ([]byte, error) {
 	m := make(map[string]interface{})
 	if err := mapstructure.Decode(e, &m); err != nil {
-		return nil, errors.Wrap(err, "")
+		return nil, err
 	}
 	b, err := json.Marshal(m)
 	if err != nil {
-		return nil, errors.Wrap(err, "")
+		return nil, err
 	}
 	return b, nil
 }
@@ -72,17 +69,12 @@ func marshalByMap(e interface{}) ([]byte, error) {
 // A Rectangle is a rectangle.
 type Rectangle struct {
 	Type     ElementType
-	Line     int
 	Aperture string
-	X        int
-	Y        int
-	Width    int
-	Height   int
-	RX       int
-	RY       int
-	Fill     string
-	Rotation float64
-	Attr     map[string]string
+	gerber.Rectangle
+	RX   int
+	RY   int
+	Fill string
+	Attr map[string]string
 }
 
 func (e Rectangle) Bounds() image.Rectangle {
@@ -164,7 +156,7 @@ func (e Path) Bounds() (image.Rectangle, error) {
 		case PathArc:
 			updateMinMax(c.X, c.Y)
 		default:
-			return image.Rectangle{}, errors.Errorf("%#v", c)
+			return image.Rectangle{}, fmt.Errorf("%#v", c)
 		}
 	}
 
@@ -187,21 +179,14 @@ func (e Path) SetAttr(k, v string) Path {
 
 // A Line is a SVG line.
 type Line struct {
-	Type        ElementType
-	Line        int
-	X1          int
-	Y1          int
-	X2          int
-	Y2          int
-	StrokeWidth int
-	Cap         string
-
+	Type ElementType
+	gerber.Line
 	Stroke string
 	Attr   map[string]string
 }
 
 func (e Line) Bounds() image.Rectangle {
-	return image.Rect(e.X1, e.Y1, e.X2, e.Y2)
+	return image.Rect(e.XStart, e.YStart, e.XEnd, e.YEnd)
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -220,26 +205,20 @@ func (e Line) SetAttr(k, v string) Line {
 
 // An Arc is a SVG Arc.
 type Arc struct {
-	Type        ElementType
-	Line        int
-	XS          int
-	YS          int
-	RadiusX     int
-	RadiusY     int
-	LargeArc    int
-	Sweep       int
-	XE          int
-	YE          int
-	StrokeWidth int
+	Type ElementType
+	gerber.Arc
+	RadiusX int
+	RadiusY int
 
-	CenterX int
-	CenterY int
-	Stroke  string
-	Attr    map[string]string
+	LargeArc int
+	Sweep    int
+
+	Stroke string
+	Attr   map[string]string
 }
 
 func (e Arc) Bounds() image.Rectangle {
-	return image.Rect(e.CenterX-e.RadiusX, e.CenterY-e.RadiusX, e.CenterX+e.RadiusX, e.CenterY+e.RadiusY)
+	return image.Rect(min(e.XStart, e.XEnd), max(e.YStart, e.YEnd), max(e.XStart, e.XEnd), max(e.YStart, e.YEnd))
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -300,19 +279,24 @@ func (p *Processor) fill(polarity bool) string {
 	return p.PolarityClear
 }
 
-func (p *Processor) Circle(lineIdx, x, y, diameter int, polarity bool) {
-	p.Data = append(p.Data, Circle{Line: lineIdx, X: x, Y: y, Radius: diameter / 2, Fill: p.fill(polarity)})
+func (p *Processor) Circle(circle gerber.Circle) {
+	p.Data = append(p.Data, Circle{Circle: circle, Fill: p.fill(circle.Polarity)})
 }
 
-func (p *Processor) Rectangle(lineIdx, x, y, width, height int, polarity bool, rotation float64) {
-	p.Data = append(p.Data, Rectangle{Line: lineIdx, Aperture: "R", X: x - width/2, Y: y + height/2, Width: width,
-		Height: height, Fill: p.fill(polarity), Rotation: rotation})
+func (p *Processor) Rectangle(rectangle gerber.Rectangle) {
+	rectangle.X -= rectangle.Width / 2
+	rectangle.Y += rectangle.Height / 2
+	p.Data = append(p.Data, Rectangle{Aperture: "R", Rectangle: rectangle, Fill: p.fill(rectangle.Polarity)})
 }
 
-func (p *Processor) Obround(lineIdx, x, y, width, height int, polarity bool, rotation float64) {
-	r := min(width, height) / 2
-	p.Data = append(p.Data, Rectangle{Line: lineIdx, Aperture: "O", X: x - width/2, Y: y + height/2, Width: width,
-		Height: height, RX: r, RY: r, Fill: p.fill(polarity), Rotation: rotation})
+func (p *Processor) Obround(obround gerber.Obround) {
+	r := min(obround.Width, obround.Height) / 2
+	obround.X -= obround.Width / 2
+	obround.Y += obround.Height / 2
+	p.Data = append(p.Data, Rectangle{Aperture: "O", Rectangle: gerber.Rectangle{Line: obround.Line,
+		X: obround.X - obround.Width/2,
+		Y: obround.Y + obround.Height/2, Width: obround.Width,
+		Height: obround.Height, Rotation: obround.Rotation}, RX: r, RY: r, Fill: p.fill(obround.Polarity)})
 }
 
 func (p *Processor) Contour(contour gerber.Contour) error {
@@ -320,9 +304,10 @@ func (p *Processor) Contour(contour gerber.Contour) error {
 		s := contour.Segments[0]
 		if s.Interpolation == gerber.InterpolationClockwise || s.Interpolation == gerber.InterpolationCCW {
 			if s.X == contour.X && s.Y == contour.Y {
-				vx, vy := float64(s.X-s.CenterX), float64(s.Y-s.CenterY)
+				vx, vy := float64(s.X-s.XCenter), float64(s.Y-s.YCenter)
 				r := int(math.Round(math.Sqrt(vx*vx + vy*vy)))
-				c := Circle{Line: contour.Line, X: s.CenterX, Y: s.CenterY, Radius: r, Fill: p.fill(contour.Polarity)}
+				c := Circle{Circle: gerber.Circle{Line: contour.Line, X: s.XCenter, Y: s.YCenter, Diameter: r * 2},
+					Fill: p.fill(contour.Polarity)}
 				p.Data = append(p.Data, c)
 				return nil
 			}
@@ -339,11 +324,11 @@ func (p *Processor) Contour(contour gerber.Contour) error {
 		case gerber.InterpolationCCW:
 			arc, err := calcArc(contour, i)
 			if err != nil {
-				return errors.Wrap(err, "")
+				return err
 			}
 			svgPath.Commands = append(svgPath.Commands, arc)
 		default:
-			return errors.Errorf("%d %+v", i, s)
+			return fmt.Errorf("%d %+v", i, s)
 		}
 	}
 	p.Data = append(p.Data, svgPath)
@@ -356,7 +341,7 @@ func calcArcParams(vs, ve [2]int, sweep int) (float64, int, error) {
 	diff := math.Abs(radiusS - radiusE)
 	diffRatio := math.Abs(radiusS/radiusE - 1)
 	if diff > 3 && diffRatio > 1e-2 {
-		return math.NaN(), -1, errors.Errorf("%f %f %f %f", radiusS, radiusE, diff, diffRatio)
+		return math.NaN(), -1, fmt.Errorf("%f %f %f %f", radiusS, radiusE, diff, diffRatio)
 	}
 
 	var largeArc int
@@ -378,25 +363,25 @@ func calcArc(contour gerber.Contour, idx int) (PathArc, error) {
 	}
 
 	s := contour.Segments[idx]
-	arc := PathArc{X: s.X, Y: s.Y, CenterX: s.CenterX, CenterY: s.CenterY}
+	arc := PathArc{X: s.X, Y: s.Y, CenterX: s.XCenter, CenterY: s.YCenter}
 	switch s.Interpolation {
 	case gerber.InterpolationClockwise:
 		arc.Sweep = 1
 	case gerber.InterpolationCCW:
 		arc.Sweep = 0
 	default:
-		return PathArc{}, errors.Errorf("%d", s.Interpolation)
+		return PathArc{}, fmt.Errorf("%d", s.Interpolation)
 	}
 
-	vs := [2]int{xs - s.CenterX, ys - s.CenterY}
-	ve := [2]int{s.X - s.CenterX, s.Y - s.CenterY}
+	vs := [2]int{xs - s.XCenter, ys - s.YCenter}
+	ve := [2]int{s.X - s.XCenter, s.Y - s.YCenter}
 	if ve == vs {
-		return PathArc{}, errors.Errorf("degenerate arc")
+		return PathArc{}, fmt.Errorf("degenerate arc")
 	}
 
 	radius, largeArc, err := calcArcParams(vs, ve, arc.Sweep)
 	if err != nil {
-		return PathArc{}, errors.Wrap(err, fmt.Sprintf("%#d %#d %#v", xs, ys, s))
+		return PathArc{}, fmt.Errorf("%#d %#d %#v %w", xs, ys, s, err)
 	}
 	arc.RadiusX, arc.RadiusY = int(math.Round(radius)), int(math.Round(radius))
 	arc.LargeArc = largeArc
@@ -404,32 +389,32 @@ func calcArc(contour gerber.Contour, idx int) (PathArc, error) {
 	return arc, nil
 }
 
-func (p *Processor) Line(lineIdx, x0, y0, x1, y1, diameter int, linecap gerber.LineCap) {
-	line := Line{Line: lineIdx, X1: x0, Y1: y0, X2: x1, Y2: y1, StrokeWidth: diameter, Cap: string(linecap), Stroke: p.PolarityDark}
+func (p *Processor) Line(gline gerber.Line) {
+	line := Line{Line: gline, Stroke: p.PolarityDark}
 	p.Data = append(p.Data, line)
 }
 
-func (p *Processor) Arc(lineIdx, xs, ys, xe, ye, xc, yc int, interpolation gerber.Interpolation, diameter int) error {
-	if xe == xs && ye == ys {
-		return errors.Errorf("degenerate arc")
+func (p *Processor) Arc(garc gerber.Arc) error {
+	if garc.XEnd == garc.XStart && garc.YEnd == garc.YStart {
+		return fmt.Errorf("degenerate arc")
 	}
 
-	arc := Arc{Line: lineIdx, XS: xs, YS: ys, XE: xe, YE: ye, StrokeWidth: diameter, CenterX: xc, CenterY: yc, Stroke: p.PolarityDark}
-	switch interpolation {
+	arc := Arc{Arc: garc, Stroke: p.PolarityDark}
+	switch garc.Interpolation {
 	case gerber.InterpolationClockwise:
 		arc.Sweep = 1
 	case gerber.InterpolationCCW:
 		arc.Sweep = 0
 	default:
-		return errors.Errorf("%d", interpolation)
+		return fmt.Errorf("%d", garc.Interpolation)
 	}
 
-	vs := [2]int{xs - xc, ys - yc}
-	ve := [2]int{xe - xc, ye - yc}
+	vs := [2]int{garc.XStart - garc.XCenter, garc.YStart - garc.YCenter}
+	ve := [2]int{garc.XEnd - garc.XCenter, garc.YEnd - garc.YCenter}
 
 	radius, largeArc, err := calcArcParams(vs, ve, arc.Sweep)
 	if err != nil {
-		return errors.Wrap(err, "")
+		return err
 	}
 	arc.RadiusX, arc.RadiusY = int(math.Round(radius)), int(math.Round(radius))
 	arc.LargeArc = largeArc
@@ -471,12 +456,12 @@ func (p *Processor) Write(w io.Writer) error {
 	}
 	svg += fmt.Sprintf(`viewBox="%s %s %s %s" style="background-color: %s;" xmlns="http://www.w3.org/2000/svg">`+"\n", p.x(p.MinX), p.y(p.MaxY), p.m(p.MaxX-p.MinX), p.m(p.MaxY-p.MinY), p.PolarityClear)
 	if _, err := w.Write([]byte(svg)); err != nil {
-		return errors.Wrap(err, "")
+		return err
 	}
 
 	if p.PanZoom {
 		if _, err := w.Write([]byte(`<script xlink:href="svgpan.js"/><g id="viewport" transform="translate(0, 0)">` + "\n")); err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 	}
 
@@ -484,7 +469,7 @@ func (p *Processor) Write(w io.Writer) error {
 	for _, datum := range p.Data {
 		bounds, err := Bounds(datum)
 		if err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 		if bounds.Min.X > svgBound.Max.X || svgBound.Min.X > bounds.Max.X || bounds.Min.Y > svgBound.Max.Y || svgBound.Min.Y > bounds.Max.Y {
 			continue
@@ -493,7 +478,9 @@ func (p *Processor) Write(w io.Writer) error {
 		var b []byte
 		switch d := datum.(type) {
 		case Circle:
-			b = []byte(fmt.Sprintf(`<circle cx="%s" cy="%s" r="%s" fill="%s" %s/>`, p.x(d.X), p.y(d.Y), p.m(d.Radius), d.Fill, attr(d.Attr)))
+			b = []byte(fmt.Sprintf(`<circle cx="%s" cy="%s" r="%s" fill="%s" %s/>`, p.x(d.X), p.y(d.Y),
+				p.m(d.Diameter/2),
+				d.Fill, attr(d.Attr)))
 		case Rectangle:
 			w, h := p.m(d.Width), p.m(d.Height)
 			b = []byte(fmt.Sprintf(`<rect x="%s" y="%s" width="%s" height="%s" rx="%s" ry="%s" fill="%s" transform
@@ -502,28 +489,28 @@ func (p *Processor) Write(w io.Writer) error {
 			var err error
 			b, err = p.pathBytes(d)
 			if err != nil {
-				return errors.Wrap(err, "")
+				return err
 			}
 		case Line:
-			b = []byte(fmt.Sprintf(`<line x1="%s" y1="%s" x2="%s" y2="%s" stroke-width="%s" stroke-linecap="%s" stroke="%s"%s/>`, p.x(d.X1), p.y(d.Y1), p.x(d.X2), p.y(d.Y2), p.m(d.StrokeWidth), d.Cap, d.Stroke, attr(d.Attr)))
+			b = []byte(fmt.Sprintf(`<line x1="%s" y1="%s" x2="%s" y2="%s" stroke-width="%s" stroke-linecap="%s" stroke="%s"%s/>`, p.x(d.XStart), p.y(d.YStart), p.x(d.XEnd), p.y(d.YEnd), p.m(d.Width), d.Cap, d.Stroke, attr(d.Attr)))
 		case Arc:
 			b = []byte(fmt.Sprintf(`<path d="M %s %s A %s %s 0 %d %d %s %s" stroke-width="%s" stroke="%s" stroke
--linecap="round"%s/>`, p.x(d.XS), p.y(d.YS), p.m(d.RadiusX), p.m(d.RadiusY), d.LargeArc, d.Sweep, p.x(d.XE), p.y(d.YE), p.m(d.StrokeWidth), d.Stroke, attr(d.Attr)))
+-linecap="round"%s/>`, p.x(d.XStart), p.y(d.YStart), p.m(d.RadiusX), p.m(d.RadiusY), d.LargeArc, d.Sweep, p.x(d.XEnd), p.y(d.YEnd), p.m(d.Width), d.Stroke, attr(d.Attr)))
 		default:
-			return errors.Errorf("%+v", d)
+			return fmt.Errorf("%+v", d)
 		}
 		if _, err := w.Write(append(b, '\n')); err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 	}
 
 	if p.PanZoom {
 		if _, err := w.Write([]byte(`</g>`)); err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 	}
 	if _, err := w.Write([]byte(`</svg>`)); err != nil {
-		return errors.Wrap(err, "")
+		return err
 	}
 	return nil
 }
@@ -541,7 +528,7 @@ func Bounds(element interface{}) (image.Rectangle, error) {
 	case Arc:
 		return e.Bounds(), nil
 	default:
-		return image.Rectangle{}, errors.Errorf("%#v", e)
+		return image.Rectangle{}, fmt.Errorf("%#v", e)
 	}
 }
 
@@ -555,7 +542,7 @@ func (p *Processor) pathBytes(svgp Path) ([]byte, error) {
 		case PathArc:
 			s = fmt.Sprintf("A %s %s 0 %d %d %s %s", p.m(c.RadiusX), p.m(c.RadiusY), c.LargeArc, c.Sweep, p.x(c.X), p.y(c.Y))
 		default:
-			return nil, errors.Errorf("%+v", c)
+			return nil, fmt.Errorf("%+v", c)
 		}
 		cmds = append(cmds, s)
 	}
@@ -580,7 +567,7 @@ func SVG(r io.Reader) (*Processor, error) {
 	processor := NewProcessor()
 	parser := gerber.NewParser(processor)
 	if err := parser.Parse(r); err != nil {
-		return nil, errors.Wrap(err, "")
+		return nil, err
 	}
 
 	return processor, nil

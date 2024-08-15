@@ -7,8 +7,6 @@ import (
 	"math"
 	"strconv"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 // fork: github.com/fumin/gerber
@@ -16,22 +14,22 @@ import (
 
 type Processor interface {
 	// Circle draws a circle.
-	Circle(lineIdx, x, y, diameter int, polarity bool)
+	Circle(Circle)
 
 	// Rectangle draws a rectangle.
-	Rectangle(lineIdx, x, y, width, height int, polarity bool, rotation float64)
+	Rectangle(Rectangle)
 
 	// Obround draws an obround.
-	Obround(lineIdx, x, y, width, height int, polarity bool, rotation float64)
+	Obround(Obround)
 
 	// Contour draws a contour.
 	Contour(Contour) error
 
 	// Line draws a line.
-	Line(lineIdx, x0, y0, x1, y1, diameter int, linecap LineCap)
+	Line(Line)
 
 	// Arc draws an arc.
-	Arc(lineIdx, xs, ys, xe, ye, xc, yc int, interpolation Interpolation, diameter int) error
+	Arc(Arc) error
 
 	// SetViewbox sets the viewbox of the Gerber image.
 	// It is called by the Parser when parsing has completed.
@@ -40,10 +38,10 @@ type Processor interface {
 
 func parseApertureID(word string) (string, error) {
 	if len(word) < 3 {
-		return "", errors.Errorf("%d", len(word))
+		return "", fmt.Errorf("%d", len(word))
 	}
 	if word[0] != 'D' {
-		return "", errors.Errorf("%v", word[0])
+		return "", fmt.Errorf("%v", word[0])
 	}
 
 	var digits int = len(word) - 1
@@ -71,6 +69,7 @@ type rectPrimitive struct {
 	Height      float64
 	CenterX     float64
 	CenterY     float64
+	Polarity    bool
 	Rotation    float64
 	SetVariable []func(p *rectPrimitive, f float64)
 }
@@ -122,7 +121,7 @@ func (err LinePrimitiveNotClosedError) Error() string {
 func parsePrimitive(lineIdx int, word string) (interface{}, error) {
 	splitted := strings.Split(word, primitiveDelimiter)
 	if len(splitted) == 0 {
-		return nil, errors.Errorf("no splitted")
+		return nil, fmt.Errorf("no splitted")
 	}
 	curLine := lineIdx
 	if strings.Contains(splitted[0], "\n") {
@@ -130,75 +129,75 @@ func parsePrimitive(lineIdx int, word string) (interface{}, error) {
 	}
 	code, err := strconv.Atoi(strings.TrimSpace(splitted[0]))
 	if err != nil {
-		return nil, errors.Wrap(err, "")
+		return nil, err
 	}
 	switch code {
 	case primitiveCodeCircle:
 		if len(splitted) != 5 {
-			return nil, errors.Errorf("%+v", splitted)
+			return nil, fmt.Errorf("%+v", splitted)
 		}
 		circle := circlePrimitive{}
 		exposure, err := strconv.Atoi(strings.TrimSpace(splitted[1]))
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		if exposure == 1 {
 			circle.Exposure = true
 		}
 		circle.Diameter, err = strconv.ParseFloat(strings.TrimSpace(splitted[2]), 64)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		circle.CenterX, err = strconv.ParseFloat(strings.TrimSpace(splitted[3]), 64)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		circle.CenterY, err = strconv.ParseFloat(strings.TrimSpace(splitted[4]), 64)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		return circle, nil
 	case primitiveCodeVectorLine:
 		if len(splitted) != 8 {
-			return nil, errors.Errorf("%+v", splitted)
+			return nil, fmt.Errorf("%+v", splitted)
 		}
 		line := vectorLinePrimitive{}
 		exposure, err := strconv.Atoi(strings.TrimSpace(splitted[1]))
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		if exposure == 1 {
 			line.Exposure = true
 		}
 		line.Width, err = strconv.ParseFloat(strings.TrimSpace(splitted[2]), 64)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		line.StartX, err = strconv.ParseFloat(strings.TrimSpace(splitted[3]), 64)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		line.StartY, err = strconv.ParseFloat(strings.TrimSpace(splitted[4]), 64)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		line.EndX, err = strconv.ParseFloat(strings.TrimSpace(splitted[5]), 64)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		line.EndY, err = strconv.ParseFloat(strings.TrimSpace(splitted[6]), 64)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		line.Rotation, err = strconv.ParseFloat(strings.TrimSpace(splitted[7]), 64)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		return line, nil
 	case primitiveCodeOutline:
 		line := outlinePrimitive{}
 		if len(splitted) < 3 {
-			return nil, errors.Errorf("%+v", splitted)
+			return nil, fmt.Errorf("%+v", splitted)
 		}
 
 		if strings.Contains(splitted[1], "\n") {
@@ -206,7 +205,7 @@ func parsePrimitive(lineIdx int, word string) (interface{}, error) {
 		}
 		exposure, err := strconv.Atoi(strings.TrimSpace(splitted[1]))
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		if exposure == 1 {
 			line.Exposure = true
@@ -217,10 +216,10 @@ func parsePrimitive(lineIdx int, word string) (interface{}, error) {
 		}
 		line.NumVertices, err = strconv.Atoi(strings.TrimSpace(splitted[2]))
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		if len(splitted) != 6+2*line.NumVertices {
-			return nil, errors.Errorf("%d", len(splitted))
+			return nil, fmt.Errorf("%d", len(splitted))
 		}
 
 		points := make([][2]string, 0)
@@ -230,7 +229,7 @@ func parsePrimitive(lineIdx int, word string) (interface{}, error) {
 			}
 			x, err := strconv.ParseFloat(strings.TrimSpace(splitted[2*i+3]), 64)
 			if err != nil {
-				return nil, errors.Wrap(err, fmt.Sprintf("%d", i))
+				return nil, fmt.Errorf("%d %w", i, err)
 			}
 
 			if strings.Contains(splitted[2*i+4], "\n") {
@@ -238,7 +237,7 @@ func parsePrimitive(lineIdx int, word string) (interface{}, error) {
 			}
 			y, err := strconv.ParseFloat(strings.TrimSpace(splitted[2*i+4]), 64)
 			if err != nil {
-				return nil, errors.Wrap(err, fmt.Sprintf("%d", i))
+				return nil, fmt.Errorf("%d %w", i, err)
 			}
 			line.Points = append(line.Points, [2]float64{x, y})
 			points = append(points, [2]string{strings.TrimSpace(splitted[2*i+3]), strings.TrimSpace(splitted[2*i+4])})
@@ -252,56 +251,56 @@ func parsePrimitive(lineIdx int, word string) (interface{}, error) {
 
 		line.Rotation, err = strconv.ParseFloat(strings.TrimSpace(splitted[len(splitted)-1]), 64)
 		if err != nil {
-			return nil, errors.Errorf("%+v", splitted)
+			return nil, fmt.Errorf("%+v", splitted)
 		}
 		return line, nil
 	case primitiveCodeLowerLeftLine:
 		if len(splitted) != 7 {
-			return nil, errors.Errorf("%+v", splitted)
+			return nil, fmt.Errorf("%+v", splitted)
 		}
 		line := lowerLeftLinePrimitive{}
 		exposure, err := strconv.Atoi(strings.TrimSpace(splitted[1]))
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		if exposure == 1 {
 			line.Exposure = true
 		}
 		line.Width, err = strconv.ParseFloat(strings.TrimSpace(splitted[2]), 64)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		line.Height, err = strconv.ParseFloat(strings.TrimSpace(splitted[3]), 64)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		line.X, err = strconv.ParseFloat(strings.TrimSpace(splitted[4]), 64)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		line.Y, err = strconv.ParseFloat(strings.TrimSpace(splitted[5]), 64)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		line.Rotation, err = strconv.ParseFloat(strings.TrimSpace(splitted[6]), 64)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		return line, nil
 	case primitiveCodeRect:
 		if len(splitted) != 7 {
-			return nil, errors.Errorf("%+v", splitted)
+			return nil, fmt.Errorf("%+v", splitted)
 		}
 		rect := rectPrimitive{}
 		exposure, err := strconv.Atoi(strings.TrimSpace(splitted[1]))
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		}
 		if exposure == 1 {
 			rect.Exposure = true
 		}
 		if isVar, err := injectFloat(&rect.Width, splitted[2]); err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		} else if isVar {
 			rect.SetVariable = append(rect.SetVariable, func(p *rectPrimitive, f float64) {
 				p.Width = f
@@ -309,7 +308,7 @@ func parsePrimitive(lineIdx int, word string) (interface{}, error) {
 		}
 
 		if isVar, err := injectFloat(&rect.Height, splitted[3]); err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		} else if isVar {
 			rect.SetVariable = append(rect.SetVariable, func(p *rectPrimitive, f float64) {
 				p.Height = f
@@ -317,7 +316,7 @@ func parsePrimitive(lineIdx int, word string) (interface{}, error) {
 		}
 
 		if isVar, err := injectFloat(&rect.CenterX, splitted[4]); err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		} else if isVar {
 			rect.SetVariable = append(rect.SetVariable, func(p *rectPrimitive, f float64) {
 				p.CenterX = f
@@ -325,7 +324,7 @@ func parsePrimitive(lineIdx int, word string) (interface{}, error) {
 		}
 
 		if isVar, err := injectFloat(&rect.CenterY, splitted[5]); err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		} else if isVar {
 			rect.SetVariable = append(rect.SetVariable, func(p *rectPrimitive, f float64) {
 				p.CenterY = f
@@ -333,7 +332,7 @@ func parsePrimitive(lineIdx int, word string) (interface{}, error) {
 		}
 
 		if isVar, err := injectFloat(&rect.Rotation, splitted[6]); err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, err
 		} else if isVar {
 			rect.SetVariable = append(rect.SetVariable, func(p *rectPrimitive, f float64) {
 				p.Rotation = f
@@ -342,7 +341,7 @@ func parsePrimitive(lineIdx int, word string) (interface{}, error) {
 
 		return rect, nil
 	default:
-		return nil, errors.Errorf("%+v", splitted)
+		return nil, fmt.Errorf("%+v", splitted)
 	}
 }
 
@@ -351,32 +350,6 @@ type aperture struct {
 	ID       string
 	Template template
 	Params   []float64
-}
-
-// A Segment is a stroked line.
-type Segment struct {
-	Interpolation Interpolation
-	X             int
-	Y             int
-	CenterX       int
-	CenterY       int
-}
-
-// A Contour is a closed sequence of connected linear or circular segments.
-type Contour struct {
-	Line     int
-	X        int
-	Y        int
-	Segments []Segment
-	Polarity bool
-}
-
-type Rectangle struct {
-	Width    int
-	Height   int
-	CenterX  int
-	CenterY  int
-	Rotation float64
 }
 
 type regionParser struct {
@@ -412,13 +385,13 @@ func (p *regionParser) process(lineIdx int, word string) error {
 	case strings.HasPrefix(word, "X"):
 		return p.processModalD01(lineIdx, word)
 	default:
-		return errors.Errorf("unknown command")
+		return fmt.Errorf("unknown command")
 	}
 }
 
 func (p *regionParser) processModalD01(lineIdx int, word string) error {
 	if !p.cp.modalD01 {
-		return errors.Errorf("not in modal D01 mode")
+		return fmt.Errorf("not in modal D01 mode")
 	}
 	return p.processD01(lineIdx, word)
 }
@@ -426,7 +399,7 @@ func (p *regionParser) processModalD01(lineIdx int, word string) error {
 func (p *regionParser) processD01(lineIdx int, word string) error {
 	coords, err := parseCoord(word)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("\"%s\"", word))
+		return fmt.Errorf(fmt.Sprintf("\"%s\"", word))
 	}
 	x, y := p.cp.findXY(coords)
 
@@ -437,9 +410,9 @@ func (p *regionParser) processD01(lineIdx int, word string) error {
 	case InterpolationCCW:
 		i, j, err := p.cp.findIJ(coords)
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("%+v", coords))
+			return fmt.Errorf("%+v %w", coords, err)
 		}
-		s.CenterX, s.CenterY = p.cp.x+i, p.cp.y+j
+		s.XCenter, s.YCenter = p.cp.x+i, p.cp.y+j
 	}
 	p.contour.Segments = append(p.contour.Segments, s)
 
@@ -451,14 +424,14 @@ func (p *regionParser) processD01(lineIdx int, word string) error {
 func (p *regionParser) processD02(lineIdx int, word string) error {
 	if p.gotCommand {
 		if err := p.cp.pc.Contour(p.contour); err != nil {
-			return errors.Wrap(err, "")
+			return err
 		}
 	}
 	p.gotCommand = true
 
 	coords, err := parseCoord(word)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("\"%s\"", word))
+		return fmt.Errorf("\"%s\" %w", word, err)
 	}
 	x, y := p.cp.findXY(coords)
 	p.cp.setXY(x, y)
@@ -578,7 +551,7 @@ func (p *commandProcessor) processWord(lineIdx int, word string) error {
 	switch {
 	case p.rp != nil:
 		if err := p.rp.process(lineIdx, word); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("%+v", p.rp))
+			return fmt.Errorf("%+v %w", p.rp, err)
 		}
 		if word == commandG37 {
 			p.rp = nil
@@ -640,7 +613,7 @@ func (p *commandProcessor) processWord(lineIdx int, word string) error {
 		p.pc.SetViewbox(p.minX, p.maxX, p.minY, p.maxY)
 		return nil
 	default:
-		return errors.Errorf("unknown command")
+		return fmt.Errorf("unknown command")
 	}
 }
 
@@ -664,7 +637,7 @@ func (p *commandProcessor) setXY(x, y int) {
 
 func (p *commandProcessor) processModalD01(lineIdx int, word string) error {
 	if !p.modalD01 {
-		return errors.Errorf("not in modal D01 mode")
+		return fmt.Errorf("not in modal D01 mode")
 	}
 	return p.processD01(lineIdx, word)
 }
@@ -672,7 +645,7 @@ func (p *commandProcessor) processModalD01(lineIdx int, word string) error {
 func (p *commandProcessor) processD01(lineIdx int, word string) error {
 	coords, err := parseCoord(word)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("\"%s\"", word))
+		return fmt.Errorf("\"%s\" %w", word, err)
 	}
 	x, y := p.findXY(coords)
 
@@ -682,29 +655,29 @@ func (p *commandProcessor) processD01(lineIdx int, word string) error {
 		diameter = p.u(p.ap.Params[0])
 	case templateNameRectangle:
 		if p.ap.Params[0] != p.ap.Params[1] {
-			return errors.Errorf("%+v", p.ap)
+			return fmt.Errorf("%+v", p.ap)
 		}
 		diameter = p.u(p.ap.Params[0])
 	default:
-		return errors.Errorf("%+v", p.ap)
+		return fmt.Errorf("%+v", p.ap)
 	}
 
 	switch p.interpolation {
 	case InterpolationLinear:
-		p.pc.Line(lineIdx, p.x, p.y, x, y, diameter, LineCapRound)
+		p.pc.Line(Line{lineIdx, p.x, p.y, x, y, diameter, LineCapRound, 0})
 	case InterpolationClockwise:
 		fallthrough
 	case InterpolationCCW:
 		i, j, err := p.findIJ(coords)
 		if err != nil {
-			return errors.Errorf("%+v", coords)
+			return fmt.Errorf("%+v", coords)
 		}
 		xc, yc := p.x+i, p.y+j
-		if err := p.pc.Arc(lineIdx, p.x, p.y, x, y, xc, yc, p.interpolation, diameter); err != nil {
-			return errors.Wrap(err, "")
+		if err := p.pc.Arc(Arc{lineIdx, p.x, p.y, x, y, xc, yc, diameter, p.interpolation}); err != nil {
+			return err
 		}
 	default:
-		return errors.Errorf("%d", p.interpolation)
+		return fmt.Errorf("%d", p.interpolation)
 	}
 
 	p.setXY(x, y)
@@ -715,7 +688,7 @@ func (p *commandProcessor) processD01(lineIdx int, word string) error {
 func (p *commandProcessor) processD02(lineIdx int, word string) error {
 	coords, err := parseCoord(word)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("\"%s\"", word))
+		return fmt.Errorf("\"%s\", %w", word, err)
 	}
 	x, y := p.findXY(coords)
 	p.setXY(x, y)
@@ -726,13 +699,13 @@ func (p *commandProcessor) processD02(lineIdx int, word string) error {
 func (p *commandProcessor) processD03(lineIdx int, word string) error {
 	coords, err := parseCoord(word)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("\"%s\"", word))
+		return fmt.Errorf("\"%s\" %w", word, err)
 	}
 	x, y := p.findXY(coords)
 	p.setXY(x, y)
 
 	if err := p.flash(lineIdx); err != nil {
-		return errors.Wrap(err, "")
+		return err
 	}
 	p.modalD01 = false
 	return nil
@@ -742,11 +715,12 @@ func (p *commandProcessor) flash(lineIdx int) error {
 	params := p.ap.Params
 	switch p.ap.Template.Name {
 	case templateNameCircle:
-		p.pc.Circle(lineIdx, p.x, p.y, p.u(params[0]), p.polarity)
+		p.pc.Circle(Circle{lineIdx, p.x, p.y, p.u(params[0]), p.polarity})
 	case templateNameRectangle:
-		p.pc.Rectangle(lineIdx, p.x, p.y, p.u(params[0]), p.u(params[1]), p.polarity, 0)
+		p.pc.Rectangle(Rectangle{Line: lineIdx, X: p.x, Y: p.y, Width: p.u(params[0]), Height: p.u(params[1]),
+			Polarity: p.polarity})
 	case templateNameObround:
-		p.pc.Obround(lineIdx, p.x, p.y, p.u(params[0]), p.u(params[1]), p.polarity, 0)
+		p.pc.Obround(Obround{lineIdx, p.x, p.y, p.u(params[0]), p.u(params[1]), p.polarity, 0})
 	default:
 		return p.flashUserDefinedTmpl(lineIdx)
 	}
@@ -755,58 +729,61 @@ func (p *commandProcessor) flash(lineIdx int) error {
 
 func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 	if !p.polarity {
-		return errors.Errorf("%v", p.polarity)
+		return fmt.Errorf("%v", p.polarity)
 	}
 	for i, primitive := range p.ap.Template.Primitives {
 		switch pm := primitive.(type) {
 		case circlePrimitive:
 			if !pm.Exposure {
-				return errors.Errorf("%d %+v", i, pm)
+				return fmt.Errorf("%d %+v", i, pm)
 			}
-			p.pc.Circle(lineIdx, p.x+p.u(pm.CenterX), p.y+p.u(pm.CenterY), p.u(pm.Diameter), p.polarity)
+			p.pc.Circle(Circle{lineIdx, p.x + p.u(pm.CenterX), p.y + p.u(pm.CenterY), p.u(pm.Diameter), p.polarity})
 		case vectorLinePrimitive:
 			if !pm.Exposure {
-				return errors.Errorf("%d %+v", i, pm)
+				return fmt.Errorf("%d %+v", i, pm)
 			}
 			if pm.Rotation != 0 {
-				return errors.Errorf("%d %+v", i, pm)
+				return fmt.Errorf("%d %+v", i, pm)
 			}
-			p.pc.Line(lineIdx, p.x+p.u(pm.StartX), p.y+p.u(pm.StartY), p.x+p.u(pm.EndX), p.y+p.u(pm.EndY), p.u(pm.Width), LineCapButt)
+			p.pc.Line(Line{lineIdx, p.x + p.u(pm.StartX), p.y + p.u(pm.StartY), p.x + p.u(pm.EndX), p.y + p.u(pm.EndY),
+				p.u(pm.Width), LineCapButt, 0})
 		case outlinePrimitive:
 			if !pm.Exposure {
-				return errors.Errorf("%d %+v", i, pm)
+				return fmt.Errorf("%d %+v", i, pm)
 			}
 			if pm.Rotation != 0 {
-				return errors.Errorf("%d %+v", i, pm)
+				return fmt.Errorf("%d %+v", i, pm)
 			}
 			contour, err := p.contourFromOutline(lineIdx, pm)
 			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("%d %+v", i, pm))
+				return fmt.Errorf("%d %+v %w", i, pm, err)
 			}
 			if err := p.pc.Contour(contour); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("%d %+v", i, pm))
+				return fmt.Errorf("%d %+v %w", i, pm, err)
 			}
 		case lowerLeftLinePrimitive:
 			if !pm.Exposure {
-				return errors.Errorf("%d %+v", i, pm)
+				return fmt.Errorf("%d %+v", i, pm)
 			}
 			if pm.Rotation != 0 {
-				return errors.Errorf("%d %+v", i, pm)
+				return fmt.Errorf("%d %+v", i, pm)
 			}
-			p.pc.Rectangle(lineIdx, p.x+p.u(pm.X+pm.Width/2), p.y+p.u(pm.Y+pm.Height/2), p.u(pm.Width),
-				p.u(pm.Height), p.polarity, pm.Rotation)
+			p.pc.Rectangle(Rectangle{Line: lineIdx, X: p.x + p.u(pm.X+pm.Width/2), Y: p.y + p.u(pm.Y+pm.Height/2),
+				Width:  p.u(pm.Width),
+				Height: p.u(pm.Height), Polarity: p.polarity, Rotation: pm.Rotation})
 		case rectPrimitive:
 			if !pm.Exposure {
-				return errors.Errorf("%d %+v", i, pm)
+				return fmt.Errorf("%d %+v", i, pm)
 			}
 			if pm.SetVariable != nil {
 				for i, f := range pm.SetVariable {
 					f(&pm, p.ap.Params[i])
 				}
 			}
-			p.pc.Rectangle(lineIdx, p.x, p.y, p.u(pm.Width), p.u(pm.Height), p.polarity, pm.Rotation)
+			p.pc.Rectangle(Rectangle{Line: lineIdx, X: p.x + p.u(pm.CenterX), Y: p.y + p.u(pm.CenterY), Width: p.u(pm.Width),
+				Height: p.u(pm.Height), Polarity: pm.Polarity, Rotation: pm.Rotation})
 		default:
-			return errors.Errorf("%d %+v", i, p)
+			return fmt.Errorf("%d %+v", i, p)
 		}
 	}
 	return nil
@@ -815,7 +792,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 func (p *commandProcessor) contourFromOutline(lineIdx int, outline outlinePrimitive) (Contour, error) {
 	contour := Contour{Line: lineIdx, Polarity: p.polarity}
 	if len(outline.Points) < 3 {
-		return Contour{}, errors.Errorf("%+v", outline.Points)
+		return Contour{}, fmt.Errorf("%+v", outline.Points)
 	}
 	contour.X = p.x + p.u(outline.Points[0][0])
 	contour.Y = p.y + p.u(outline.Points[0][1])
@@ -848,7 +825,7 @@ func parseCoord(word string) ([]coord, error) {
 		default:
 			cur.I, err = strconv.Atoi(string(digits))
 			if err != nil {
-				return nil, errors.Wrap(err, fmt.Sprintf("%d \"%s\"", i, digits))
+				return nil, fmt.Errorf("%d \"%s\" %w", i, digits, err)
 			}
 			coords = append(coords, cur)
 			cur = coord{}
@@ -859,7 +836,7 @@ func parseCoord(word string) ([]coord, error) {
 
 	cur.I, err = strconv.Atoi(string(digits))
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("invalid digits \"%s\"", digits))
+		return nil, fmt.Errorf("invalid digits \"%s\" %w", digits, err)
 	}
 	coords = append(coords, cur)
 
@@ -897,7 +874,7 @@ func (p *commandProcessor) findIJ(coords []coord) (int, int, error) {
 		}
 	}
 	if !got {
-		return -math.MaxInt, -math.MaxInt, errors.Errorf("no i")
+		return -math.MaxInt, -math.MaxInt, fmt.Errorf("no i")
 	}
 
 	got = false
@@ -910,7 +887,7 @@ func (p *commandProcessor) findIJ(coords []coord) (int, int, error) {
 		}
 	}
 	if !got {
-		return -math.MaxInt, -math.MaxInt, errors.Errorf("no j")
+		return -math.MaxInt, -math.MaxInt, fmt.Errorf("no j")
 	}
 
 	return i, j, nil
@@ -921,7 +898,7 @@ func (p *commandProcessor) parseAD(lineIdx int, word string) error {
 	var err error
 	aperture.ID, err = parseApertureID(word)
 	if err != nil {
-		return errors.Wrap(err, "")
+		return err
 	}
 	afterAID := word[len(aperture.ID):]
 
@@ -948,19 +925,19 @@ func (p *commandProcessor) parseAD(lineIdx int, word string) error {
 			for k := range p.templates {
 				tmpls = append(tmpls, k)
 			}
-			return errors.Errorf("%s %+v", tmplName, tmpls)
+			return fmt.Errorf("%s %+v", tmplName, tmpls)
 		}
 	}
 
 	if commaIdx != -1 {
 		if commaIdx+1 > len(afterAID) {
-			return errors.Errorf("%d %s", commaIdx, afterAID)
+			return fmt.Errorf("%d %s", commaIdx, afterAID)
 		}
 		params := strings.Split(afterAID[commaIdx+1:], "X")
 		for i, pStr := range params {
 			p, err := strconv.ParseFloat(pStr, 64)
 			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("%d", i))
+				return fmt.Errorf("%d %w", i, err)
 			}
 			aperture.Params = append(aperture.Params, p)
 		}
@@ -975,11 +952,11 @@ func (p *commandProcessor) parseAD(lineIdx int, word string) error {
 		expectedParams = 2
 	}
 	if expectedParams != len(aperture.Params) {
-		return errors.Errorf("%d %+v", expectedParams, aperture.Params)
+		return fmt.Errorf("%d %+v", expectedParams, aperture.Params)
 	}
 
 	if prev, ok := p.apertures[aperture.ID]; ok {
-		return errors.Errorf("%+v", prev)
+		return fmt.Errorf("%+v", prev)
 	}
 	p.apertures[aperture.ID] = aperture
 
@@ -988,11 +965,11 @@ func (p *commandProcessor) parseAD(lineIdx int, word string) error {
 
 func (p *commandProcessor) processFS(lineIdx int, word string) error {
 	if len(word) < 7 {
-		return errors.Errorf("%d", len(word))
+		return fmt.Errorf("%d", len(word))
 	}
 	decimal, err := strconv.Atoi(word[6:7])
 	if err != nil {
-		return errors.Wrap(err, "")
+		return err
 	}
 	p.decimal = math.Pow(10, float64(decimal))
 	return nil
@@ -1004,7 +981,7 @@ func (p *commandProcessor) u(f float64) int {
 
 func (p *commandProcessor) processMO(lineIdx int, word string) error {
 	if len(word) != 4 {
-		return errors.Errorf("%d", len(word))
+		return fmt.Errorf("%d", len(word))
 	}
 	unit := word[2:]
 	switch unit {
@@ -1015,20 +992,20 @@ func (p *commandProcessor) processMO(lineIdx int, word string) error {
 		p.unit = UnitInch
 		return nil
 	default:
-		return errors.Errorf("%s", unit)
+		return fmt.Errorf("%s", unit)
 	}
 }
 
 func (p *commandProcessor) processSR(lineIdx int, word string) error {
 	if word != "SRX1Y1I0J0" {
-		return errors.Errorf("unsupported SR")
+		return fmt.Errorf("unsupported SR")
 	}
 	return nil
 }
 
 func (p *commandProcessor) processLP(lineIdx int, word string) error {
 	if len(word) != 3 {
-		return errors.Errorf("%d", len(word))
+		return fmt.Errorf("%d", len(word))
 	}
 	switch word[2] {
 	case 'D':
@@ -1036,7 +1013,7 @@ func (p *commandProcessor) processLP(lineIdx int, word string) error {
 	case 'C':
 		p.polarity = false
 	default:
-		return errors.Errorf("%s", word)
+		return fmt.Errorf("%s", word)
 	}
 	return nil
 }
@@ -1049,7 +1026,7 @@ func (p *commandProcessor) processDnn(lineIdx int, word string) error {
 		for k := range p.apertures {
 			aps = append(aps, k)
 		}
-		return errors.Errorf("%+v", aps)
+		return fmt.Errorf("%+v", aps)
 	}
 	p.modalD01 = false
 	return nil
@@ -1057,7 +1034,7 @@ func (p *commandProcessor) processDnn(lineIdx int, word string) error {
 
 func (p *commandProcessor) processExtended(lineIdx int, words []string) error {
 	if len(words) == 0 {
-		return errors.Errorf("no words")
+		return fmt.Errorf("no words")
 	}
 
 	switch {
@@ -1066,13 +1043,13 @@ func (p *commandProcessor) processExtended(lineIdx int, words []string) error {
 		for _, w := range words[1:] {
 			primitive, err := parsePrimitive(lineIdx, w)
 			if err != nil {
-				return errors.Wrap(err, "")
+				return err
 			}
 			tmpl.Primitives = append(tmpl.Primitives, primitive)
 		}
 		p.templates[tmpl.Name] = tmpl
 	default:
-		return errors.Errorf("unknown command")
+		return fmt.Errorf("unknown command")
 	}
 
 	return nil
@@ -1116,10 +1093,10 @@ func (p *Parser) parse(lineIdx int, line string) error {
 		// Split by *
 		joined := strings.Join(p.cmdLines, "\n")
 		if len(joined) == 0 {
-			return errors.Errorf("%d", p.cmdStart)
+			return fmt.Errorf("%d", p.cmdStart)
 		}
 		if !strings.HasSuffix(joined, wordTerminator) {
-			return errors.Errorf("%s", joined)
+			return fmt.Errorf("%s", joined)
 		}
 		joined = joined[:len(joined)-len(wordTerminator)]
 		words := strings.Split(joined, wordTerminator)
@@ -1133,7 +1110,7 @@ func (p *Parser) parse(lineIdx int, line string) error {
 		if strings.HasSuffix(line, extendedCommandDelimiter) {
 			word := line[len(extendedCommandDelimiter) : len(line)-len(extendedCommandDelimiter)]
 			if !strings.HasSuffix(word, wordTerminator) {
-				return errors.Errorf("%s", word)
+				return fmt.Errorf("%s", word)
 			}
 			return p.cmdProcessor.processWord(lineIdx, word[:len(word)-len(wordTerminator)])
 		}
@@ -1145,11 +1122,11 @@ func (p *Parser) parse(lineIdx int, line string) error {
 	}
 
 	if !strings.HasSuffix(line, wordTerminator) {
-		return errors.Errorf("%s", line)
+		return fmt.Errorf("%s", line)
 	}
 	word := line[:len(line)-len(wordTerminator)]
 	if err := p.cmdProcessor.processWord(lineIdx, word); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("unable to parse word \"%s\"", word))
+		return fmt.Errorf("unable to parse word \"%s\" %w", word, err)
 	}
 
 	return nil
@@ -1167,11 +1144,11 @@ func (parser *Parser) Parse(r io.Reader) error {
 			continue
 		}
 		if err := parser.parse(lineIdx, line); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("at line %d: \"%s\"", lineIdx, line))
+			return fmt.Errorf("at line %d: \"%s\" %w", lineIdx, line, err)
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		return errors.Wrap(err, "")
+		return err
 	}
 
 	return nil
