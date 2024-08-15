@@ -6,14 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/hopeio/utils/encoding/gerber"
+	psvg "github.com/hopeio/utils/media/image/svg"
 	"image"
 	"io"
 	"math"
-	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/mitchellh/mapstructure"
 )
 
 // An ElementType is a SVG element type.
@@ -43,7 +41,7 @@ func (e Circle) Bounds() image.Rectangle {
 // MarshalJSON implements json.Marshaler.
 func (e Circle) MarshalJSON() ([]byte, error) {
 	e.Type = ElementTypeCircle
-	return marshalByMap(e)
+	return json.Marshal(e)
 }
 
 func (e Circle) SetAttr(k, v string) Circle {
@@ -52,18 +50,6 @@ func (e Circle) SetAttr(k, v string) Circle {
 	}
 	e.Attr[k] = v
 	return e
-}
-
-func marshalByMap(e interface{}) ([]byte, error) {
-	m := make(map[string]interface{})
-	if err := mapstructure.Decode(e, &m); err != nil {
-		return nil, err
-	}
-	b, err := json.Marshal(m)
-	if err != nil {
-		return nil, err
-	}
-	return b, nil
 }
 
 // A Rectangle is a rectangle.
@@ -84,7 +70,7 @@ func (e Rectangle) Bounds() image.Rectangle {
 // MarshalJSON implements json.Marshaler.
 func (e Rectangle) MarshalJSON() ([]byte, error) {
 	e.Type = ElementTypeRectangle
-	return marshalByMap(e)
+	return json.Marshal(e)
 }
 
 func (e Rectangle) SetAttr(k, v string) Rectangle {
@@ -105,7 +91,7 @@ type PathLine struct {
 // MarshalJSON implements json.Marshaler.
 func (e PathLine) MarshalJSON() ([]byte, error) {
 	e.Type = ElementTypeLine
-	return marshalByMap(e)
+	return json.Marshal(e)
 }
 
 // A PathArc is an arc in a SVG path.
@@ -125,7 +111,7 @@ type PathArc struct {
 // MarshalJSON implements json.Marshaler.
 func (e PathArc) MarshalJSON() ([]byte, error) {
 	e.Type = ElementTypeArc
-	return marshalByMap(e)
+	return json.Marshal(e)
 }
 
 // A Path is a SVG path.
@@ -166,7 +152,7 @@ func (e Path) Bounds() (image.Rectangle, error) {
 // MarshalJSON implements json.Marshaler.
 func (e Path) MarshalJSON() ([]byte, error) {
 	e.Type = ElementTypePath
-	return marshalByMap(e)
+	return json.Marshal(e)
 }
 
 func (e Path) SetAttr(k, v string) Path {
@@ -192,7 +178,7 @@ func (e Line) Bounds() image.Rectangle {
 // MarshalJSON implements json.Marshaler.
 func (e Line) MarshalJSON() ([]byte, error) {
 	e.Type = ElementTypeLine
-	return marshalByMap(e)
+	return json.Marshal(e)
 }
 
 func (e Line) SetAttr(k, v string) Line {
@@ -224,7 +210,7 @@ func (e Arc) Bounds() image.Rectangle {
 // MarshalJSON implements json.Marshaler.
 func (e Arc) MarshalJSON() ([]byte, error) {
 	e.Type = ElementTypeArc
-	return marshalByMap(e)
+	return json.Marshal(e)
 }
 
 func (e Arc) SetAttr(k, v string) Arc {
@@ -291,8 +277,6 @@ func (p *Processor) Rectangle(rectangle gerber.Rectangle) {
 
 func (p *Processor) Obround(obround gerber.Obround) {
 	r := min(obround.Width, obround.Height) / 2
-	obround.X -= obround.Width / 2
-	obround.Y += obround.Height / 2
 	p.Data = append(p.Data, Rectangle{Aperture: "O", Rectangle: gerber.Rectangle{Line: obround.Line,
 		X: obround.X - obround.Width/2,
 		Y: obround.Y + obround.Height/2, Width: obround.Width,
@@ -430,24 +414,6 @@ func (p *Processor) SetViewbox(minX, maxX, minY, maxY int) {
 	p.MaxY = maxY
 }
 
-func attr(m map[string]string) string {
-	if len(m) == 0 {
-		return ""
-	}
-
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	s := ""
-	for _, k := range keys {
-		s += fmt.Sprintf(` %s="%s"`, k, m[k])
-	}
-	return s
-}
-
 // Write writes Gerber graphics operations as SVG.
 func (p *Processor) Write(w io.Writer) error {
 	svg := "<svg "
@@ -480,11 +446,12 @@ func (p *Processor) Write(w io.Writer) error {
 		case Circle:
 			b = []byte(fmt.Sprintf(`<circle cx="%s" cy="%s" r="%s" fill="%s" %s/>`, p.x(d.X), p.y(d.Y),
 				p.m(d.Diameter/2),
-				d.Fill, attr(d.Attr)))
+				d.Fill, psvg.FormatAttr(d.Attr)))
 		case Rectangle:
 			w, h := p.m(d.Width), p.m(d.Height)
 			b = []byte(fmt.Sprintf(`<rect x="%s" y="%s" width="%s" height="%s" rx="%s" ry="%s" fill="%s" transform
-="rotate(%.1f)" %s/>`, p.x(d.X), p.y(d.Y), w, h, p.m(d.RX), p.m(d.RY), d.Fill, d.Rotation, attr(d.Attr)))
+="rotate(%.1f, %s, %s)" %s/>`, p.x(d.X), p.y(d.Y), w, h, p.m(d.RX), p.m(d.RY), d.Fill, d.Rotation, p.x(d.X+d.Width/2),
+				p.y(d.Y-d.Height/2), psvg.FormatAttr(d.Attr)))
 		case Path:
 			var err error
 			b, err = p.pathBytes(d)
@@ -492,10 +459,10 @@ func (p *Processor) Write(w io.Writer) error {
 				return err
 			}
 		case Line:
-			b = []byte(fmt.Sprintf(`<line x1="%s" y1="%s" x2="%s" y2="%s" stroke-width="%s" stroke-linecap="%s" stroke="%s"%s/>`, p.x(d.XStart), p.y(d.YStart), p.x(d.XEnd), p.y(d.YEnd), p.m(d.Width), d.Cap, d.Stroke, attr(d.Attr)))
+			b = []byte(fmt.Sprintf(`<line x1="%s" y1="%s" x2="%s" y2="%s" stroke-width="%s" stroke-linecap="%s" stroke="%s"%s/>`, p.x(d.XStart), p.y(d.YStart), p.x(d.XEnd), p.y(d.YEnd), p.m(d.Width), d.Cap, d.Stroke, psvg.FormatAttr(d.Attr)))
 		case Arc:
 			b = []byte(fmt.Sprintf(`<path d="M %s %s A %s %s 0 %d %d %s %s" stroke-width="%s" stroke="%s" stroke
--linecap="round"%s/>`, p.x(d.XStart), p.y(d.YStart), p.m(d.RadiusX), p.m(d.RadiusY), d.LargeArc, d.Sweep, p.x(d.XEnd), p.y(d.YEnd), p.m(d.Width), d.Stroke, attr(d.Attr)))
+-linecap="round"%s/>`, p.x(d.XStart), p.y(d.YStart), p.m(d.RadiusX), p.m(d.RadiusY), d.LargeArc, d.Sweep, p.x(d.XEnd), p.y(d.YEnd), p.m(d.Width), d.Stroke, psvg.FormatAttr(d.Attr)))
 		default:
 			return fmt.Errorf("%+v", d)
 		}
@@ -546,7 +513,7 @@ func (p *Processor) pathBytes(svgp Path) ([]byte, error) {
 		}
 		cmds = append(cmds, s)
 	}
-	b := fmt.Sprintf(`<path d="%s" fill="%s" line="%d"%s/>`, strings.Join(cmds, " "), svgp.Fill, svgp.Line, attr(svgp.Attr))
+	b := fmt.Sprintf(`<path d="%s" fill="%s" line="%d"%s/>`, strings.Join(cmds, " "), svgp.Fill, svgp.Line, psvg.FormatAttr(svgp.Attr))
 	return []byte(b), nil
 }
 

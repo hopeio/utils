@@ -3,6 +3,7 @@ package gerber
 import (
 	"bufio"
 	"fmt"
+	"image"
 	"io"
 	"math"
 	"strconv"
@@ -69,7 +70,6 @@ type rectPrimitive struct {
 	Height      float64
 	CenterX     float64
 	CenterY     float64
-	Polarity    bool
 	Rotation    float64
 	SetVariable []func(p *rectPrimitive, f float64)
 }
@@ -619,19 +619,21 @@ func (p *commandProcessor) processWord(lineIdx int, word string) error {
 
 func (p *commandProcessor) setXY(x, y int) {
 	p.x = x
-	if x < p.minX {
-		p.minX = x
-	}
-	if x > p.maxX {
-		p.maxX = x
-	}
-
 	p.y = y
-	if y < p.minY {
-		p.minY = y
+}
+
+func (p *commandProcessor) bounds(rect image.Rectangle) {
+	if p.minX > rect.Min.X {
+		p.minX = rect.Min.X
 	}
-	if y > p.maxY {
-		p.maxY = y
+	if p.maxX < rect.Max.X {
+		p.maxX = rect.Max.X
+	}
+	if p.minY > rect.Min.Y {
+		p.minY = rect.Min.Y
+	}
+	if p.maxY < rect.Max.Y {
+		p.maxY = rect.Max.Y
 	}
 }
 
@@ -715,12 +717,18 @@ func (p *commandProcessor) flash(lineIdx int) error {
 	params := p.ap.Params
 	switch p.ap.Template.Name {
 	case templateNameCircle:
-		p.pc.Circle(Circle{lineIdx, p.x, p.y, p.u(params[0]), p.polarity})
+		c := Circle{lineIdx, p.x, p.y, p.u(params[0]), p.polarity}
+		p.pc.Circle(c)
+		p.bounds(c.Bounds())
 	case templateNameRectangle:
-		p.pc.Rectangle(Rectangle{Line: lineIdx, X: p.x, Y: p.y, Width: p.u(params[0]), Height: p.u(params[1]),
-			Polarity: p.polarity})
+		r := Rectangle{Line: lineIdx, X: p.x, Y: p.y, Width: p.u(params[0]), Height: p.u(params[1]),
+			Polarity: p.polarity}
+		p.pc.Rectangle(r)
+		p.bounds(r.Bounds())
 	case templateNameObround:
-		p.pc.Obround(Obround{lineIdx, p.x, p.y, p.u(params[0]), p.u(params[1]), p.polarity, 0})
+		o := Obround{lineIdx, p.x, p.y, p.u(params[0]), p.u(params[1]), p.polarity, 0}
+		p.pc.Obround(o)
+		p.bounds(o.Bounds())
 	default:
 		return p.flashUserDefinedTmpl(lineIdx)
 	}
@@ -737,7 +745,9 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if !pm.Exposure {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			p.pc.Circle(Circle{lineIdx, p.x + p.u(pm.CenterX), p.y + p.u(pm.CenterY), p.u(pm.Diameter), p.polarity})
+			c := Circle{lineIdx, p.x + p.u(pm.CenterX), p.y + p.u(pm.CenterY), p.u(pm.Diameter), p.polarity}
+			p.pc.Circle(c)
+			p.bounds(c.Bounds())
 		case vectorLinePrimitive:
 			if !pm.Exposure {
 				return fmt.Errorf("%d %+v", i, pm)
@@ -745,8 +755,10 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if pm.Rotation != 0 {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			p.pc.Line(Line{lineIdx, p.x + p.u(pm.StartX), p.y + p.u(pm.StartY), p.x + p.u(pm.EndX), p.y + p.u(pm.EndY),
-				p.u(pm.Width), LineCapButt, 0})
+			l := Line{lineIdx, p.x + p.u(pm.StartX), p.y + p.u(pm.StartY), p.x + p.u(pm.EndX), p.y + p.u(pm.EndY),
+				p.u(pm.Width), LineCapButt, 0}
+			p.pc.Line(l)
+			p.bounds(l.Bounds())
 		case outlinePrimitive:
 			if !pm.Exposure {
 				return fmt.Errorf("%d %+v", i, pm)
@@ -761,6 +773,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if err := p.pc.Contour(contour); err != nil {
 				return fmt.Errorf("%d %+v %w", i, pm, err)
 			}
+			p.bounds(contour.Bounds())
 		case lowerLeftLinePrimitive:
 			if !pm.Exposure {
 				return fmt.Errorf("%d %+v", i, pm)
@@ -768,9 +781,11 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if pm.Rotation != 0 {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			p.pc.Rectangle(Rectangle{Line: lineIdx, X: p.x + p.u(pm.X+pm.Width/2), Y: p.y + p.u(pm.Y+pm.Height/2),
+			r := Rectangle{Line: lineIdx, X: p.x + p.u(pm.X+pm.Width/2), Y: p.y + p.u(pm.Y+pm.Height/2),
 				Width:  p.u(pm.Width),
-				Height: p.u(pm.Height), Polarity: p.polarity, Rotation: pm.Rotation})
+				Height: p.u(pm.Height), Polarity: p.polarity, Rotation: pm.Rotation}
+			p.pc.Rectangle(r)
+			p.bounds(r.Bounds())
 		case rectPrimitive:
 			if !pm.Exposure {
 				return fmt.Errorf("%d %+v", i, pm)
@@ -780,8 +795,10 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 					f(&pm, p.ap.Params[i])
 				}
 			}
-			p.pc.Rectangle(Rectangle{Line: lineIdx, X: p.x + p.u(pm.CenterX), Y: p.y + p.u(pm.CenterY), Width: p.u(pm.Width),
-				Height: p.u(pm.Height), Polarity: pm.Polarity, Rotation: pm.Rotation})
+			r := Rectangle{Line: lineIdx, X: p.x + p.u(pm.CenterX), Y: p.y + p.u(pm.CenterY), Width: p.u(pm.Width),
+				Height: p.u(pm.Height), Polarity: p.polarity, Rotation: pm.Rotation}
+			p.pc.Rectangle(r)
+			p.bounds(r.Bounds())
 		default:
 			return fmt.Errorf("%d %+v", i, p)
 		}
