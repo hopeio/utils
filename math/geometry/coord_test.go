@@ -1,4 +1,4 @@
-package coordinate
+package geometry
 
 import "testing"
 

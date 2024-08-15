@@ -365,10 +365,10 @@ func decodeRectangle(b []byte, elm *Rectangle) error {
 			elm.Width, residue, err = decodeInt(residue)
 		case "Height":
 			elm.Height, residue, err = decodeInt(residue)
-		case "RX":
-			elm.RX, residue, err = decodeInt(residue)
-		case "RY":
-			elm.RY, residue, err = decodeInt(residue)
+		case "RadiusX":
+			elm.RadiusX, residue, err = decodeInt(residue)
+		case "RadiusY":
+			elm.RadiusY, residue, err = decodeInt(residue)
 		case "Fill":
 			elm.Fill, residue, err = decodeString(residue)
 		case "Attr":
@@ -455,14 +455,14 @@ func decodeLine(b []byte, elm *Line) error {
 			elm.Type = ElementType(elmType)
 		case "Line":
 			elm.Line.Line, residue, err = decodeInt(residue)
-		case "XStart":
-			elm.XStart, residue, err = decodeInt(residue)
-		case "YStart":
-			elm.YStart, residue, err = decodeInt(residue)
-		case "XEnd":
-			elm.XEnd, residue, err = decodeInt(residue)
-		case "YEnd":
-			elm.YEnd, residue, err = decodeInt(residue)
+		case "StartX":
+			elm.StartX, residue, err = decodeInt(residue)
+		case "StartY":
+			elm.StartY, residue, err = decodeInt(residue)
+		case "EndX":
+			elm.EndX, residue, err = decodeInt(residue)
+		case "EndY":
+			elm.EndY, residue, err = decodeInt(residue)
 		case "Width":
 			elm.Width, residue, err = decodeInt(residue)
 		case "Cap":
@@ -509,10 +509,10 @@ func decodeArc(b []byte, elm *Arc) error {
 			elm.Type = ElementType(elmType)
 		case "Line":
 			elm.Line, residue, err = decodeInt(residue)
-		case "XStart":
-			elm.XStart, residue, err = decodeInt(residue)
-		case "YStart":
-			elm.YStart, residue, err = decodeInt(residue)
+		case "StartX":
+			elm.StartX, residue, err = decodeInt(residue)
+		case "StartY":
+			elm.StartY, residue, err = decodeInt(residue)
 		case "RadiusX":
 			elm.RadiusX, residue, err = decodeInt(residue)
 		case "RadiusY":
@@ -521,16 +521,16 @@ func decodeArc(b []byte, elm *Arc) error {
 			elm.LargeArc, residue, err = decodeInt(residue)
 		case "Sweep":
 			elm.Sweep, residue, err = decodeInt(residue)
-		case "XEnd":
-			elm.XEnd, residue, err = decodeInt(residue)
-		case "YEnd":
-			elm.YEnd, residue, err = decodeInt(residue)
+		case "EndX":
+			elm.EndX, residue, err = decodeInt(residue)
+		case "EndY":
+			elm.EndY, residue, err = decodeInt(residue)
 		case "Width":
 			elm.Width, residue, err = decodeInt(residue)
-		case "XCenter":
-			elm.XCenter, residue, err = decodeInt(residue)
-		case "YCenter":
-			elm.YCenter, residue, err = decodeInt(residue)
+		case "CenterX":
+			elm.CenterX, residue, err = decodeInt(residue)
+		case "CenterY":
+			elm.CenterY, residue, err = decodeInt(residue)
 		case "Stroke":
 			elm.Stroke, residue, err = decodeString(residue)
 		case "Attr":
@@ -618,10 +618,6 @@ func decodePathArc(b []byte, elm *PathArc) error {
 			elm.X, residue, err = decodeInt(residue)
 		case "Y":
 			elm.Y, residue, err = decodeInt(residue)
-		case "XCenter":
-			elm.CenterX, residue, err = decodeInt(residue)
-		case "YCenter":
-			elm.CenterY, residue, err = decodeInt(residue)
 		default:
 			err = fmt.Errorf("\"%s\"", key)
 		}

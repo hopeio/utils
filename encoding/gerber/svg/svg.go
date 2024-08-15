@@ -57,10 +57,10 @@ type Rectangle struct {
 	Type     ElementType
 	Aperture string
 	gerber.Rectangle
-	RX   int
-	RY   int
-	Fill string
-	Attr map[string]string
+	RadiusX int
+	RadiusY int
+	Fill    string
+	Attr    map[string]string
 }
 
 func (e Rectangle) Bounds() image.Rectangle {
@@ -103,9 +103,6 @@ type PathArc struct {
 	Sweep    int
 	X        int
 	Y        int
-
-	CenterX int
-	CenterY int
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -172,7 +169,7 @@ type Line struct {
 }
 
 func (e Line) Bounds() image.Rectangle {
-	return image.Rect(e.XStart, e.YStart, e.XEnd, e.YEnd)
+	return image.Rect(e.StartX, e.StartY, e.EndX, e.EndY)
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -204,7 +201,7 @@ type Arc struct {
 }
 
 func (e Arc) Bounds() image.Rectangle {
-	return image.Rect(min(e.XStart, e.XEnd), max(e.YStart, e.YEnd), max(e.XStart, e.XEnd), max(e.YStart, e.YEnd))
+	return image.Rect(min(e.StartX, e.EndX), max(e.StartY, e.EndY), max(e.StartX, e.EndX), max(e.StartY, e.EndY))
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -280,7 +277,7 @@ func (p *Processor) Obround(obround gerber.Obround) {
 	p.Data = append(p.Data, Rectangle{Aperture: "O", Rectangle: gerber.Rectangle{Line: obround.Line,
 		X: obround.X - obround.Width/2,
 		Y: obround.Y + obround.Height/2, Width: obround.Width,
-		Height: obround.Height, Rotation: obround.Rotation}, RX: r, RY: r, Fill: p.fill(obround.Polarity)})
+		Height: obround.Height, Rotation: obround.Rotation}, RadiusX: r, RadiusY: r, Fill: p.fill(obround.Polarity)})
 }
 
 func (p *Processor) Contour(contour gerber.Contour) error {
@@ -347,7 +344,7 @@ func calcArc(contour gerber.Contour, idx int) (PathArc, error) {
 	}
 
 	s := contour.Segments[idx]
-	arc := PathArc{X: s.X, Y: s.Y, CenterX: s.XCenter, CenterY: s.YCenter}
+	arc := PathArc{X: s.X, Y: s.Y}
 	switch s.Interpolation {
 	case gerber.InterpolationClockwise:
 		arc.Sweep = 1
@@ -379,7 +376,7 @@ func (p *Processor) Line(gline gerber.Line) {
 }
 
 func (p *Processor) Arc(garc gerber.Arc) error {
-	if garc.XEnd == garc.XStart && garc.YEnd == garc.YStart {
+	if garc.EndX == garc.StartX && garc.EndY == garc.StartY {
 		return fmt.Errorf("degenerate arc")
 	}
 
@@ -393,8 +390,8 @@ func (p *Processor) Arc(garc gerber.Arc) error {
 		return fmt.Errorf("%d", garc.Interpolation)
 	}
 
-	vs := [2]int{garc.XStart - garc.XCenter, garc.YStart - garc.YCenter}
-	ve := [2]int{garc.XEnd - garc.XCenter, garc.YEnd - garc.YCenter}
+	vs := [2]int{garc.StartX - garc.CenterX, garc.StartY - garc.CenterY}
+	ve := [2]int{garc.EndX - garc.CenterX, garc.EndY - garc.CenterY}
 
 	radius, largeArc, err := calcArcParams(vs, ve, arc.Sweep)
 	if err != nil {
@@ -450,7 +447,7 @@ func (p *Processor) Write(w io.Writer) error {
 		case Rectangle:
 			w, h := p.m(d.Width), p.m(d.Height)
 			b = []byte(fmt.Sprintf(`<rect x="%s" y="%s" width="%s" height="%s" rx="%s" ry="%s" fill="%s" transform
-="rotate(%.1f, %s, %s)" %s/>`, p.x(d.X), p.y(d.Y), w, h, p.m(d.RX), p.m(d.RY), d.Fill, d.Rotation, p.x(d.X+d.Width/2),
+="rotate(%.1f, %s, %s)" %s/>`, p.x(d.X), p.y(d.Y), w, h, p.m(d.RadiusX), p.m(d.RadiusY), d.Fill, d.Rotation, p.x(d.X+d.Width/2),
 				p.y(d.Y-d.Height/2), psvg.FormatAttr(d.Attr)))
 		case Path:
 			var err error
@@ -459,10 +456,10 @@ func (p *Processor) Write(w io.Writer) error {
 				return err
 			}
 		case Line:
-			b = []byte(fmt.Sprintf(`<line x1="%s" y1="%s" x2="%s" y2="%s" stroke-width="%s" stroke-linecap="%s" stroke="%s"%s/>`, p.x(d.XStart), p.y(d.YStart), p.x(d.XEnd), p.y(d.YEnd), p.m(d.Width), d.Cap, d.Stroke, psvg.FormatAttr(d.Attr)))
+			b = []byte(fmt.Sprintf(`<line x1="%s" y1="%s" x2="%s" y2="%s" stroke-width="%s" stroke-linecap="%s" stroke="%s"%s/>`, p.x(d.StartX), p.y(d.StartY), p.x(d.EndX), p.y(d.EndY), p.m(d.Width), d.Cap, d.Stroke, psvg.FormatAttr(d.Attr)))
 		case Arc:
 			b = []byte(fmt.Sprintf(`<path d="M %s %s A %s %s 0 %d %d %s %s" stroke-width="%s" stroke="%s" stroke
--linecap="round"%s/>`, p.x(d.XStart), p.y(d.YStart), p.m(d.RadiusX), p.m(d.RadiusY), d.LargeArc, d.Sweep, p.x(d.XEnd), p.y(d.YEnd), p.m(d.Width), d.Stroke, psvg.FormatAttr(d.Attr)))
+-linecap="round"%s/>`, p.x(d.StartX), p.y(d.StartY), p.m(d.RadiusX), p.m(d.RadiusY), d.LargeArc, d.Sweep, p.x(d.EndX), p.y(d.EndY), p.m(d.Width), d.Stroke, psvg.FormatAttr(d.Attr)))
 		default:
 			return fmt.Errorf("%+v", d)
 		}

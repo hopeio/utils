@@ -38,8 +38,8 @@ type Rectangle struct {
 	Y        int
 	Width    int
 	Height   int
-	XCenter  int
-	YCenter  int
+	CenterX  int
+	CenterY  int
 	Polarity bool
 	Rotation float64
 }
@@ -79,31 +79,31 @@ func (e *Circle) Bounds() image.Rectangle {
 
 type Arc struct {
 	Line    int
-	XEnd    int
-	YEnd    int
-	XStart  int
-	YStart  int
-	XCenter int
-	YCenter int
+	EndX    int
+	EndY    int
+	StartX  int
+	StartY  int
+	CenterX int
+	CenterY int
 	Width   int
 	Interpolation
 }
 
 func (e *Arc) Bounds() image.Rectangle {
-	return image.Rect(e.XStart, e.YStart, e.XEnd, e.YEnd)
+	return image.Rect(e.StartX, e.StartY, e.EndX, e.EndY)
 }
 
 type Line struct {
 	Line     int
-	XStart   int
-	YStart   int
-	XEnd     int
-	YEnd     int
+	StartX   int
+	StartY   int
+	EndX     int
+	EndY     int
 	Width    int
 	Cap      LineCap
 	Rotation float64
 }
 
 func (e *Line) Bounds() image.Rectangle {
-	return image.Rect(e.XStart, e.YStart, e.XEnd, e.YEnd)
+	return image.Rect(e.StartX, e.StartY, e.EndX, e.EndY)
 }
