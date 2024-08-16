@@ -39,3 +39,15 @@ func FormatRelativeTime(fromTime time.Time) string {
 		return fmt.Sprintf("%d年前", years)
 	}
 }
+
+func ParseTime(t string) (time.Time, error) {
+	return time.Parse(LayoutTime, t)
+}
+
+func ParseDateTime(t string) (time.Time, error) {
+	return time.Parse(LayoutDateTime, t)
+}
+
+func ParseDate(t string) (time.Time, error) {
+	return time.Parse(LayoutDate, t)
+}
