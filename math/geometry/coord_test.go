@@ -1,7 +1,6 @@
 package geometry
 
 import (
-	"math"
 	"testing"
 )
 
@@ -13,7 +12,7 @@ func TestTransformPoint(t *testing.T) {
 	point2A := Point{X: 7.83, Y: -8.10}
 	// {7.826025403784439 8.09602540378444}
 	t.Log(TransformPointByOnePointAndRotationAngle(point2B, point1B, point1A, angle))
-	angle = CalculateRotationAngle(point1A, point2A, point1B, point2B)
-	t.Log(angle * 180 / math.Pi)
-	t.Log(TransformPointByOnePointAndRotationAngle(point2B, point1B, point1A, angle))
+	angle = CalculateRotationAngle(point1A, point1B, point2A, point2B)
+	t.Log(angle)
+	t.Log(TransformPointByOnePointAndRotationAngle(point2B, point1B, point1A, -angle))
 }

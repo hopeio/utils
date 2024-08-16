@@ -36,8 +36,22 @@ func TransformPointByOnePointAndRotationAngle(pA, qA, qB Point, angleDeg float64
 	return Point{x1, y1}
 }
 
-// TODO 已知两点在两平面坐标系中的坐标，求坐标系夹角
+// 已知两点在两平面坐标系中的坐标，求坐标系夹角,A旋转到B的度数，逆时针>0
 // CalculateRotationAngle
 func CalculateRotationAngle(pA, pB, qA, qB Point) float64 {
-	return 0
+	// 计算向量pA->pB和qA->qB
+	vectorP := Point{pB.X - pA.X, pB.Y - pA.Y}
+	vectorQ := Point{qB.X - qA.X, qB.Y - qA.Y}
+	// 计算两个向量之间的夹角
+	angleInRadians := angleBetweenVectors(vectorP, vectorQ)
+
+	// 将弧度转换为度
+	return angleInRadians * (180.0 / math.Pi)
+}
+
+// 计算两个向量之间的夹角（以弧度为单位）
+func angleBetweenVectors(v1, v2 Point) float64 {
+	dx := v2.X - v1.X
+	dy := v2.Y - v1.Y
+	return math.Atan2(dy, dx)
 }
