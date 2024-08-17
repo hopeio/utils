@@ -45,7 +45,7 @@ func (p *Parallel) Run() {
 			}
 		}()
 		for task := range p.taskCh {
-			var times = 1
+			var times = uint(1)
 			for task(times) {
 				times++
 			}
