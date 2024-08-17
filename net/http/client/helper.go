@@ -61,13 +61,13 @@ func GetStreamX(url string) (io.ReadCloser, error) {
 }
 
 func Post(url string, param, response interface{}) error {
-	return New().DisableLog().Post(url, param, response)
+	return PostRequest(url).Do(param, response)
 }
 
 func Put(url string, param, response interface{}) error {
-	return New().DisableLog().Put(url, param, response)
+	return PutRequest(url).Do(param, response)
 }
 
 func Delete(url string, param, response interface{}) error {
-	return New().DisableLog().Delete(url, param, response)
+	return DeleteRequest(url).Do(param, response)
 }

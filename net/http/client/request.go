@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-var DefaultClient = New()
+var DefaultClient = New().DisableLog()
 
 type Request struct {
 	ctx         context.Context

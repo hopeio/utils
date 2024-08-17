@@ -1,7 +1,7 @@
 package dingding
 
 import (
-	"github.com/hopeio/utils/sdk/dingding"
+	"github.com/hopeio/utils/sdk/dingtalk"
 	"go.uber.org/zap/zapcore"
 	"strconv"
 	"time"
@@ -9,7 +9,7 @@ import (
 
 func NewCore(token, secret string, level zapcore.Level) zapcore.Core {
 	return &core{
-		RobotConfig: dingding.RobotConfig{
+		RobotConfig: dingtalk.RobotConfig{
 			Token:  token,
 			Secret: secret,
 		},
@@ -18,7 +18,7 @@ func NewCore(token, secret string, level zapcore.Level) zapcore.Core {
 }
 
 type core struct {
-	dingding.RobotConfig
+	dingtalk.RobotConfig
 	zapcore.Level
 	fields []zapcore.Field
 }
@@ -57,6 +57,6 @@ func (c *core) Write(e zapcore.Entry, fields []zapcore.Field) error {
 		return err
 	}
 
-	return dingding.SendRobotMarkDownMessageWithSecret(c.Token, c.Secret, "日志", buffer.String())
+	return dingtalk.RobotSendMarkDownMessageWithSecret(c.Token, c.Secret, "日志", buffer.String(), nil)
 }
 func (*core) Sync() error { return nil }

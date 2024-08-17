@@ -1,26 +1,40 @@
-package dingding
+package dingtalk
 
-import "fmt"
+import (
+	"encoding/json"
+	"strconv"
+	"strings"
+)
 
 const (
-	MsgTypeTextTmpl       = `{"msgtype":"text","text":{"content":"%s"}}`
-	MsgTypeMarkdownTmpl   = `{"msgtype":"markdown","markdown":{"title":"%s","text":"%s"}}`
-	MsgTypeMarkdownAtTmpl = `{"msgtype":"markdown","markdown":{"title":"%s","text":"%s"},"at":{"isAtAll": false, "atMobiles":[]}}`
+	MsgTypeTmpl = `{"msgtype":"%s",%s}`
 )
+
+type MessageType interface {
+	MessageType() MsgType
+}
 
 type RobotConfig struct {
 	Token  string
 	Secret string
 }
 
-type DingMsg struct {
-	MsgType string `json:"msgtype"`
-	Text    Text   `json:"text"`
-	At      At     `json:"at"`
+type Markdown struct {
+	Title string `json:"title"`
+	Text  string `json:"text"`
+	At    *At    `json:"at,omitempty"`
+}
+
+func (*Markdown) MessageType() MsgType {
+	return MsgTypeMarkdown
 }
 
 type Text struct {
 	Content string `json:"content"`
+}
+
+func (Text) MessageType() MsgType {
+	return MsgTypeText
 }
 
 type At struct {
@@ -36,12 +50,20 @@ type Link struct {
 	MessageUrl string `json:"messageUrl"`
 }
 
+func (*Link) MessageType() MsgType {
+	return MsgTypeLink
+}
+
 type ActionCard struct {
 	Title          string `json:"title"`
 	Text           string `json:"text"`
 	BtnOrientation string `json:"btnOrientation"`
 	SingleTitle    string `json:"singleTitle"`
 	SingleURL      string `json:"singleURL"`
+}
+
+func (*ActionCard) MessageType() MsgType {
+	return MsgTypeActionCard
 }
 
 type FeedCard struct {
@@ -51,6 +73,11 @@ type FeedCard struct {
 		PicURL     string `json:"picURL"`
 	} `json:"links"`
 }
+
+func (*FeedCard) MessageType() MsgType {
+	return MsgTypeFeedCard
+}
+
 type MsgType int
 
 const (
@@ -75,28 +102,28 @@ func (c MsgType) String() string {
 	case MsgTypeFeedCard:
 		return "feedCard"
 	default:
-		return ""
+		return "text"
 	}
 }
 
-func (c MsgType) Tmpl() string {
-	switch c {
-	case MsgTypeText:
-		return MsgTypeTextTmpl
-	case MsgTypeMarkdown:
-		return MsgTypeMarkdownTmpl
-	default:
-		return MsgTypeTextTmpl
-	}
+func TextMessage(text string) string {
+	buf := strings.Builder{}
+	buf.WriteString(`{"msgtype":"text","text":{"content":`)
+	buf.WriteString(strconv.Quote(text))
+	buf.WriteString(`}}`)
+	return buf.String()
 }
 
-func (c MsgType) Body(title, content string) string {
-	switch c {
-	case MsgTypeText:
-		return fmt.Sprintf(c.Tmpl(), content)
-	case MsgTypeMarkdown:
-		return fmt.Sprintf(c.Tmpl(), title, content)
-	default:
-		return fmt.Sprintf(c.Tmpl(), content)
-	}
+func Format(msg MessageType) string {
+	msgType := msg.MessageType()
+	buf := strings.Builder{}
+	buf.WriteString(`{"msgtype":"`)
+	buf.WriteString(msgType.String())
+	buf.WriteString(`","`)
+	buf.WriteString(msgType.String())
+	buf.WriteString(`":`)
+	data, _ := json.Marshal(msg)
+	buf.Write(data)
+	buf.WriteString("}")
+	return buf.String()
 }

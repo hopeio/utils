@@ -2,7 +2,6 @@ package client
 
 import (
 	"github.com/hopeio/utils/net/http/client"
-	"net/http"
 )
 
 func GetRequest[RES any](url string) *Request[RES] {
@@ -22,19 +21,19 @@ func DeleteRequest[RES any](url string) *Request[RES] {
 }
 
 func Get[RES any](url string, param any) (*RES, error) {
-	return NewRequest[RES](http.MethodGet, url).Do(param)
+	return GetRequest[RES](url).Do(param)
 }
 
 func Post[RES any](url string, param any) (*RES, error) {
-	return NewRequest[RES](http.MethodPost, url).Do(param)
+	return PostRequest[RES](url).Do(param)
 }
 
 func Put[RES any](url string, param any) (*RES, error) {
-	return NewRequest[RES](http.MethodPut, url).Do(param)
+	return PutRequest[RES](url).Do(param)
 }
 
 func Delete[RES any](url string, param any) (*RES, error) {
-	return NewRequest[RES](http.MethodDelete, url).Do(param)
+	return DeleteRequest[RES](url).Do(param)
 }
 
 func GetSubData[RES ResponseInterface[T], T any](url string, param any) (T, error) {

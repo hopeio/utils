@@ -1,12 +1,12 @@
 package dingding
 
 import (
-	"github.com/hopeio/utils/sdk/dingding"
+	"github.com/hopeio/utils/sdk/dingtalk"
 	"go.uber.org/zap"
 	"net/url"
 )
 
-type sink dingding.RobotConfig
+type sink dingtalk.RobotConfig
 
 // TODO
 func (th *sink) Write(b []byte) (n int, err error) {
