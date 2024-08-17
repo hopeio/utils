@@ -28,46 +28,36 @@ func Run(tasks []funcs.FuncWithErr) error {
 }
 
 type Parallel struct {
-	taskCh     chan funcs.FuncWithErr
-	workNum    int
-	wg         sync.WaitGroup
-	retryTimes int
+	taskCh  chan funcs.FuncContinue
+	workNum uint
+	wg      sync.WaitGroup
 }
 
-func New(workNum int, opts ...Option) *Parallel {
-	return &Parallel{taskCh: make(chan funcs.FuncWithErr, workNum), workNum: workNum}
-}
-
-func (p *Parallel) RetryTimes(retryTimes int) *Parallel {
-	p.retryTimes = retryTimes
-	return p
+func New(workNum uint, opts ...Option) *Parallel {
+	return &Parallel{taskCh: make(chan funcs.FuncContinue, workNum), workNum: workNum}
 }
 
 func (p *Parallel) Run() {
-	for _ = range p.workNum {
-		go func() {
-			for task := range p.taskCh {
-				err := task()
-				if err != nil {
-					if p.retryTimes > 0 {
-						for _ = range p.retryTimes - 1 {
-							err = task()
-							if err == nil {
-								break
-							}
-						}
-					}
-					if err != nil {
-						log.Error(err)
-					}
-				}
-				p.wg.Done()
+	g := func() {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Error(err)
 			}
 		}()
+		for task := range p.taskCh {
+			var times = 1
+			for task(times) {
+				times++
+			}
+			p.wg.Done()
+		}
+	}
+	for _ = range p.workNum {
+		go g()
 	}
 }
 
-func (p *Parallel) AddTask(task funcs.FuncWithErr) {
+func (p *Parallel) AddTask(task funcs.FuncContinue) {
 	p.wg.Add(1)
 	p.taskCh <- task
 }
@@ -82,9 +72,3 @@ func (p *Parallel) Stop() {
 }
 
 type Option func(p *Parallel)
-
-func RetryTimes(retryTimes int) Option {
-	return func(p *Parallel) {
-		p.retryTimes = retryTimes
-	}
-}
