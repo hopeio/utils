@@ -10,7 +10,10 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 )
+
+var DefaultUploader = NewUploader()
 
 // TODO
 type UploadMode uint8
@@ -21,7 +24,22 @@ const (
 	UModeStream
 )
 
-type Uploader Client
+type Uploader = Client
+
+func NewUploader() *Uploader {
+	return &Uploader{
+		typ:           ClientTypeUpload,
+		httpClient:    DefaultDownloadHttpClient,
+		retryTimes:    3,
+		retryInterval: time.Second,
+		logger:        nil,
+		logLevel:      LogLevelSilent,
+	}
+}
+
+func (u *Uploader) UploadReq(url string) *UploadReq {
+	return NewUploadReq(url).WithDownloader(u)
+}
 
 const (
 	chunkSize = 1024 * 1024 // 每个分块的大小，这里是1MB

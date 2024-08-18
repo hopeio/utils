@@ -28,9 +28,6 @@ func (req *Request[RES]) SetClient(set func(c *client.Client)) *Request[RES] {
 	return req
 }
 
-func (req *Request[RES]) Client() *client.Client {
-	return (*client.Request)(req).Client()
-}
 func (r *Request[RES]) Origin() *client.Request {
 	return (*client.Request)(r)
 }
