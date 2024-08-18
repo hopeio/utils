@@ -1,7 +1,6 @@
 package client
 
 import (
-	"errors"
 	httpi "github.com/hopeio/utils/net/http"
 	"io"
 	"net"
@@ -10,34 +9,46 @@ import (
 	"time"
 )
 
+// github.com/go-resty/resty 是个不错的选择,但是缺少一些我需要的功能，例如brotli解码，以及自定义处理body data，用于解决一些参数和返回body的AES加密或其他
 // 不是并发安全的
 
 var (
-	DefaultHttpClient = newHttpClient()
+	DefaultHttpClient = newHttpClient(ClientTypeApi)
 	DefaultLogLevel   = LogLevelError
 )
 
 const timeout = time.Minute
 
-func newHttpClient() *http.Client {
-	return &http.Client{
-		//Timeout: timeout * 2,
-		Transport: &http.Transport{
-			Proxy:             http.ProxyFromEnvironment, // 代理使用
-			ForceAttemptHTTP2: true,
-			DialContext: (&net.Dialer{
-				Timeout:   timeout,
-				KeepAlive: 30 * time.Second,
-			}).DialContext,
-			//DisableKeepAlives: true,
-			TLSHandshakeTimeout: timeout,
-		},
+type ClientType uint8
+
+const (
+	ClientTypeApi      ClientType = iota
+	ClientTypeDownload ClientType = iota
+	ClientTypeUpload   ClientType = iota
+)
+
+func newHttpClient(typ ClientType) *http.Client {
+	if typ == ClientTypeApi {
+		return &http.Client{
+			//Timeout: timeout * 2,
+			Transport: &http.Transport{
+				Proxy:             http.ProxyFromEnvironment, // 代理使用
+				ForceAttemptHTTP2: true,
+				DialContext: (&net.Dialer{
+					Timeout:   timeout,
+					KeepAlive: 30 * time.Second,
+				}).DialContext,
+				//DisableKeepAlives: true,
+				TLSHandshakeTimeout: timeout,
+			},
+		}
 	}
+	return newDownloadHttpClient()
 }
 
 // Client ...
 type Client struct {
-
+	typ ClientType
 	// httpClient settings
 	httpClient    *http.Client
 	newHttpClient bool
@@ -47,6 +58,7 @@ type Client struct {
 	// request
 	httpRequestOptions []HttpRequestOption
 	header             http.Header //公共请求头
+	reqDataHandler     func(data []byte) ([]byte, error)
 
 	// response
 	responseHandler func(response *http.Response) (retry bool, data []byte, err error)
@@ -60,8 +72,6 @@ type Client struct {
 	retryTimes    int
 	retryInterval time.Duration
 	retryHandler  func(*http.Request)
-
-	req *Request
 }
 
 func New() *Client {
@@ -113,15 +123,25 @@ func (c *Client) ResponseHandler(handler func(response *http.Response) (retry bo
 	return c
 }
 
-func (c *Client) ResDataHandler(handler func(response []byte) ([]byte, error)) *Client {
+func (c *Client) ResDataHandler(handler func(data []byte) ([]byte, error)) *Client {
 	c.resDataHandler = handler
+	return c
+}
+
+func (c *Client) ReqDataHandler(handler func(data []byte) ([]byte, error)) *Client {
+	c.reqDataHandler = handler
+	return c
+}
+
+func (c *Client) HttpRequestOption(opts ...HttpRequestOption) *Downloader {
+	c.httpRequestOptions = append(c.httpRequestOptions, opts...)
 	return c
 }
 
 // 设置过期时间,仅对单次请求有效
 func (c *Client) Timeout(timeout time.Duration) *Client {
 	if !c.newHttpClient {
-		c.httpClient = newHttpClient()
+		c.httpClient = newHttpClient(c.typ)
 		c.newHttpClient = true
 	}
 	setTimeout(c.httpClient, timeout)
@@ -136,7 +156,7 @@ func (c *Client) HttpClient(client *http.Client) *Client {
 
 func (c *Client) SetHttpClient(opt HttpClientOption) *Client {
 	if !c.newHttpClient {
-		c.httpClient = newHttpClient()
+		c.httpClient = newHttpClient(c.typ)
 		c.newHttpClient = true
 	}
 	opt(c.httpClient)
@@ -161,7 +181,7 @@ func (c *Client) RetryHandler(handle func(r *http.Request)) *Client {
 
 func (c *Client) Proxy(proxyUrl string) *Client {
 	if !c.newHttpClient {
-		c.httpClient = newHttpClient()
+		c.httpClient = newHttpClient(c.typ)
 		c.newHttpClient = true
 	}
 	if proxyUrl != "" {
@@ -194,17 +214,7 @@ func (c *Client) Request(method, url string) *Request {
 	r := &Request{
 		Method: method, Url: url, client: c,
 	}
-	c.req = r
 	return r
-}
-
-func (c *Client) RequestDo(param, response any) error {
-	if c.req == nil {
-		return errors.New("request is nil")
-	}
-	req := c.req
-	c.req = nil
-	return req.Do(param, response)
 }
 
 func (c *Client) Do(r *Request, param, response any) error {

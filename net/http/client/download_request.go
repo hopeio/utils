@@ -240,12 +240,12 @@ func (c *DownloadReq) ConcurrencyDownload(filepath string, url string, concurren
 }
 
 func GetReader(url string) (io.ReadCloser, error) {
-	return GetReaderWithReqOption(url, nil)
+	return GetReaderWithHttpRequestOption(url, nil)
 }
 
-func GetReaderWithReqOption(url string, opts ...HttpRequestOption) (io.ReadCloser, error) {
+func GetReaderWithHttpRequestOption(url string, opts ...HttpRequestOption) (io.ReadCloser, error) {
 
-	resp, err := NewDownloader().Options(opts...).DownloadReq(url).GetResponse()
+	resp, err := NewDownloader().HttpRequestOption(opts...).DownloadReq(url).GetResponse()
 	if err != nil {
 		return nil, err
 	}
@@ -257,11 +257,11 @@ func Download(filepath, url string) error {
 }
 
 func GetImage(url string) (io.ReadCloser, error) {
-	return GetReaderWithReqOption(url, ImageOption)
+	return GetReaderWithHttpRequestOption(url, ImageOption)
 }
 
 func DownloadImage(filepath, url string) error {
-	reader, err := GetReaderWithReqOption(url, ImageOption)
+	reader, err := GetReaderWithHttpRequestOption(url, ImageOption)
 	if err != nil {
 		return err
 	}

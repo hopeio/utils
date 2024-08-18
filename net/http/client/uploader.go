@@ -21,11 +21,7 @@ const (
 	UModeStream
 )
 
-type Uploader struct {
-	Client  *http.Client
-	Request *http.Request
-	Mode    UploadMode // 模式，0-强制覆盖，1-不存在下载，2-断续下载
-}
+type Uploader Client
 
 const (
 	chunkSize = 1024 * 1024 // 每个分块的大小，这里是1MB
@@ -54,7 +50,7 @@ func uploadChunk(url, paramName, filePath string, chunkNum int, chunkTotal int) 
 	buffer = buffer[:n]
 
 	// 创建HTTP请求
-	body := &bytes.Buffer{}
+	body := bufPool.Get().(*bytes.Buffer)
 	writer := multipart.NewWriter(body)
 
 	part, err := writer.CreateFormFile(paramName, filepath.Base(filePath)+"."+strconv.Itoa(chunkNum))

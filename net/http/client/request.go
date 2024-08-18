@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"compress/flate"
 	"compress/gzip"
 	"context"
 	"encoding/json"
@@ -15,11 +16,14 @@ import (
 	"github.com/hopeio/utils/strings/unicode"
 	"io"
 	"net/http"
-	"strings"
+	"sync"
 	"time"
 )
 
-var DefaultClient = New().DisableLog()
+var (
+	DefaultClient = New().DisableLog()
+	bufPool       = &sync.Pool{New: func() interface{} { return &bytes.Buffer{} }}
+)
 
 type Request struct {
 	ctx         context.Context
@@ -40,21 +44,13 @@ func NewRequest(method, url string) *Request {
 
 func (req *Request) WithClient(c *Client) *Request {
 	req.client = c
-	req.client.req = req
 	return req
 }
 
 func (req *Request) SetClient(set func(c *Client)) *Request {
 	req.client = New()
-	req.client.req = req
 	set(req.client)
 	return req
-}
-
-func (req *Request) Client() *Client {
-	req.client = New()
-	req.client.req = req
-	return req.client
 }
 
 func (req *Request) Header(header httpi.Header) *Request {
@@ -145,11 +141,11 @@ func (req *Request) Do(param, response any, opts ...RequestOption) error {
 		opt(req)
 	}
 	if req.Method == "" {
-		return errors.New("没有设置请求方法")
+		return errors.New("not set method")
 	}
 
 	if req.Url == "" {
-		return errors.New("没有设置url")
+		return errors.New("not set url")
 	}
 	if req.ctx == nil {
 		req.ctx = context.Background()
@@ -158,7 +154,7 @@ func (req *Request) Do(param, response any, opts ...RequestOption) error {
 		req.client = DefaultClient
 	}
 	c := req.client
-	var body io.Reader
+
 	var reqBody, respBody *Body
 	var statusCode, reqTimes int
 	var err error
@@ -178,28 +174,26 @@ func (req *Request) Do(param, response any, opts ...RequestOption) error {
 		if param != nil {
 			switch paramType := param.(type) {
 			case string:
-				body = strings.NewReader(paramType)
 				reqBody.Data = stringsi.ToBytes(paramType)
 			case []byte:
-				body = bytes.NewReader(paramType)
 				reqBody.Data = paramType
 			case io.Reader:
 				var reqBytes []byte
 				reqBytes, err = io.ReadAll(paramType)
-				body = bytes.NewReader(reqBytes)
 				reqBody.Data = reqBytes
 			default:
-				if req.contentType == ContentTypeForm {
+				switch req.contentType {
+				case ContentTypeForm:
 					params := url2.QueryParam(param)
 					reqBody.Data = stringsi.ToBytes(params)
-					body = strings.NewReader(params)
-				} else {
+				case ContentTypeXml:
+
+				default:
 					var reqBytes []byte
 					reqBytes, err = json.Marshal(param)
 					if err != nil {
 						return err
 					}
-					body = bytes.NewReader(reqBytes)
 					reqBody.Data = reqBytes
 					reqBody.ContentType = ContentTypeJson
 				}
@@ -207,7 +201,11 @@ func (req *Request) Do(param, response any, opts ...RequestOption) error {
 		}
 	}
 	var request *http.Request
-	request, err = http.NewRequestWithContext(req.ctx, req.Method, req.Url, body)
+	reqBytes := reqBody.Data
+	if c.reqDataHandler != nil {
+		reqBytes, err = c.reqDataHandler(reqBody.Data)
+	}
+	request, err = http.NewRequestWithContext(req.ctx, req.Method, req.Url, bytes.NewReader(reqBytes))
 	if err != nil {
 		return err
 	}
@@ -221,8 +219,8 @@ Retry:
 			time.Sleep(c.retryInterval)
 		}
 		reqTime = time.Now()
-		if reqBody != nil && reqBody.Data != nil {
-			request.Body = io.NopCloser(bytes.NewReader(reqBody.Data))
+		if reqBytes != nil {
+			request.Body = io.NopCloser(bytes.NewReader(reqBytes))
 		}
 		if c.retryHandler != nil {
 			c.retryHandler(request)
@@ -283,6 +281,12 @@ Retry:
 		}
 	} else if ascii.EqualFold(resp.Header.Get("Content-Encoding"), "br") {
 		reader = brotli.NewReader(resp.Body)
+		resp.Header.Del("Content-Encoding")
+		resp.Header.Del("Content-Length")
+		resp.ContentLength = -1
+		resp.Uncompressed = true
+	} else if ascii.EqualFold(resp.Header.Get("Content-Encoding"), "deflate") {
+		reader = flate.NewReader(resp.Body)
 		resp.Header.Del("Content-Encoding")
 		resp.Header.Del("Content-Length")
 		resp.ContentLength = -1
