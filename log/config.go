@@ -93,14 +93,14 @@ type Config struct {
 	Development       bool
 	DisableCaller     bool
 	DisableStacktrace bool
-	Level             zapcore.Level         `json:"level,omitempty"`
-	EncodeLevelType   string                `json:"encodeLevelType,omitempty"`
-	Sampling          *zap.SamplingConfig   `json:"sampling" yaml:"sampling"`
-	OutputPaths       OutPutPaths           `json:"outputPaths"`
-	EncoderConfig     zapcore.EncoderConfig `json:"encoderConfig" yaml:"encoderConfig"`
+	Level             zapcore.Level       `json:"level,omitempty"`
+	Sampling          *zap.SamplingConfig `json:"sampling" yaml:"sampling"`
+	OutputPaths       OutPutPaths         `json:"outputPaths"`
 	ErrorOutputPaths  []string
 	// InitialFields is a collection of fields to add to the root logger.
 	InitialFields map[string]interface{} `json:"initialFields" yaml:"initialFields"`
+	zapcore.EncoderConfig
+	EncodeLevelType string `json:"encodeLevelType,omitempty" comment:"capital;capitalColor;color"`
 }
 
 func (lc *Config) Init() {

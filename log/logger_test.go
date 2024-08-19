@@ -7,7 +7,7 @@ func TestLog(t *testing.T) {
 }
 
 func TestLogStack(t *testing.T) {
-	ErrorS("test")
+	StackError("test")
 }
 
 func TestLogNoCaller(t *testing.T) {
