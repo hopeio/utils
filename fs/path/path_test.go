@@ -1,7 +1,7 @@
 package path
 
 import (
-	"fmt"
+	"github.com/stretchr/testify/assert"
 	"path"
 	"path/filepath"
 	"testing"
@@ -15,11 +15,8 @@ func TestDir(t *testing.T) {
 }
 
 func TestClean(t *testing.T) {
-	s := `......`
-	fmt.Println(len(s))
-	r := FileCleanse(s)
-	fmt.Println(r)
-	fmt.Println(len(r))
+	assert.Equal(t, "", FileCleanse(`--......++`))
+	assert.Equal(t, "1...1", FileCleanse(`--1...1...++`))
 }
 
 func TestRune(t *testing.T) {

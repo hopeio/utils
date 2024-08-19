@@ -3,8 +3,6 @@ package unicode
 import (
 	"github.com/hopeio/utils/slices"
 	stringsi "github.com/hopeio/utils/strings"
-	"regexp"
-	"strings"
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -87,29 +85,4 @@ func ToLowerFirst(s string) string {
 		return string(unicode.ToLower(rune(s[0]))) + s[1:]
 	}
 	return ""
-}
-
-func TrimSymbol(s string) string {
-	var builder strings.Builder
-	for _, r := range s {
-		if unicode.IsLetter(r) || unicode.IsNumber(r) {
-			builder.WriteRune(r)
-		}
-	}
-	return builder.String()
-}
-
-var emojiReg = regexp.MustCompile(`[\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}]`)
-
-func TrimEmoji(s string) string {
-	return emojiReg.ReplaceAllString(s, "")
-}
-func RetainChineseAndASCII(s string) string {
-	var result []rune
-	for _, char := range s {
-		if unicode.Is(unicode.Han, char) || char <= 127 {
-			result = append(result, char)
-		}
-	}
-	return string(result)
 }

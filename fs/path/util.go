@@ -38,7 +38,7 @@ func (d *ByUId) PreHandle() {
 	if d.UserIdStr == "" {
 		d.UserIdStr = strconv.Itoa(d.UserId)
 	}
-	d.TimeStr = stringsi.ReplaceRunesEmpty(d.TimeStr, '-', ' ', ':')
+	d.TimeStr = stringsi.RemoveRunes(d.TimeStr, '-', ' ', ':')
 }
 
 func (d *ByUId) Path() string {

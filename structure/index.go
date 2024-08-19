@@ -1,4 +1,4 @@
-package slices
+package structure
 
 import "sync"
 

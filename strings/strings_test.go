@@ -1,6 +1,7 @@
 package strings
 
 import (
+	"github.com/stretchr/testify/assert"
 	"log"
 	"testing"
 )
@@ -44,10 +45,10 @@ func TestReplaceBytes(t *testing.T) {
 
 func TestReplaceRunesEmpty(t *testing.T) {
 	s := "p我o爱s中t"
-	log.Println(ReplaceRunesEmpty(s, 'o'))
-	log.Println(ReplaceRunesEmpty(s, 'o', 's'))
-	log.Println(ReplaceRunesEmpty(s, 'o', 't'))
-	log.Println(ReplaceRunesEmpty(s, '中', 't'))
+	log.Println(RemoveRunes(s, 'o'))
+	log.Println(RemoveRunes(s, 'o', 's'))
+	log.Println(RemoveRunes(s, 'o', 't'))
+	log.Println(RemoveRunes(s, '中', 't'))
 }
 
 // TODO
@@ -120,4 +121,15 @@ func TestConvert(t *testing.T) {
 	for i := 'a'; i <= 'z'; i++ {
 		t.Log(string(i^' '), string(i^' '^' '))
 	}
+}
+
+func TestTrimSymbol(t *testing.T) {
+	assert.Equal(t, "Hello世界123", RemoveSymbol("Hello, 世界! 123"))
+	assert.Equal(t, "Hello世界123", RemoveSymbol("Hello, 世界! 😊 123"))
+	assert.Equal(t, "Hello, 世界!  123", RemoveEmoji("Hello, 世界! 😊 123"))
+	assert.Equal(t, "Hello世界123", RemoveSymbol("Hello_世界_123"))
+	assert.Equal(t, "是谁的小篮球", RemoveSymbol("是谁的小篮球🏀？"))
+	assert.Equal(t, "汉字567_.mp4\\\"", RetainHanAndASCIIGt32("૮𖥦აʚɞ汉字567_.mp4\n\t\\\a\b\f\r\v\""))
+	assert.Equal(t, "", RetainHanAndASCIIGt32("ᴿᵃʳᵉⁱⁿᵗʰᵉʷᵒʳˡᵈʸᵒᵘʳᵉʷᵒʳᵗʰⁱᵗ"))
+	assert.Equal(t, "#@!~$%&^*(){}[]", RetainHanAndASCIIGt32("#@!！~·￥$%&^*()【】{}[]"))
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/hopeio/utils/slices"
 	"github.com/hopeio/utils/strings/ascii"
 	"math/rand"
+	"regexp"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -147,7 +148,7 @@ func ReplaceRunes(s string, olds []rune, new rune) string {
 	panic("TODO")
 }
 
-func ReplaceRunesEmpty(s string, old ...rune) string {
+func RemoveRunes(s string, old ...rune) string {
 	if len(old) == 0 {
 		return s // avoid allocation
 	}
@@ -176,7 +177,7 @@ func ReplaceRunesEmpty(s string, old ...rune) string {
 	if needCopy {
 		w += copy(t[w:], s[start:])
 	}
-	return string(t[0:w])
+	return FromBytes(t[0:w])
 }
 
 // And now lots of helper functions.
@@ -616,4 +617,72 @@ func DJB33(seed uint32, k string) uint32 {
 		d = (d * 33) ^ uint32(k[i+2])
 	}
 	return d ^ (d >> 16)
+}
+
+func RemoveSymbol(s string) string {
+	return CommonRuneHandler(s, func(r rune) bool {
+		return !unicode.IsSymbol(r)
+	})
+}
+
+var emojiReg = regexp.MustCompile(`[\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}]`)
+
+func RemoveEmoji(s string) string {
+	return emojiReg.ReplaceAllString(s, "")
+}
+func RetainHanAndASCIIGt32(s string) string {
+	return CommonRuneHandler(s, func(r rune) bool {
+		return unicode.Is(unicode.Han, r) || (r > 32 && r < 127)
+	})
+}
+
+func RetainHanAndASCII(s string) string {
+	return CommonRuneHandler(s, func(r rune) bool {
+		return unicode.Is(unicode.Han, r) || (r < 127)
+	})
+}
+
+func CommonRuneHandler(s string, retain func(r rune) bool) string {
+	if len(s) == 0 {
+		return s // avoid allocation
+	}
+
+	// Apply replacements to buffer.
+	t := make([]byte, len(s))
+	w := 0
+	start := 0
+	needCopy := false
+	last := false
+	for i, r := range s {
+		if retain(r) {
+			if needCopy {
+				w += copy(t[w:], s[start:i])
+				needCopy = false
+			}
+			last = true
+			continue
+		}
+		needCopy = true
+		if last {
+			start = i
+			last = false
+		}
+	}
+	if needCopy {
+		w += copy(t[w:], s[start:])
+	}
+	return FromBytes(t[0:w])
+}
+
+func CommonRuneReplace(s string, f func(r rune) rune) string {
+	if len(s) == 0 {
+		return s // avoid allocation
+	}
+	var builder strings.Builder
+	for _, r := range s {
+		if r = f(r); r != 0 {
+			builder.WriteRune(r)
+		}
+	}
+	return builder.String()
 }

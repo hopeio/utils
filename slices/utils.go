@@ -46,6 +46,15 @@ func InByKey[S ~[]E, E cmp.EqualKey[K], K comparable](key K, s S) bool {
 	return false
 }
 
+func Index[S ~[]T, T comparable](v T, s S) int {
+	for i, x := range s {
+		if x == v {
+			return i
+		}
+	}
+	return -1
+}
+
 func Reverse[S ~[]T, T any](s S) S {
 	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]

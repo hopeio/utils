@@ -1,6 +1,7 @@
 package path
 
 import (
+	"github.com/hopeio/utils/slices"
 	stringsi "github.com/hopeio/utils/strings"
 	sdpath "path"
 	"path/filepath"
@@ -9,28 +10,37 @@ import (
 
 // windows需要,由于linux的文件也要放到windows看,统一处理
 func FileRewrite(filename string) string {
-	filename = stringsi.ReplaceRunesEmpty(filename, '/', '\\', '*', '|')
-	filename = strings.ReplaceAll(filename, "<", "《")
-	filename = strings.ReplaceAll(filename, ">", "》")
-	filename = strings.ReplaceAll(filename, "?", "？")
-	filename = strings.ReplaceAll(filename, ":", "：")
-	return filename
+	var result []rune
+	var empty = []rune{'/', '\\', '*', '|'}
+	origin := []rune{'<', '>', '?', ':'}
+	var replace []rune
+	for _, char := range "《》？：" {
+		replace = append(result, char)
+	}
+
+	for _, char := range filename {
+		if slices.In(char, empty) {
+			continue
+		}
+		if idx := slices.Index(char, origin); idx >= 0 {
+			result = append(result, replace[idx])
+		}
+	}
+	return string(result)
 }
 
 // 仅仅针对文件名,Removed unsupported characters
 func FileCleanse(filename string) string {
 
-	filename = strings.Trim(filename, ".")
-	filename = strings.TrimPrefix(filename, "-")
-	filename = strings.TrimPrefix(filename, "+")
+	filename = strings.Trim(filename, ".-+")
 	// windows
-	//filename = stringsi.ReplaceRunesEmpty(filename, '/', '\\', ':', '*', '?', '"', '<', '>', '|')
+	//filename = stringsi.RemoveRunes(filename, '/', '\\', ':', '*', '?', '"', '<', '>', '|')
 	// linux
-	//filename = stringsi.ReplaceRunesEmpty(filename, '\'', '*','?', '@', '#', '$', '&', '(', ')', '|', ';',  '/', '%', '^', ' ', '\t', '\n')
+	//filename = stringsi.RemoveRunes(filename, '\'', '*','?', '@', '#', '$', '&', '(', ')', '|', ';',  '/', '%', '^', ' ', '\t', '\n')
 
-	filename = stringsi.ReplaceRunesEmpty(filename, '/', '\\', ':', '*', '?', '"', '<', '>', '|', ';', '/', '%', '^', ' ', '\t', '\n', '$', '&')
+	filename = stringsi.RemoveRunes(filename, '/', '\\', ':', '*', '?', '"', '<', '>', '|', ';', '/', '%', '^', ' ', '\t', '\n', '$', '&')
 	// 中文符号
-	//filename = stringsi.ReplaceRunesEmpty(filename, '：', '，', '。', '！', '？', '、', '“', '”', '、')
+	//filename = stringsi.RemoveRunes(filename, '：', '，', '。', '！', '？', '、', '“', '”', '、')
 	return filename
 }
 
@@ -40,9 +50,9 @@ func DirCleanse(dir string) string { // will be used when save the dir or the pa
 	// :unix允许存在，windows需要
 	// windows path
 	if len(dir) > 2 && dir[1] == ':' && ((dir[0] >= 'A' && dir[0] <= 'Z') || (dir[0] >= 'a' && dir[0] <= 'z')) && (dir[2] == '/' || dir[2] == '\\') {
-		return dir[:3] + stringsi.ReplaceRunesEmpty(dir[3:], ':', '*', '?', '"', '<', '>', '|', ',', ' ', '\t', '\n')
+		return dir[:3] + stringsi.RemoveRunes(dir[3:], ':', '*', '?', '"', '<', '>', '|', ',', ' ', '\t', '\n')
 	}
-	return stringsi.ReplaceRunesEmpty(dir, ':', '*', '?', '"', '<', '>', '|', ',', ' ', '\t', '\n')
+	return stringsi.RemoveRunes(dir, ':', '*', '?', '"', '<', '>', '|', ',', ' ', '\t', '\n')
 }
 
 // 针对带目录的完整文件名,Removed unsupported characters
