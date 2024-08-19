@@ -21,4 +21,5 @@ func TestTrimSymbol(t *testing.T) {
 	assert.Equal(t, "Hello, 世界!  123", TrimEmoji("Hello, 世界! 😊 123"))
 	assert.Equal(t, "Hello世界123", TrimSymbol("Hello_世界_123"))
 	assert.Equal(t, "是谁的小篮球", TrimSymbol("是谁的小篮球🏀？"))
+	assert.Equal(t, "汉字567", RetainChineseAndAlphanumeric("૮𖥦აʚɞ汉字567"))
 }

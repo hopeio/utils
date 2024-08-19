@@ -104,3 +104,20 @@ var emojiReg = regexp.MustCompile(`[\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F6
 func TrimEmoji(s string) string {
 	return emojiReg.ReplaceAllString(s, "")
 }
+
+var pattern = regexp.MustCompile(`[\p{Han}a-zA-Z0-9]+`)
+
+func RetainChineseAndAlphanumeric(inputStr string) string {
+	// 使用正则表达式匹配中文字符和字母数字
+	pattern := regexp.MustCompile(`[\p{Han}a-zA-Z0-9]+`)
+	filteredStr := pattern.FindAllString(inputStr, -1)
+	return joinStrings(filteredStr)
+}
+
+func joinStrings(strs []string) string {
+	result := ""
+	for _, str := range strs {
+		result += str
+	}
+	return result
+}
