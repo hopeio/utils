@@ -621,7 +621,7 @@ func DJB33(seed uint32, k string) uint32 {
 
 func RemoveSymbol(s string) string {
 	return CommonRuneHandler(s, func(r rune) bool {
-		return !unicode.IsSymbol(r)
+		return !(unicode.IsLetter(r) || unicode.IsNumber(r))
 	})
 }
 
@@ -632,17 +632,17 @@ func RemoveEmoji(s string) string {
 }
 func RetainHanAndASCIIGt32(s string) string {
 	return CommonRuneHandler(s, func(r rune) bool {
-		return unicode.Is(unicode.Han, r) || (r > 32 && r < 127)
+		return !(unicode.Is(unicode.Han, r) || (r > 32 && r < 127))
 	})
 }
 
 func RetainHanAndASCII(s string) string {
 	return CommonRuneHandler(s, func(r rune) bool {
-		return unicode.Is(unicode.Han, r) || (r < 127)
+		return !(unicode.Is(unicode.Han, r) || (r < 127))
 	})
 }
 
-func CommonRuneHandler(s string, retain func(r rune) bool) string {
+func CommonRuneHandler(s string, rm func(r rune) bool) string {
 	if len(s) == 0 {
 		return s // avoid allocation
 	}
@@ -654,7 +654,7 @@ func CommonRuneHandler(s string, retain func(r rune) bool) string {
 	needCopy := false
 	last := false
 	for i, r := range s {
-		if retain(r) {
+		if rm(r) {
 			if needCopy {
 				w += copy(t[w:], s[start:i])
 				needCopy = false
