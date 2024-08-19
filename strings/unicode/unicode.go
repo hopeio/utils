@@ -2,7 +2,9 @@ package unicode
 
 import (
 	"github.com/hopeio/utils/slices"
-	"github.com/hopeio/utils/strings"
+	stringsi "github.com/hopeio/utils/strings"
+	"regexp"
+	"strings"
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -47,7 +49,7 @@ func Getu4(s []byte) rune {
 
 func ToUtf8(s []byte) string {
 	if len(s) < 6 {
-		return strings.BytesToString(s)
+		return stringsi.BytesToString(s)
 	}
 	b := make([]byte, len(s)+2*utf8.UTFMax)
 	begin, bbegin := 0, 0
@@ -56,7 +58,7 @@ func ToUtf8(s []byte) string {
 			bbegin += copy(b[bbegin:], s[begin:i])
 			rr := Getu4(s[i:])
 			if rr < 0 {
-				return strings.BytesToString(s)
+				return stringsi.BytesToString(s)
 			}
 			i += 6
 			if utf16.IsSurrogate(rr) {
@@ -77,7 +79,7 @@ func ToUtf8(s []byte) string {
 		}
 	}
 	bbegin += copy(b[bbegin:], s[begin:])
-	return strings.BytesToString(b[:bbegin])
+	return stringsi.BytesToString(b[:bbegin])
 }
 
 func ToLowerFirst(s string) string {
@@ -85,4 +87,20 @@ func ToLowerFirst(s string) string {
 		return string(unicode.ToLower(rune(s[0]))) + s[1:]
 	}
 	return ""
+}
+
+func TrimSymbol(s string) string {
+	var builder strings.Builder
+	for _, r := range s {
+		if unicode.IsLetter(r) || unicode.IsNumber(r) {
+			builder.WriteRune(r)
+		}
+	}
+	return builder.String()
+}
+
+var emojiReg = regexp.MustCompile(`[\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}]`)
+
+func TrimEmoji(s string) string {
+	return emojiReg.ReplaceAllString(s, "")
 }

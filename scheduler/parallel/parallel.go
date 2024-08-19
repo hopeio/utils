@@ -41,7 +41,7 @@ func (p *Parallel) Run() {
 	g := func() {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Error(err)
+				log.ErrorS(err)
 			}
 		}()
 		for task := range p.taskCh {
