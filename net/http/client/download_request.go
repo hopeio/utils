@@ -50,21 +50,13 @@ func NewDownloadReq(url string) *DownloadReq {
 
 func (req *DownloadReq) WithDownloader(c *Downloader) *DownloadReq {
 	req.downloader = c
-	req.downloader.req = req
 	return req
 }
 
 func (req *DownloadReq) SetDownloader(set func(c *Downloader)) *DownloadReq {
 	req.downloader = NewDownloader()
-	req.downloader.req = req
 	set(req.downloader)
 	return req
-}
-
-func (req *DownloadReq) Downloader() *Downloader {
-	req.downloader = NewDownloader()
-	req.downloader.req = req
-	return req.downloader
 }
 
 func (req *DownloadReq) AddHeader(k, v string) *DownloadReq {
