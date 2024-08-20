@@ -20,17 +20,16 @@ func TestTransformPoint(t *testing.T) {
 
 func TestIsPointInRectangle(t *testing.T) {
 	assert.Equal(t, false, IsPointInRectangle(Point{X: 0.44, Y: 0.62}, Point{X: 0.5, Y: 0.5}, 0.4, 0.2, 30))
-	assert.Equal(t, false, IsPointInRectangle(Point{X: 0.44, Y: -0.62}, Point{X: 0.5, Y: -0.5}, 0.4, 0.2, 150))
+	assert.Equal(t, false, IsPointInRectangle(Point{X: 0.44, Y: -0.62}, Point{X: 0.5, Y: -0.5}, 0.4, 0.2, -30))
 	assert.Equal(t, true, IsPointInRectangle(Point{X: 0.58, Y: 0.54}, Point{X: 0.5, Y: 0.5}, 0.4, 0.2, 30))
-	assert.Equal(t, true, IsPointInRectangle(Point{X: 0.58, Y: -0.54}, Point{X: 0.5, Y: -0.5}, 0.4, 0.2, 150))
+	assert.Equal(t, true, IsPointInRectangle(Point{X: 0.58, Y: -0.54}, Point{X: 0.5, Y: -0.5}, 0.4, 0.2, -30))
+	assert.Equal(t, true, IsPointInRectangle(Point{X: 82, Y: 12.5}, Point{X: 596, Y: 1491}, 1129.5, 2957, 0))
+	assert.Equal(t, true, IsPointInRectangle(Point{X: 82, Y: -12.5}, Point{X: 596, Y: -1491}, 1129.5, 2957, 0))
 }
 
 func FuzzIsPointInRectangle(f *testing.F) {
 	f.Fuzz(func(t *testing.T, x, y, cx, cy, w, h, angle float64) {
 		angle = NormalizeAngleDegrees(angle)
-		if angle > 180 {
-			angle = angle - 180
-		}
 		if x < 0 {
 			x = -x
 		}
@@ -51,6 +50,6 @@ func FuzzIsPointInRectangle(f *testing.F) {
 		}
 		t.Log(x, y, cx, cy, w, h, angle)
 		assert.Equal(t, IsPointInRectangle(Point{x, y}, Point{cx, cy}, w, h, angle), IsPointInRectangle(Point{x, -y},
-			Point{cx, -cy}, w, h, 180-angle))
+			Point{cx, -cy}, w, h, -angle))
 	})
 }

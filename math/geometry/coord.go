@@ -78,7 +78,7 @@ func IsPointInRectangle(p Point, rCenter Point, W, H, angleDeg float64) bool {
 	Bx := rCenter.X - (W/2)*cosA + (H/2)*sinA
 	By := rCenter.Y - (W/2)*sinA - (H/2)*cosA
 	Cx := rCenter.X + (W/2)*cosA + (H/2)*sinA
-	Cy := rCenter.X + (W/2)*sinA - (H/2)*cosA
+	Cy := rCenter.Y + (W/2)*sinA - (H/2)*cosA
 
 	// 射线法判断点是否在矩形内
 	inside := false
@@ -92,7 +92,7 @@ func IsPointInRectangle(p Point, rCenter Point, W, H, angleDeg float64) bool {
 		if y1 == y2 { // 水平边
 			continue
 		}
-		if p.Y < min(y1, y2) || p.Y >= max(y1, y2) { // 在边的外部
+		if p.Y < min(y1, y2) || p.Y > max(y1, y2) { // 在边的外部
 			continue
 		}
 
