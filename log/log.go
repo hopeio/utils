@@ -17,12 +17,11 @@ type skipLogger struct {
 }
 
 var (
-	defaultLogger      *Logger
-	stackLogger        *Logger
-	noCallerLogger     *Logger
-	noLineEndingLogger *Logger
-	skipLoggers        = make([]skipLogger, 10)
-	mu                 sync.Mutex
+	defaultLogger  *Logger
+	stackLogger    *Logger
+	noCallerLogger *Logger
+	skipLoggers    = make([]skipLogger, 10)
+	mu             sync.Mutex
 )
 
 //go:nosplit
@@ -39,7 +38,6 @@ func SetDefaultLogger(lf *Config, cores ...zapcore.Core) {
 	noCallerLogger = defaultLogger.WithOptions(zap.WithCaller(false))
 	clf := *lf
 	clf.SkipLineEnding = true
-	noLineEndingLogger = clf.NewLogger(cores...)
 	for i := 0; i < len(skipLoggers); i++ {
 		if skipLoggers[i].Logger != nil {
 			skipLoggers[i].needUpdate = true
@@ -70,10 +68,6 @@ func GetNoCallerLogger() *Logger {
 }
 func GetStackLogger() *Logger {
 	return stackLogger
-}
-
-func GetNoLineEndingLogger() *Logger {
-	return noLineEndingLogger
 }
 func Sync() error {
 	return defaultLogger.Sync()
