@@ -1,4 +1,4 @@
-package binding
+package mtos
 
 import (
 	"errors"

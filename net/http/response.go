@@ -9,8 +9,9 @@ import (
 	"time"
 )
 
-type Body map[string]interface{}
+type Body map[string]any
 
+// ResData 主要用来接收返回，发送请使用ResAnyData
 type ResData[T any] struct {
 	Code errcode.ErrCode `json:"code"`
 	Msg  string          `json:"msg,omitempty"`
@@ -45,6 +46,10 @@ func NewResAnyData(code errcode.ErrCode, msg string, data any) *ResAnyData {
 
 func RespErrcode(w http.ResponseWriter, code errcode.ErrCode) {
 	NewResData[any](code, code.Error(), nil).Response(w, http.StatusOK)
+}
+
+func RespError(w http.ResponseWriter, code errcode.ErrCode, msg string) {
+	NewResData[any](code, msg, nil).Response(w, http.StatusOK)
 }
 
 func RespSuccess[T any](w http.ResponseWriter, msg string, data T) {

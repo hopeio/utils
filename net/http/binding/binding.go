@@ -1,7 +1,10 @@
 package binding
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/hopeio/utils/encoding"
+	"io"
 	"net/http"
 	"reflect"
 
@@ -57,13 +60,9 @@ var (
 	Query  = queryBinding{}
 	Header = headerBinding{}
 
-	JSON          = jsonBinding{}
-	XML           = xmlBinding{}
+	CustomBody    = bodyBinding{name: "json", unmarshaller: json.Unmarshal}
 	FormPost      = formPostBinding{}
 	FormMultipart = formMultipartBinding{}
-	ProtoBuf      = protobufBinding{}
-	MsgPack       = msgpackBinding{}
-	YAML          = yamlBinding{}
 )
 
 // Default returns the appropriate Binding instance based on the HTTP method
@@ -77,22 +76,12 @@ func Default(method string, contentType string) Binding {
 
 func Body(contentType string) Binding {
 	switch contentType {
-	case MIMEJSON:
-		return JSON
 	case MIMEPOSTForm:
 		return FormPost
-	case MIMEXML, MIMEXML2:
-		return XML
-	case MIMEPROTOBUF:
-		return ProtoBuf
-	case MIMEMSGPACK, MIMEMSGPACK2:
-		return MsgPack
-	case MIMEYAML:
-		return YAML
 	case MIMEMultipartPOSTForm:
 		return FormMultipart
 	default: // case MIMEPOSTForm:
-		return JSON
+		return CustomBody
 	}
 }
 
@@ -126,4 +115,14 @@ func Bind(r *http.Request, obj interface{}) error {
 		return fmt.Errorf("args bind error: %w", err)
 	}
 	return nil
+}
+
+func RegisterBodyBinding(name string, unmarshaller func(data []byte, obj any) error) {
+	CustomBody.name = name
+	CustomBody.unmarshaller = unmarshaller
+}
+
+func RegisterBodyBindingByDecoder(name string, newDecoder func(io.Reader) encoding.Decoder) {
+	CustomBody.name = name
+	CustomBody.newDecoder = newDecoder
 }

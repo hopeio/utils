@@ -1,6 +1,7 @@
 package binding
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gofiber/fiber/v3"
 	"github.com/hopeio/utils/net/http/binding"
@@ -20,15 +21,11 @@ type BindingBody interface {
 }
 
 var (
-	JSON          = jsonBinding{}
-	XML           = xmlBinding{}
+	CustomBody    = bodyBinding{name: "json", unmarshaller: json.Unmarshal}
 	Query         = queryBinding{}
 	FormPost      = formPostBinding{}
 	FormMultipart = formMultipartBinding{}
 	Uri           = uriBinding{}
-	ProtoBuf      = protobufBinding{}
-	MsgPack       = msgpackBinding{}
-	YAML          = yamlBinding{}
 	Header        = headerBinding{}
 )
 
@@ -42,22 +39,12 @@ func Default(method string, contentType []byte) Binding {
 
 func Body(contentType []byte) Binding {
 	switch stringsi.BytesToString(contentType) {
-	case binding.MIMEJSON:
-		return JSON
 	case binding.MIMEPOSTForm:
 		return FormPost
-	case binding.MIMEXML, binding.MIMEXML2:
-		return XML
-	case binding.MIMEPROTOBUF:
-		return ProtoBuf
-	case binding.MIMEMSGPACK, binding.MIMEMSGPACK2:
-		return MsgPack
-	case binding.MIMEYAML:
-		return YAML
 	case binding.MIMEMultipartPOSTForm:
 		return FormMultipart
 	default: // case MIMEPOSTForm:
-		return JSON
+		return CustomBody
 	}
 }
 
@@ -87,4 +74,9 @@ func Bind(c fiber.Ctx, obj interface{}) error {
 		return fmt.Errorf("args bind error: %w", err)
 	}
 	return nil
+}
+
+func RegisterBodyBinding(name string, unmarshaller func(data []byte, obj any) error) {
+	CustomBody.name = name
+	CustomBody.unmarshaller = unmarshaller
 }

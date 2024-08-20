@@ -6,6 +6,7 @@ package binding
 
 import (
 	"errors"
+	"github.com/hopeio/utils/reflect/mtos"
 	"mime/multipart"
 	"net/http"
 	"reflect"
@@ -14,7 +15,6 @@ import (
 const defaultMemory = 32 << 20
 
 type formPostBinding struct{}
-type formMultipartBinding struct{}
 
 func (formPostBinding) Name() string {
 	return "form-urlencoded"
@@ -24,11 +24,13 @@ func (formPostBinding) Bind(req *http.Request, obj interface{}) error {
 	if err := req.ParseForm(); err != nil {
 		return err
 	}
-	if err := Decode(obj, req.PostForm); err != nil {
+	if err := mtos.Decode(obj, req.PostForm); err != nil {
 		return err
 	}
 	return Validate(obj)
 }
+
+type formMultipartBinding struct{}
 
 func (formMultipartBinding) Name() string {
 	return "multipart/form-data"

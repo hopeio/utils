@@ -14,24 +14,13 @@ func NewReq[REQ any](c *gin.Context) (*REQ, error) {
 	return req, nil
 }
 
-// BindJSON is a shortcut for c.MustBindWith(obj, binding.JSON).
-func BindJSON(c *gin.Context, obj interface{}) error {
-	return MustBindWith(c, obj, JSON)
-}
-
-// BindXML is a shortcut for c.MustBindWith(obj, binding.BindXML).
-func BindXML(c *gin.Context, obj interface{}) error {
-	return MustBindWith(c, obj, XML)
+func BindBody(c *gin.Context, obj interface{}) error {
+	return MustBindWith(c, obj, CustomBody)
 }
 
 // BindQuery is a shortcut for c.MustBindWith(obj, binding.Query).
 func BindQuery(c *gin.Context, obj interface{}) error {
 	return MustBindWith(c, obj, Query)
-}
-
-// BindYAML is a shortcut for c.MustBindWith(obj, binding.YAML).
-func BindYAML(c *gin.Context, obj interface{}) error {
-	return MustBindWith(c, obj, YAML)
 }
 
 // MustBindWith binds the passed struct pointer using the specified binding engine.
@@ -62,24 +51,13 @@ func ShouldBind(c *gin.Context, obj interface{}) error {
 	return b.Bind(c, obj)
 }
 
-// ShouldBindJSON is a shortcut for c.ShouldBindWith(obj, binding.JSON).
-func ShouldBindJSON(c *gin.Context, obj interface{}) error {
-	return ShouldBindWith(c, obj, JSON)
-}
-
-// ShouldBindXML is a shortcut for c.ShouldBindWith(obj, binding.XML).
-func ShouldBindXML(c *gin.Context, obj interface{}) error {
-	return ShouldBindWith(c, obj, XML)
+func ShouldBindBody(c *gin.Context, obj interface{}) error {
+	return ShouldBindWith(c, obj, CustomBody)
 }
 
 // ShouldBindQuery is a shortcut for c.ShouldBindWith(obj, binding.Query).
 func ShouldBindQuery(c *gin.Context, obj interface{}) error {
 	return ShouldBindWith(c, obj, Query)
-}
-
-// ShouldBindYAML is a shortcut for c.ShouldBindWith(obj, binding.YAML).
-func ShouldBindYAML(c *gin.Context, obj interface{}) error {
-	return ShouldBindWith(c, obj, YAML)
 }
 
 // ShouldBindUri binds the passed struct pointer using the specified binding engine.

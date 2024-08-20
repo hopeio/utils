@@ -1,7 +1,11 @@
 package http
 
 import (
+	"fmt"
+	"mime"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 type Header []string
@@ -69,4 +73,47 @@ func copyHeader(src, dst http.Header) {
 			dst.Add(k, v)
 		}
 	}
+}
+
+func ParseDisposition(disposition string) (mediatype string, params map[string]string, err error) {
+	return mime.ParseMediaType(disposition)
+}
+
+func ParseRange(rangeHeader string) (start int64, end int64, total int64, err error) {
+	// 提取Range值，格式为"bytes unit-unit/*"
+	parts := strings.Split(rangeHeader, " ")
+	if len(parts) != 2 || parts[0] != "bytes" {
+		err = fmt.Errorf("invalid Content-Range format")
+		return
+	}
+	rangeSpec := parts[1]
+	info := strings.Split(rangeSpec, "/")
+	bounds := strings.Split(info[0], "-")
+	start, err = strconv.ParseInt(bounds[0], 10, 64)
+	if err != nil {
+		err = fmt.Errorf("invalid range start %w", err)
+		return
+	}
+
+	if len(bounds) > 1 {
+		end, err = strconv.ParseInt(bounds[1], 10, 64)
+		if err != nil {
+			err = fmt.Errorf("invalid range end %w", err)
+			return
+		}
+	} else {
+		// 如果只有开始位置，结束位置默认为文件末尾
+		end = -1
+	}
+
+	if len(info) == 2 && info[1] != "*" {
+		total, err = strconv.ParseInt(info[1], 10, 64)
+		if err != nil {
+			err = fmt.Errorf("invalid range total %w", err)
+			return
+		}
+	} else {
+		total = -1
+	}
+	return
 }

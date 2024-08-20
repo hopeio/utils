@@ -1,25 +1,20 @@
 package binding
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/net/http/binding"
+
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 const (
-	MIMEJSON              = "application/json"
-	MIMEHTML              = "text/html"
-	MIMEXML               = "application/xml"
-	MIMEXML2              = "text/xml"
-	MIMEPlain             = "text/plain"
 	MIMEPOSTForm          = "application/x-www-form-urlencoded"
 	MIMEMultipartPOSTForm = "multipart/form-data"
-	MIMEPROTOBUF          = "application/x-protobuf"
-	MIMEMSGPACK           = "application/x-msgpack"
-	MIMEMSGPACK2          = "application/msgpack"
-	MIMEYAML              = "application/x-yaml"
 )
 
 func SetTag(tag string) {
@@ -46,16 +41,12 @@ type BindingBody interface {
 // These implement the Binding interface and can be used to bind the data
 // present in the request to struct instances.
 var (
-	JSON          = jsonBinding{}
-	XML           = xmlBinding{}
 	Query         = queryBinding{}
 	FormPost      = formPostBinding{}
 	FormMultipart = formMultipartBinding{}
 	Uri           = uriBinding{}
-	ProtoBuf      = protobufBinding{}
-	MsgPack       = msgpackBinding{}
-	YAML          = yamlBinding{}
 	Header        = headerBinding{}
+	CustomBody    = bodyBinding{name: "json", unmarshaller: json.Unmarshal}
 )
 
 // Default returns the appropriate Binding instance based on the HTTP method
@@ -70,22 +61,12 @@ func Default(method string, contentType string) Binding {
 
 func Body(contentType string) Binding {
 	switch contentType {
-	case MIMEJSON:
-		return JSON
 	case MIMEPOSTForm:
 		return FormPost
-	case MIMEXML, MIMEXML2:
-		return XML
-	case MIMEPROTOBUF:
-		return ProtoBuf
-	case MIMEMSGPACK, MIMEMSGPACK2:
-		return MsgPack
-	case MIMEYAML:
-		return YAML
 	case MIMEMultipartPOSTForm:
 		return FormMultipart
 	default: // case MIMEPOSTForm:
-		return JSON
+		return CustomBody
 	}
 }
 
@@ -119,4 +100,14 @@ func Bind(c *gin.Context, obj interface{}) error {
 		return fmt.Errorf("args bind error: %w", err)
 	}
 	return nil
+}
+
+func RegisterBodyBinding(name string, unmarshaller func(data []byte, obj any) error) {
+	CustomBody.name = name
+	CustomBody.unmarshaller = unmarshaller
+}
+
+func RegisterBodyBindingByDecoder(name string, newDecoder func(io.Reader) encoding.Decoder) {
+	CustomBody.name = name
+	CustomBody.newDecoder = newDecoder
 }

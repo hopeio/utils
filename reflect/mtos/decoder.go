@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package binding
+package mtos
 
 import (
 	"encoding"
@@ -33,7 +33,7 @@ func (d *Decoder) SetAliasTag(tag string) {
 	d.cache.tag = tag
 }
 
-// ZeroEmpty controls the behaviour when the decoder encounters empty values
+// ZeroEmpty controls the behaviour when the Decoder encounters empty values
 // in a map.
 // If z is true and a key in the map has the empty string as a value
 // then the corresponding struct field is set to the zero value.
@@ -45,7 +45,7 @@ func (d *Decoder) ZeroEmpty(z bool) {
 	d.zeroEmpty = z
 }
 
-// IgnoreUnknownKeys controls the behaviour when the decoder encounters unknown
+// IgnoreUnknownKeys controls the behaviour when the Decoder encounters unknown
 // keys in the map.
 // If i is true and an unknown field is encountered, it is ignored. This is
 // similar to how unknown keys are handled by encoding/json.

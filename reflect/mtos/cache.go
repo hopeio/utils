@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package binding
+package mtos
 
 import (
 	"errors"
+	"github.com/hopeio/utils/net/http/binding"
 	reflecti "github.com/hopeio/utils/reflect/converter"
 	"reflect"
 	"strconv"
@@ -20,7 +21,7 @@ func newCache() *cache {
 	c := cache{
 		m:       make(map[reflect.Type]*structInfo),
 		regconv: make(map[reflect.Type]reflecti.StringConverter),
-		tag:     Tag,
+		tag:     binding.Tag,
 	}
 	return &c
 }

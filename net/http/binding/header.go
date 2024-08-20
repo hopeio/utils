@@ -1,6 +1,7 @@
 package binding
 
 import (
+	"github.com/hopeio/utils/reflect/mtos"
 	"net/http"
 	"net/textproto"
 	"reflect"
@@ -14,7 +15,7 @@ func (headerBinding) Name() string {
 
 func (headerBinding) Bind(req *http.Request, obj interface{}) error {
 
-	if err := Decode(obj, req.Header); err != nil {
+	if err := mtos.Decode(obj, req.Header); err != nil {
 		return err
 	}
 

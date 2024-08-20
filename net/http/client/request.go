@@ -14,6 +14,7 @@ import (
 	stringsi "github.com/hopeio/utils/strings"
 	"github.com/hopeio/utils/strings/ascii"
 	"github.com/hopeio/utils/strings/unicode"
+	"github.com/klauspost/compress/zstd"
 	"io"
 	"net/http"
 	"sync"
@@ -268,31 +269,38 @@ Retry:
 
 	var reader io.Reader
 	// net/http会自动处理gzip
-	// go1.22 发现没有处理
-	if resp.Header.Get(httpi.HeaderContentEncoding) == "gzip" {
+	// go1.22 发现没有处理(并不是,是请求时header标明Content-Encoding时不会处理)
+	encoding := resp.Header.Get(httpi.HeaderContentEncoding)
+	var compress bool
+	switch {
+	case ascii.EqualFold(encoding, "gzip"):
 		reader, err = gzip.NewReader(resp.Body)
-		resp.Header.Del("Content-Encoding")
-		resp.Header.Del("Content-Length")
-		resp.ContentLength = -1
-		resp.Uncompressed = true
 		if err != nil {
 			resp.Body.Close()
 			return err
 		}
-	} else if ascii.EqualFold(resp.Header.Get("Content-Encoding"), "br") {
+		compress = true
+	case ascii.EqualFold(encoding, "br"):
 		reader = brotli.NewReader(resp.Body)
-		resp.Header.Del("Content-Encoding")
-		resp.Header.Del("Content-Length")
-		resp.ContentLength = -1
-		resp.Uncompressed = true
-	} else if ascii.EqualFold(resp.Header.Get("Content-Encoding"), "deflate") {
+		compress = true
+	case ascii.EqualFold(encoding, "deflate"):
 		reader = flate.NewReader(resp.Body)
-		resp.Header.Del("Content-Encoding")
-		resp.Header.Del("Content-Length")
+		compress = true
+	case ascii.EqualFold(encoding, "zstd"):
+		reader, err = zstd.NewReader(resp.Body)
+		if err != nil {
+			resp.Body.Close()
+			return err
+		}
+		compress = true
+	default:
+		reader = resp.Body
+	}
+	if compress {
+		resp.Header.Del(httpi.HeaderContentEncoding)
+		resp.Header.Del(httpi.HeaderContentLength)
 		resp.ContentLength = -1
 		resp.Uncompressed = true
-	} else {
-		reader = resp.Body
 	}
 
 	if httpresp, ok := response.(*io.Reader); ok {
