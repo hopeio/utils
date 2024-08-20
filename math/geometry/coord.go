@@ -55,3 +55,47 @@ func angleBetweenVectors(v1, v2 Point) float64 {
 	dy := v2.Y - v1.Y
 	return math.Atan2(dy, dx)
 }
+
+func IsPointInRotatedRectangle(Px, Py, Cx, Cy, W, H, theta float64) bool {
+	// 将角度转换为弧度
+	theta = theta * math.Pi / 180
+	Cost := math.Cos(theta)
+	Sint := math.Sin(theta)
+	// 计算矩形四个角的坐标
+	Dx := Cx + (W/2)*Cost - (H/2)*Sint
+	Dy := Cy + (W/2)*Sint + (H/2)*Cost
+	Ax := Cx - (W/2)*Cost - (H/2)*Sint
+	Ay := Cy - (W/2)*Sint + (H/2)*Cost
+	Bx := Cx - (W/2)*Cost + (H/2)*Sint
+	By := Cy - (W/2)*Sint - (H/2)*Cost
+	Cx = Cx + (W/2)*Cost + (H/2)*Sint
+	Cy = Cy + (W/2)*Sint - (H/2)*Cost
+
+	// 射线法判断点是否在矩形内
+	inside := false
+	intersections := 0
+	corners := [][]float64{{Ax, Ay}, {Bx, By}, {Cx, Cy}, {Dx, Dy}}
+
+	for i := 0; i < len(corners); i++ {
+		x1, y1 := corners[i][0], corners[i][1]
+		x2, y2 := corners[(i+1)%len(corners)][0], corners[(i+1)%len(corners)][1]
+
+		if y1 == y2 { // 水平边
+			continue
+		}
+		if Py < min(y1, y2) || Py >= max(y1, y2) { // 在边的外部
+			continue
+		}
+
+		x_intersect := x1 + (Py-y1)*(x2-x1)/(y2-y1)
+		if Px < x_intersect {
+			intersections++
+		}
+	}
+
+	if intersections%2 == 1 {
+		inside = true
+	}
+
+	return inside
+}
