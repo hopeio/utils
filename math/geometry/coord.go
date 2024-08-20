@@ -2,12 +2,20 @@ package geometry
 
 import (
 	"math"
+	"math/rand"
 )
 
 // Point 结构体用于表示一个点
 type Point struct {
 	X float64
 	Y float64
+}
+
+func (p *Point) Rotate(angleDeg float64) {
+	angleRad := math.Pi * angleDeg / 180.0
+	cosA := math.Cos(angleRad)
+	sinA := math.Sin(angleRad)
+	p.X, p.Y = p.X*cosA-p.Y*sinA, p.X*sinA+p.Y*cosA
 }
 
 // 两个原点不重合的坐标系O1,O2。O2在O1内部,且经过顺时针旋转c度。其中的点分别用(x1,y1),(x2,y2)表示，已知某个点在两个坐标系中的坐标(x1,y1),(x2,y2),以及另一点在O2内的坐标(x2,
@@ -22,16 +30,16 @@ func TransformPointByOnePointAndRotationAngle(pA, qA, qB Point, angleDeg float64
 	// Convert angle from degrees to radians
 	angleRad := angleDeg * math.Pi / 180.0
 	// Calculate cosine and sine of the angle
-	cosC := math.Cos(angleRad)
-	sinC := math.Sin(angleRad)
+	cosA := math.Cos(angleRad)
+	sinA := math.Sin(angleRad)
 
 	// Calculate dx and dy
-	dx := qB.X - (qA.X*cosC - qA.Y*sinC)
-	dy := qB.Y - (qA.X*sinC + qA.Y*cosC)
+	dx := qB.X - (qA.X*cosA - qA.Y*sinA)
+	dy := qB.Y - (qA.X*sinA + qA.Y*cosA)
 
 	// Apply rotation and translation
-	x1 := pA.X*cosC - pA.Y*sinC + dx
-	y1 := pA.X*sinC + pA.Y*cosC + dy
+	x1 := pA.X*cosA - pA.Y*sinA + dx
+	y1 := pA.X*sinA + pA.Y*cosA + dy
 
 	return Point{x1, y1}
 }
@@ -56,20 +64,21 @@ func angleBetweenVectors(v1, v2 Point) float64 {
 	return math.Atan2(dy, dx)
 }
 
-func IsPointInRotatedRectangle(Px, Py, Cx, Cy, W, H, theta float64) bool {
-	// 将角度转换为弧度
-	theta = theta * math.Pi / 180
-	Cost := math.Cos(theta)
-	Sint := math.Sin(theta)
-	// 计算矩形四个角的坐标
-	Dx := Cx + (W/2)*Cost - (H/2)*Sint
-	Dy := Cy + (W/2)*Sint + (H/2)*Cost
-	Ax := Cx - (W/2)*Cost - (H/2)*Sint
-	Ay := Cy - (W/2)*Sint + (H/2)*Cost
-	Bx := Cx - (W/2)*Cost + (H/2)*Sint
-	By := Cy - (W/2)*Sint - (H/2)*Cost
-	Cx = Cx + (W/2)*Cost + (H/2)*Sint
-	Cy = Cy + (W/2)*Sint - (H/2)*Cost
+// 图片就是第四象限,角度90+θ
+func IsPointInRectangle(p Point, rCenter Point, W, H, angleDeg float64) bool {
+	angleRad := angleDeg * math.Pi / 180.0
+	// Calculate cosine and sine of the angle
+	cosA := math.Cos(angleRad)
+	sinA := math.Sin(angleRad)
+	// 计算矩形四个角的坐标 (A左下-B右下-C右上-D左上)
+	Dx := rCenter.X + (W/2)*cosA - (H/2)*sinA
+	Dy := rCenter.Y + (W/2)*sinA + (H/2)*cosA
+	Ax := rCenter.X - (W/2)*cosA - (H/2)*sinA
+	Ay := rCenter.Y - (W/2)*sinA + (H/2)*cosA
+	Bx := rCenter.X - (W/2)*cosA + (H/2)*sinA
+	By := rCenter.Y - (W/2)*sinA - (H/2)*cosA
+	Cx := rCenter.X + (W/2)*cosA + (H/2)*sinA
+	Cy := rCenter.X + (W/2)*sinA - (H/2)*cosA
 
 	// 射线法判断点是否在矩形内
 	inside := false
@@ -83,12 +92,12 @@ func IsPointInRotatedRectangle(Px, Py, Cx, Cy, W, H, theta float64) bool {
 		if y1 == y2 { // 水平边
 			continue
 		}
-		if Py < min(y1, y2) || Py >= max(y1, y2) { // 在边的外部
+		if p.Y < min(y1, y2) || p.Y >= max(y1, y2) { // 在边的外部
 			continue
 		}
 
-		x_intersect := x1 + (Py-y1)*(x2-x1)/(y2-y1)
-		if Px < x_intersect {
+		x_intersect := x1 + (p.Y-y1)*(x2-x1)/(y2-y1)
+		if p.X < x_intersect {
 			intersections++
 		}
 	}
@@ -98,4 +107,32 @@ func IsPointInRotatedRectangle(Px, Py, Cx, Cy, W, H, theta float64) bool {
 	}
 
 	return inside
+}
+
+func RandomPoint(min, max Point) Point {
+	return Point{
+		X: math.Floor(min.X + math.Floor(rand.Float64()*(max.X-min.X))),
+		Y: math.Floor(min.Y + math.Floor(rand.Float64()*(max.Y-min.Y))),
+	}
+}
+
+// RotatePoint 计算点 (x, y) 绕点 (centerX, centerY) 旋转 angle 度后的新坐标
+func RotatePoint(p Point, center Point, angleDeg float64) Point {
+	angleRad := angleDeg * math.Pi / 180.0
+	// Calculate cosine and sine of the angle
+	cosA := math.Cos(angleRad)
+	sinA := math.Sin(angleRad)
+	// 计算旋转后的坐标
+	newX := center.X + (p.X-center.X)*cosA - (p.Y-center.Y)*sinA
+	newY := center.Y + (p.X-center.X)*sinA + (p.Y-center.Y)*cosA
+
+	return Point{newX, newY}
+}
+
+func NormalizeAngleDegrees(theta float64) float64 {
+	normalized := math.Mod(theta, 360)
+	if normalized < 0 {
+		normalized += 360
+	}
+	return normalized
 }

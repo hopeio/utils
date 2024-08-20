@@ -18,6 +18,39 @@ func TestTransformPoint(t *testing.T) {
 	t.Log(TransformPointByOnePointAndRotationAngle(point2B, point1B, point1A, -angle))
 }
 
-func TestIsPointInRotatedRectangle(t *testing.T) {
+func TestIsPointInRectangle(t *testing.T) {
+	assert.Equal(t, false, IsPointInRectangle(Point{X: 0.44, Y: 0.62}, Point{X: 0.5, Y: 0.5}, 0.4, 0.2, 30))
+	assert.Equal(t, false, IsPointInRectangle(Point{X: 0.44, Y: -0.62}, Point{X: 0.5, Y: -0.5}, 0.4, 0.2, 150))
+	assert.Equal(t, true, IsPointInRectangle(Point{X: 0.58, Y: 0.54}, Point{X: 0.5, Y: 0.5}, 0.4, 0.2, 30))
+	assert.Equal(t, true, IsPointInRectangle(Point{X: 0.58, Y: -0.54}, Point{X: 0.5, Y: -0.5}, 0.4, 0.2, 150))
+}
 
+func FuzzIsPointInRectangle(f *testing.F) {
+	f.Fuzz(func(t *testing.T, x, y, cx, cy, w, h, angle float64) {
+		angle = NormalizeAngleDegrees(angle)
+		if angle > 180 {
+			angle = angle - 180
+		}
+		if x < 0 {
+			x = -x
+		}
+		if y < 0 {
+			y = -y
+		}
+		if w < 0 {
+			w = -w
+		}
+		if h < 0 {
+			h = -h
+		}
+		if cx < 0 {
+			cx = -cx
+		}
+		if cy < 0 {
+			cy = -cy
+		}
+		t.Log(x, y, cx, cy, w, h, angle)
+		assert.Equal(t, IsPointInRectangle(Point{x, y}, Point{cx, cy}, w, h, angle), IsPointInRectangle(Point{x, -y},
+			Point{cx, -cy}, w, h, 180-angle))
+	})
 }
