@@ -17,8 +17,8 @@ type Encoder struct {
 }
 
 // NewEncoder returns a new Encoder with defaults.
-func NewEncoder() *Encoder {
-	return &Encoder{cache: newCache(), regenc: make(map[reflect.Type]encoderFunc)}
+func NewEncoder(tag string) *Encoder {
+	return &Encoder{cache: newCache(tag), regenc: make(map[reflect.Type]encoderFunc)}
 }
 
 // Encode encodes a struct into map[string][]string.

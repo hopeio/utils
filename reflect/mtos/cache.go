@@ -6,7 +6,6 @@ package mtos
 
 import (
 	"errors"
-	"github.com/hopeio/utils/net/http/binding"
 	reflecti "github.com/hopeio/utils/reflect/converter"
 	"reflect"
 	"strconv"
@@ -17,11 +16,11 @@ import (
 var invalidPath = errors.New("schema: invalid path")
 
 // newCache returns a new cache.
-func newCache() *cache {
+func newCache(tag string) *cache {
 	c := cache{
 		m:       make(map[reflect.Type]*structInfo),
 		regconv: make(map[reflect.Type]reflecti.StringConverter),
-		tag:     binding.Tag,
+		tag:     tag,
 	}
 	return &c
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/hopeio/utils/encoding"
+	"github.com/hopeio/utils/reflect/mtos"
 	"io"
 	"net/http"
 	"reflect"
@@ -31,6 +32,7 @@ func SetTag(tag string) {
 	if tag != "" {
 		Tag = tag
 	}
+	mtos.SetAliasTag(tag)
 }
 
 // Binding describes the interface which needs to be implemented for binding the

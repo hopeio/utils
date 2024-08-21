@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"github.com/andybalholm/brotli"
@@ -188,7 +189,12 @@ func (req *Request) Do(param, response any, opts ...RequestOption) error {
 					params := url2.QueryParam(param)
 					reqBody.Data = stringsi.ToBytes(params)
 				case ContentTypeXml:
-
+					var reqBytes []byte
+					reqBytes, err = xml.Marshal(param)
+					if err != nil {
+						return err
+					}
+					reqBody.Data = reqBytes
 				default:
 					var reqBytes []byte
 					reqBytes, err = json.Marshal(param)
@@ -202,11 +208,17 @@ func (req *Request) Do(param, response any, opts ...RequestOption) error {
 		}
 	}
 	var request *http.Request
-	reqBytes := reqBody.Data
-	if c.reqDataHandler != nil {
-		reqBytes, err = c.reqDataHandler(reqBody.Data)
+	var body io.Reader
+	var reqBytes []byte
+	if reqBody != nil {
+		reqBytes = reqBody.Data
+		if c.reqDataHandler != nil {
+			reqBytes, err = c.reqDataHandler(reqBody.Data)
+		}
+		body = bytes.NewReader(reqBytes)
 	}
-	request, err = http.NewRequestWithContext(req.ctx, req.Method, req.Url, bytes.NewReader(reqBytes))
+
+	request, err = http.NewRequestWithContext(req.ctx, req.Method, req.Url, body)
 	if err != nil {
 		return err
 	}
@@ -339,13 +351,18 @@ Retry:
 			*raw = respBytes
 			return nil
 		}
-		if respBody.ContentType == ContentTypeForm {
-			// TODO
-		} else {
+		switch respBody.ContentType {
+		case ContentTypeForm:
+		case ContentTypeXml:
+			err = xml.Unmarshal(respBytes, response)
+			if err != nil {
+				return fmt.Errorf("xml.Unmarshal error: %w", err)
+			}
+		default:
 			// 默认json
 			err = json.Unmarshal(respBytes, response)
 			if err != nil {
-				return fmt.Errorf("json.Unmarshal error: %v", err)
+				return fmt.Errorf("json.Unmarshal error: %w", err)
 			}
 		}
 

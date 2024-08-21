@@ -4,7 +4,7 @@ import (
 	reflecti "github.com/hopeio/utils/reflect/converter"
 )
 
-var defaultDecoder = NewDecoder()
+var defaultDecoder = NewDecoder("json")
 
 func DefaultDecoder() *Decoder {
 	return defaultDecoder

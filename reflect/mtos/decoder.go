@@ -16,8 +16,8 @@ import (
 )
 
 // NewDecoder returns a new Decoder.
-func NewDecoder() *Decoder {
-	return &Decoder{cache: newCache()}
+func NewDecoder(tag string) *Decoder {
+	return &Decoder{cache: newCache(tag)}
 }
 
 // Decoder decodes values from a map[string][]string to a struct.

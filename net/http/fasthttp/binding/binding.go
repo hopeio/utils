@@ -72,6 +72,11 @@ func Bind(c *fasthttp.RequestCtx, obj interface{}) error {
 }
 
 func RegisterBodyBinding(name string, unmarshaller func(data []byte, obj any) error) {
+	binding.SetTag(name)
 	CustomBody.name = name
 	CustomBody.unmarshaller = unmarshaller
+}
+
+func SetTag(tag string) {
+	binding.SetTag(tag)
 }
