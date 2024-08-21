@@ -44,6 +44,19 @@ func NewResAnyData(code errcode.ErrCode, msg string, data any) *ResAnyData {
 	}
 }
 
+func NewSuccessResData(data any) *ResAnyData {
+	return &ResAnyData{
+		Data: data,
+	}
+}
+
+func NewErrorResData(code errcode.ErrCode, msg string) *ResAnyData {
+	return &ResAnyData{
+		Code: code,
+		Msg:  msg,
+	}
+}
+
 func RespErrcode(w http.ResponseWriter, code errcode.ErrCode) {
 	NewResData[any](code, code.Error(), nil).Response(w, http.StatusOK)
 }
