@@ -2,7 +2,7 @@ package iter
 
 import (
 	"github.com/hopeio/utils/types"
-	"github.com/hopeio/utils/types/constraints"
+	"golang.org/x/exp/constraints"
 	"iter"
 	"sort"
 )
@@ -121,7 +121,7 @@ func IsSorted[T any](seq iter.Seq[T], cmp Comparator[T]) bool {
 
 // Limit limits the number of elements in Seq.
 // 限制元素个数
-func Limit[T any, Number constraints.Number](seq iter.Seq[T], limit Number) iter.Seq[T] {
+func Limit[T any](seq iter.Seq[T], limit int) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for v := range seq {
 			limit--
@@ -137,7 +137,7 @@ func Limit[T any, Number constraints.Number](seq iter.Seq[T], limit Number) iter
 
 // Skip drop some elements of the Seq.
 // 跳过指定个数的元素
-func Skip[T any, Number constraints.Number](seq iter.Seq[T], skip Number) iter.Seq[T] {
+func Skip[T any](seq iter.Seq[T], skip int) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for v := range seq {
 			skip--
@@ -145,6 +145,32 @@ func Skip[T any, Number constraints.Number](seq iter.Seq[T], skip Number) iter.S
 				if !yield(v) {
 					return
 				}
+			}
+		}
+	}
+}
+
+func UntilComparable[T comparable](seq iter.Seq[T], e T) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for v := range seq {
+			if v == e {
+				return
+			}
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+func Until[T any](seq iter.Seq[T], match Predicate[T]) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for v := range seq {
+			if match(v) {
+				return
+			}
+			if !yield(v) {
+				return
 			}
 		}
 	}
@@ -242,16 +268,8 @@ func First[T any](seq iter.Seq[T]) (T, bool) {
 
 // Count return the count of elements in the Seq.
 // 返回序列中的元素个数
-func Count[T any](seq iter.Seq[T]) (count int64) {
+func Count[T any](seq iter.Seq[T]) (count int) {
 	for _ = range seq {
-		count++
-	}
-	return
-}
-
-func CountForEach[T any](seq iter.Seq[T], accept Consumer[T]) (count int64) {
-	for v := range seq {
-		accept(v)
 		count++
 	}
 	return
@@ -286,4 +304,26 @@ func Zip[T any](seq1 iter.Seq[T], seq2 iter.Seq[T]) iter.Seq[T] {
 			}
 		}
 	}
+}
+
+func Sum[T any](seq iter.Seq[T], add BinaryOperator[T]) T {
+	var result T
+	var idx int
+	for v := range seq {
+		if idx == 0 {
+			result = v
+			continue
+		}
+		result = add(result, v)
+		idx++
+	}
+	return result
+}
+
+func SumComparable[T constraints.Ordered](seq iter.Seq[T]) T {
+	var result T
+	for v := range seq {
+		result += v
+	}
+	return result
 }

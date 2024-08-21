@@ -42,8 +42,9 @@ type Stream[T any] interface {
 	Peek(Consumer[T]) Stream[T]
 	Sorted(Comparator[T]) Stream[T]
 	Distinct(Function[T, int]) Stream[T]
-	Limit(int64) Stream[T]
-	Skip(int64) Stream[T]
+	Limit(int) Stream[T]
+	Until(Predicate[T]) Stream[T]
+	Skip(int) Stream[T]
 	Zip(iter.Seq[T]) Stream[T]
 
 	ForEach(Consumer[T])
@@ -55,7 +56,8 @@ type Stream[T any] interface {
 	Reduce(acc BinaryOperator[T]) (T, bool)
 	Fold(initVal T, acc BinaryOperator[T]) T
 	First() (T, bool)
-	Count() int64
+	Count() int
+	Sum(BinaryOperator[T]) T
 }
 
 func StreamOf[T any](seq iter.Seq[T]) Stream[T] {
@@ -126,11 +128,15 @@ func (it Seq[T]) IsSorted(cmp Comparator[T]) bool {
 	return IsSorted(iter.Seq[T](it), cmp)
 }
 
-func (it Seq[T]) Limit(limit int64) Stream[T] {
+func (it Seq[T]) Limit(limit int) Stream[T] {
 	return Seq[T](Limit(iter.Seq[T](it), limit))
 }
 
-func (it Seq[T]) Skip(skip int64) Stream[T] {
+func (it Seq[T]) Until(test Predicate[T]) Stream[T] {
+	return Seq[T](Until(iter.Seq[T](it), test))
+}
+
+func (it Seq[T]) Skip(skip int) Stream[T] {
 	return Seq[T](Skip(iter.Seq[T](it), skip))
 }
 
@@ -170,8 +176,12 @@ func (it Seq[T]) First() (T, bool) {
 	return First(iter.Seq[T](it))
 }
 
-func (it Seq[T]) Count() int64 {
+func (it Seq[T]) Count() int {
 	return Count(iter.Seq[T](it))
+}
+
+func (it Seq[T]) Sum(add BinaryOperator[T]) T {
+	return Sum(iter.Seq[T](it), add)
 }
 
 func (it Seq[T]) Iter() iteri.Iterator[T] {
