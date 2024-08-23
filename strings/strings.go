@@ -686,3 +686,7 @@ func CommonRuneReplace(s string, f func(r rune) rune) string {
 	}
 	return builder.String()
 }
+
+func IsEmpty(str string) bool {
+	return len(strings.TrimSpace(str)) == 0
+}

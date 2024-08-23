@@ -1,69 +1,69 @@
 package http
 
 const (
-	// ContentJavascriptHeaderValue header value for JSONP & Javascript data.
-	ContentJavascriptHeaderValue = "text/javascript"
-	// ContentHtmlHeaderValue is the  string of text/html response header's content type value.
-	ContentHtmlHeaderValue = "text/html"
-	ContentCssHeaderValue  = "text/css"
-	// ContentTextHeaderValue header value for Text data.
-	ContentTextHeaderValue = "text/plain"
-	// ContentXmlHeaderValue header value for XML data.
-	ContentXmlHeaderValue = "text/xml"
-	// ContentMarkdownHeaderValue custom key/content type, the real is the text/html.
-	ContentMarkdownHeaderValue = "text/markdown"
-	// ContentYamlTextHeaderValue header value for YAML plain text.
-	ContentYamlTextHeaderValue = "text/yaml"
+	// ContentTypeJavascript header value for JSONP & Javascript data.
+	ContentTypeJavascript = "text/javascript"
+	// ContentTypeHtml is the  string of text/html response header's content type value.
+	ContentTypeHtml = "text/html"
+	ContentTypeCss  = "text/css"
+	// ContentTypeText header value for Text data.
+	ContentTypeText = "text/plain"
+	// ContentTypeXml header value for XML data.
+	ContentTypeXml = "text/xml"
+	// ContentTypeMarkdown custom key/content type, the real is the text/html.
+	ContentTypeMarkdown = "text/markdown"
+	// ContentTypeYamlText header value for YAML plain text.
+	ContentTypeYamlText = "text/yaml"
 
-	// ContentFormMultipartHeaderValue header value for post multipart form data.
-	ContentFormMultipartHeaderValue = "multipart/form-data"
+	// ContentTypeMultipart header value for post multipart form data.
+	ContentTypeMultipart = "multipart/form-data"
 
-	// ContentBinaryHeaderValue header value for binary data.
-	ContentBinaryHeaderValue = "application/octet-stream"
-	// ContentWebassemblyHeaderValue header value for web assembly files.
-	ContentWebassemblyHeaderValue = "application/wasm"
-	// ContentJsonHeaderValue header value for JSON data.
-	ContentJsonHeaderValue = "application/json"
-	// ContentJsonProblemHeaderValue header value for JSON API problem error.
+	// ContentTypeOctetStream header value for binary data.
+	ContentTypeOctetStream = "application/octet-stream"
+	// ContentTypeWebassembly header value for web assembly files.
+	ContentTypeWebassembly = "application/wasm"
+	// ContentTypeJson header value for JSON data.
+	ContentTypeJson = "application/json"
+	// ContentTypeJsonProblem header value for JSON API problem error.
 	// Read more at: https://tools.ietf.org/html/rfc7807
-	ContentJsonProblemHeaderValue = "application/problem+json"
-	// ContentXmlProblemHeaderValue header value for XML API problem error.
+	ContentTypeJsonProblem = "application/problem+json"
+	// ContentTypeXmlProblem header value for XML API problem error.
 	// Read more at: https://tools.ietf.org/html/rfc7807
-	ContentXmlProblemHeaderValue           = "application/problem+xml"
-	ContentJavascriptUnreadableHeaderValue = "application/javascript"
-	// ContentXmlUnreadableHeaderValue obsolete header value for XML.
-	ContentXmlUnreadableHeaderValue = "application/xml"
-	// ContentYamlHeaderValue header value for YAML data.
-	ContentYamlHeaderValue = "application/x-yaml"
-	// ContentProtobufHeaderValue header value for Protobuf messages data.
-	ContentProtobufHeaderValue = "application/x-protobuf"
-	// ContentMsgPackHeaderValue header value for MsgPack data.
-	ContentMsgPackHeaderValue = "application/msgpack"
-	// ContentMsgPack2HeaderValue alternative header value for MsgPack data.
-	ContentMsgPack2HeaderValue = "application/x-msgpack"
-	// ContentFormHeaderValue header value for post form data.
-	ContentFormHeaderValue = "application/x-www-form-urlencoded"
+	ContentTypeXmlProblem           = "application/problem+xml"
+	ContentTypeJavascriptUnreadable = "application/javascript"
+	// ContentTypeXmlUnreadable obsolete header value for XML.
+	ContentTypeXmlUnreadable = "application/xml"
+	// ContentTypeYaml header value for YAML data.
+	ContentTypeYaml = "application/x-yaml"
+	// ContentTypeProtobuf header value for Protobuf messages data.
+	ContentTypeProtobuf = "application/x-protobuf"
+	// ContentTypeMsgPack header value for MsgPack data.
+	ContentTypeMsgPack = "application/msgpack"
+	// ContentTypeMsgPack2 alternative header value for MsgPack data.
+	ContentTypeMsgPack2 = "application/x-msgpack"
+	// ContentTypeForm header value for post form data.
+	ContentTypeForm = "application/x-www-form-urlencoded"
 
-	// ContentGrpcHeaderValue Content-Type header value for gRPC.
-	ContentGrpcHeaderValue      = "application/grpc"
-	ContentGrpcWebHeaderValue   = "application/grpc-web"
-	ContentPdfHeaderValue       = "application/pdf"
-	ContentJsonUtf8HeaderValue  = "application/json;charset=utf-8"
-	ContentFormParamHeaderValue = "application/x-www-form-urlencoded;param=value"
+	// ContentTypeGrpc Content-Type header value for gRPC.
+	ContentTypeGrpc    = "application/grpc"
+	ContentTypeGrpcWeb = "application/grpc-web"
+	ContentPdf         = "application/pdf"
+	ContentJsonUtf8    = "application/json;charset=utf-8"
+	ContentFormParam   = "application/x-www-form-urlencoded;param=value"
 
-	ContentImagePngHeaderValue  = "image/png"
-	ContentImageJpegHeaderValue = "image/jpeg"
-	ContentImageGifHeaderValue  = "image/gif"
-	ContentImageBmpHeaderValue  = "image/bmp"
-	ContentImageWebpHeaderValue = "image/webp"
-	ContentImageAvifHeaderValue = "image/avif"
-	//ContentImageHeifHeaderValue = "image/heif"
-	ContentImageSvgHeaderValue              = "image/svg+xml"
-	ContentImageTiffHeaderValue             = "image/tiff"
-	ContentImageXIconHeaderValue            = "image/x-icon"
-	ContentImageVndMicrosoftIconHeaderValue = "image/vnd.microsoft.icon"
+	ContentImagePng                  = "image/png"
+	ContentImageJpeg                 = "image/jpeg"
+	ContentImageGif                  = "image/gif"
+	ContentImageBmp                  = "image/bmp"
+	ContentImageWebp                 = "image/webp"
+	ContentImageAvif                 = "image/avif"
+	ContentTypeImageHeif             = "image/heif"
+	ContentTypeImageSvg              = "image/svg+xml"
+	ContentTypeImageTiff             = "image/tiff"
+	ContentTypeImageXIcon            = "image/x-icon"
+	ContentTypeImageVndMicrosoftIcon = "image/vnd.microsoft.icon"
 
-	ContentCharsetUtf8HeaderValue = "charset=UTF-8"
+	ContentTypeCharsetUtf8 = "charset=UTF-8"
 )
 
 const (
@@ -95,6 +95,7 @@ const (
 	HeaderSetCookie                   = "Set-Cookie"
 	HeaderTrailer                     = "Trailer"
 	HeaderTransferEncoding            = "Transfer-Encoding"
+	HeaderTransferEncodingChunked     = "chunked"
 	HeaderInternal                    = "Internal"
 	HeaderTE                          = "TE"
 	HeaderLastModified                = "Last-Modified"
@@ -111,4 +112,9 @@ const (
 const (
 	HeaderGrpcTraceBin = "grpc-trace-bin"
 	HeaderGrpcInternal = "grpc-internal"
+)
+
+const (
+	FormDataFieldTmpl = `form-data; name="%s"`
+	FormDataFileTmpl  = `form-data; name="%s"; filename="%s"`
 )

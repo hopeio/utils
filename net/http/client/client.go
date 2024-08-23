@@ -82,7 +82,7 @@ func (c *Client) Header(header http.Header) *Client {
 	if c.header == nil {
 		c.header = make(http.Header)
 	}
-	httpi.CopyHttpHeader(header, c.header)
+	httpi.CopyHttpHeader(c.header, header)
 	return c
 }
 
@@ -218,51 +218,51 @@ func (c *Client) Request(method, url string) *Request {
 }
 
 func (c *Client) Do(r *Request, param, response any) error {
-	return r.WithClient(c).Do(param, response)
+	return r.Client(c).Do(param, response)
 }
 
 func (c *Client) Get(url string, param, response any) error {
-	return NewRequest(http.MethodGet, url).WithClient(c).Do(param, response)
+	return NewRequest(http.MethodGet, url).Client(c).Do(param, response)
 }
 
 func (c *Client) GetRequest(url string) *Request {
-	return NewRequest(http.MethodGet, url).WithClient(c)
+	return NewRequest(http.MethodGet, url).Client(c)
 }
 
 func (c *Client) Post(url string, param, response any) error {
-	return NewRequest(http.MethodPost, url).WithClient(c).Do(param, response)
+	return NewRequest(http.MethodPost, url).Client(c).Do(param, response)
 }
 
 func (c *Client) PostRequest(url string) *Request {
-	return NewRequest(http.MethodPost, url).WithClient(c)
+	return NewRequest(http.MethodPost, url).Client(c)
 }
 
 func (c *Client) Put(url string, param, response any) error {
-	return NewRequest(http.MethodPut, url).WithClient(c).Do(param, response)
+	return NewRequest(http.MethodPut, url).Client(c).Do(param, response)
 }
 
 func (c *Client) PutRequest(url string) *Request {
-	return NewRequest(http.MethodPut, url).WithClient(c)
+	return NewRequest(http.MethodPut, url).Client(c)
 }
 
 func (c *Client) Delete(url string, param, response any) error {
-	return NewRequest(http.MethodDelete, url).WithClient(c).Do(param, response)
+	return NewRequest(http.MethodDelete, url).Client(c).Do(param, response)
 }
 
 func (c *Client) DeleteRequest(url string) *Request {
-	return NewRequest(http.MethodDelete, url).WithClient(c)
+	return NewRequest(http.MethodDelete, url).Client(c)
 }
 
 func (c *Client) GetX(url string, response any) error {
-	return NewRequest(http.MethodGet, url).WithClient(c).Do(nil, response)
+	return NewRequest(http.MethodGet, url).Client(c).Do(nil, response)
 }
 
 func (c *Client) GetRaw(url string, param any) (RawBytes, error) {
-	return NewRequest(http.MethodGet, url).WithClient(c).DoRaw(param)
+	return NewRequest(http.MethodGet, url).Client(c).DoRaw(param)
 }
 
 func (c *Client) GetRawX(url string) (RawBytes, error) {
-	return NewRequest(http.MethodGet, url).WithClient(c).DoRaw(nil)
+	return NewRequest(http.MethodGet, url).Client(c).DoRaw(nil)
 }
 
 func (c *Client) GetStream(url string, param any) (io.ReadCloser, error) {

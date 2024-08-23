@@ -18,8 +18,8 @@ func NewRequestFromV1[RES any](req *client.Request) *Request[RES] {
 	return (*Request[RES])(req)
 }
 
-func (req *Request[RES]) WithClient(client2 *client.Client) *Request[RES] {
-	(*client.Request)(req).WithClient(client2)
+func (req *Request[RES]) Client(client2 *client.Client) *Request[RES] {
+	(*client.Request)(req).Client(client2)
 	return req
 }
 

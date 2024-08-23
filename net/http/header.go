@@ -31,11 +31,10 @@ func (h *Header) Set(k, v string) *Header {
 	return h.Add(k, v)
 }
 
-func (h *Header) IntoHttpHeader(header http.Header) {
-	res := *h
-	hlen := len(res)
+func (h Header) IntoHttpHeader(header http.Header) {
+	hlen := len(h)
 	for i := 0; i < hlen && i+1 < hlen; i += 2 {
-		header.Set(res[i], res[i+1])
+		header.Set(h[i], h[i+1])
 	}
 }
 
@@ -45,7 +44,7 @@ func (h Header) Clone() Header {
 	return newh
 }
 
-func CopyHttpHeader(src, dst http.Header) {
+func CopyHttpHeader(dst, src http.Header) {
 	if src == nil {
 		return
 	}
@@ -116,4 +115,14 @@ func ParseRange(rangeHeader string) (start int64, end int64, total int64, err er
 		total = -1
 	}
 	return
+}
+
+func FormatRange(start, end, total int64) string {
+	if end <= 0 {
+		return fmt.Sprintf("bytes=%d-", start)
+	}
+	if total <= 0 {
+		return fmt.Sprintf("bytes=%d-%d/*", start, end)
+	}
+	return fmt.Sprintf("bytes=%d-%d/%d", start, end, total)
 }

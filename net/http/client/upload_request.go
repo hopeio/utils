@@ -4,11 +4,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/hopeio/utils/log"
 	httpi "github.com/hopeio/utils/net/http"
+	stringsi "github.com/hopeio/utils/strings"
 	"io"
+	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
+	"os"
+	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -16,21 +22,75 @@ var (
 	ContentTypeKey = http.CanonicalHeaderKey("Content-Type")
 )
 
+type UploadMode uint16
+
+const (
+	UModeNormal UploadMode = iota
+	UModeStream
+	UModeChunked
+	UModeChunkedConcurrent
+)
+
 type UploadReq struct {
-	Url      string
-	uploader *Uploader
-	ctx      context.Context
-	header   httpi.Header //请求级请求头
-	Boundary string
-	FormData map[string]string
-	Files    []*File
+	Url       string
+	uploader  *Uploader
+	ctx       context.Context
+	header    httpi.Header //请求级请求头
+	boundary  string
+	mode      UploadMode
+	chunkSize int
+}
+
+type Multipart struct {
+	Param       string
+	Name        string
+	ContentType string
+	io.Reader
 }
 
 type File struct {
-	Name        string
-	Param       string
-	ContentType string
-	io.Reader
+	Path string
+	*os.File
+}
+
+func NewFile(path string) (*File, error) {
+	osfile, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	return &File{
+		Path: path,
+		File: osfile,
+	}, nil
+}
+
+func (f *File) ToMutilPart(param string) *Multipart {
+	contentType := mime.TypeByExtension(filepath.Ext(f.Path))
+	return NewMultipart(param, path.Base(f.Path), contentType, f.File)
+}
+
+func NewMultipart(param, name, contentType string, reader io.Reader) *Multipart {
+	return &Multipart{
+		Param:       param,
+		Name:        name,
+		ContentType: contentType,
+		Reader:      reader,
+	}
+}
+
+func (f *Multipart) setHeader(header textproto.MIMEHeader) {
+	var contentDispositionValue string
+	if stringsi.IsEmpty(f.Name) {
+		contentDispositionValue = fmt.Sprintf(httpi.FormDataFieldTmpl, escapeQuotes(f.Param))
+	} else {
+		contentDispositionValue = fmt.Sprintf(httpi.FormDataFileTmpl,
+			escapeQuotes(f.Param), escapeQuotes(f.Name))
+	}
+	header.Set(httpi.HeaderContentDisposition, contentDispositionValue)
+
+	if !stringsi.IsEmpty(f.ContentType) {
+		header.Set(ContentTypeKey, f.ContentType)
+	}
 }
 
 func NewUploadReq(url string) *UploadReq {
@@ -41,29 +101,61 @@ func NewUploadReq(url string) *UploadReq {
 	}
 }
 
-func (r *UploadReq) WithDownloader(u *Uploader) *UploadReq {
+func (r *UploadReq) Uploader(u *Uploader) *UploadReq {
 	r.uploader = u
 	return r
 }
 
-func (r *UploadReq) UploadMultipart() error {
+func (r *UploadReq) Boundary(boundary string) *UploadReq {
+	r.boundary = boundary
+	return r
+}
+
+func (r *UploadReq) Mode(mode UploadMode) *UploadReq {
+	r.mode = mode
+	return r
+}
+
+func (r *UploadReq) ChunkSize(chunkSize int) *UploadReq {
+	if chunkSize < 512 {
+		panic("buffer size should > 512")
+	}
+	r.chunkSize = chunkSize
+	return r
+}
+
+func (r *UploadReq) UploadMultipart(formData map[string]string, files ...*Multipart) error {
 	body := bufPool.Get().(*bytes.Buffer)
 	w := multipart.NewWriter(body)
 
-	for k, v := range r.FormData {
-		if err := w.WriteField(k, v); err != nil {
+	if r.boundary != "" {
+		if err := w.SetBoundary(r.boundary); err != nil {
 			return err
 		}
 	}
-	cbuf := make([]byte, 512)
-	for _, file := range r.Files {
+	header := make(textproto.MIMEHeader)
+	for k, v := range formData {
+		header.Set(httpi.HeaderContentDisposition, fmt.Sprintf(httpi.FormDataFieldTmpl, escapeQuotes(k)))
+		part, err := w.CreatePart(header)
+		if err != nil {
+			return err
+		}
+		_, err = part.Write([]byte(v))
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, file := range files {
 		if file.ContentType == "" {
+			cbuf := make([]byte, 512)
 			size, err := file.Reader.Read(cbuf)
 			if err != nil && err != io.EOF {
 				return err
 			}
-			partWriter, err := w.CreatePart(createMultipartHeader(file.Param, file.Name,
-				http.DetectContentType(cbuf[:size])))
+			file.ContentType = http.DetectContentType(cbuf[:size])
+			file.setHeader(header)
+			partWriter, err := w.CreatePart(header)
 			if err != nil {
 				return err
 			}
@@ -76,7 +168,8 @@ func (r *UploadReq) UploadMultipart() error {
 				return err
 			}
 		} else {
-			partWriter, err := w.CreatePart(createMultipartHeader(file.Param, file.Name, file.ContentType))
+			file.setHeader(header)
+			partWriter, err := w.CreatePart(header)
 			if err != nil {
 				return err
 			}
@@ -97,14 +190,14 @@ func (r *UploadReq) UploadMultipart() error {
 		return err
 	}
 	d := r.uploader
-	httpi.CopyHttpHeader(d.header, req.Header)
+	httpi.CopyHttpHeader(req.Header, d.header)
 	for i := 0; i+1 < len(r.header); i += 2 {
 		req.Header.Set(r.header[i], r.header[i+1])
 	}
 	for _, opt := range d.httpRequestOptions {
 		opt(req)
 	}
-	_, err = r.uploader.httpClient.Do(req)
+	_, err = d.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -112,22 +205,109 @@ func (r *UploadReq) UploadMultipart() error {
 	return nil
 }
 
-func createMultipartHeader(param, fileName, contentType string) textproto.MIMEHeader {
+// 默认单文件
+func (r *UploadReq) UploadMultipartChunked(formData map[string]string, file Multipart) error {
+	u := r.uploader
+	body := bufPool.Get().(*bytes.Buffer)
+	w := multipart.NewWriter(body)
+	var start, total int64
+	var end int64 = -1
+
+	req, err := http.NewRequest(http.MethodPost, r.Url, nil)
+	if err != nil {
+		return err
+	}
+
+	if r.boundary != "" {
+		if err := w.SetBoundary(r.boundary); err != nil {
+			return err
+		}
+	}
 	header := make(textproto.MIMEHeader)
-
-	var contentDispositionValue string
-	if IsStringEmpty(fileName) {
-		contentDispositionValue = fmt.Sprintf(`form-data; name="%s"`, param)
-	} else {
-		contentDispositionValue = fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
-			param, escapeQuotes(fileName))
+	for k, v := range formData {
+		header.Set(httpi.HeaderContentDisposition, fmt.Sprintf(httpi.FormDataFieldTmpl, escapeQuotes(k)))
+		part, err := w.CreatePart(header)
+		if err != nil {
+			return err
+		}
+		_, err = part.Write([]byte(v))
+		if err != nil {
+			return err
+		}
 	}
-	header.Set("Content-Disposition", contentDispositionValue)
+	fieldSize := body.Len()
+	for {
+		body.Reset()
+		body.Truncate(fieldSize)
+		buf := make([]byte, chunkSize)
+		size, er := file.Reader.Read(buf)
+		if er != nil && er != io.EOF {
+			return er
+		}
+		if size > 0 {
+			if file.ContentType == "" {
+				file.ContentType = http.DetectContentType(buf[:min(size, 512)])
+			}
 
-	if !IsStringEmpty(contentType) {
-		header.Set(ContentTypeKey, contentType)
+			file.setHeader(header)
+			partWriter, err := w.CreatePart(header)
+			if err != nil {
+				return err
+			}
+			if _, err = partWriter.Write(buf[:size]); err != nil {
+				return err
+			}
+
+			end += int64(size)
+			if er == io.EOF {
+				total = end + 1
+			}
+			req.Body = io.NopCloser(bytes.NewReader(buf[0:size]))
+			req.Header.Set(httpi.HeaderContentRange, httpi.FormatRange(start, end, total))
+			resp, err := u.httpClient.Do(req)
+			if err != nil {
+				return err
+			}
+			resp.Body.Close()
+		}
+		if er == io.EOF {
+			return nil
+		}
 	}
-	return header
+}
+
+func (r *UploadReq) UploadStream(oReader io.Reader) error {
+	u := r.uploader
+
+	// 创建一个HTTP请求
+	req, err := http.NewRequest(http.MethodPost, r.Url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set(httpi.HeaderContentType, httpi.ContentTypeOctetStream)
+	req.Header.Set(httpi.HeaderTransferEncoding, httpi.HeaderTransferEncodingChunked)
+	// 使用io.Pipe创建一个管道，用于流式传输文件内容
+	reader, writer := io.Pipe()
+
+	// 创建一个goroutine来读取文件内容并写入管道
+	go func() {
+		defer writer.Close()
+		_, err = io.Copy(writer, oReader)
+		if err != nil && err != io.EOF {
+			log.Error("error copying file to pipe: ", err)
+		}
+	}()
+
+	// 将管道的读取端作为请求体发送到服务器
+	req.Body = reader
+
+	// 发送请求
+	resp, err := u.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	return nil
 }
 
 var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
@@ -136,6 +316,62 @@ func escapeQuotes(s string) string {
 	return quoteEscaper.Replace(s)
 }
 
-func IsStringEmpty(str string) bool {
-	return len(strings.TrimSpace(str)) == 0
+func (r *UploadReq) UploadRaw(reader io.Reader, name string) error {
+	u := r.uploader
+
+	req, err := http.NewRequest(http.MethodPost, r.Url, reader)
+	if err != nil {
+		return err
+	}
+	httpi.CopyHttpHeader(req.Header, u.header)
+	r.header.IntoHttpHeader(req.Header)
+	name = escapeQuotes(name)
+	req.Header.Set(httpi.HeaderContentType, httpi.ContentTypeOctetStream)
+	req.Header.Set(httpi.HeaderContentDisposition, fmt.Sprintf(httpi.FormDataFileTmpl,
+		name, name))
+	resp, err := u.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	return nil
+}
+
+func (r *UploadReq) UploadRawChunked(reader io.Reader, name string) error {
+
+	var start, total int64
+	var end int64 = -1
+
+	u := r.uploader
+	buf := make([]byte, r.chunkSize)
+	req, err := http.NewRequest(http.MethodPost, r.Url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set(httpi.HeaderContentType, httpi.ContentTypeOctetStream)
+	name = escapeQuotes(name)
+	req.Header.Set(httpi.HeaderContentDisposition, fmt.Sprintf(httpi.FormDataFileTmpl,
+		name, name))
+	for {
+		nr, er := reader.Read(buf)
+		if er != nil && er != io.EOF {
+			return er
+		}
+		if nr > 0 {
+			end += int64(nr)
+			if er == io.EOF {
+				total = end + 1
+			}
+			req.Body = io.NopCloser(bytes.NewReader(buf[0:nr]))
+			req.Header.Set(httpi.HeaderContentRange, httpi.FormatRange(start, end, total))
+			resp, err := u.httpClient.Do(req)
+			if err != nil {
+				return err
+			}
+			resp.Body.Close()
+		}
+		if er == io.EOF {
+			return nil
+		}
+	}
 }

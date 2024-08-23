@@ -15,15 +15,6 @@ import (
 
 var DefaultUploader = NewUploader()
 
-// TODO
-type UploadMode uint8
-
-const (
-	UModeNormal UploadMode = iota
-	UModeChunk
-	UModeStream
-)
-
 type Uploader = Client
 
 func NewUploader() *Uploader {
@@ -38,7 +29,7 @@ func NewUploader() *Uploader {
 }
 
 func (u *Uploader) UploadReq(url string) *UploadReq {
-	return NewUploadReq(url).WithDownloader(u)
+	return NewUploadReq(url).Uploader(u)
 }
 
 const (

@@ -11,13 +11,13 @@ func (c ContentType) String() string {
 	if c < ContentTypeApplication {
 		return contentTypes[c] + ";charset=UTF-8"
 	}
-	return httpi.ContentBinaryHeaderValue + ";charset=UTF-8"
+	return httpi.ContentTypeOctetStream + ";charset=UTF-8"
 }
 
 func (c *ContentType) Decode(contentType string) {
-	if strings.HasPrefix(contentType, httpi.ContentJsonHeaderValue) {
+	if strings.HasPrefix(contentType, httpi.ContentTypeJson) {
 		*c = ContentTypeJson
-	} else if strings.HasPrefix(contentType, httpi.ContentFormHeaderValue) {
+	} else if strings.HasPrefix(contentType, httpi.ContentTypeForm) {
 		*c = ContentTypeForm
 	} else if strings.HasPrefix(contentType, "text") {
 		*c = ContentTypeText
@@ -51,14 +51,14 @@ const (
 )
 
 var contentTypes = []string{
-	httpi.ContentJsonHeaderValue,
-	httpi.ContentFormHeaderValue,
-	httpi.ContentFormMultipartHeaderValue,
-	httpi.ContentGrpcHeaderValue,
-	httpi.ContentGrpcWebHeaderValue,
-	httpi.ContentXmlUnreadableHeaderValue,
-	httpi.ContentTextHeaderValue,
-	httpi.ContentBinaryHeaderValue,
+	httpi.ContentTypeJson,
+	httpi.ContentTypeForm,
+	httpi.ContentTypeMultipart,
+	httpi.ContentTypeGrpc,
+	httpi.ContentTypeGrpcWeb,
+	httpi.ContentTypeXmlUnreadable,
+	httpi.ContentTypeText,
+	httpi.ContentTypeOctetStream,
 	/*	httpi.ContentImagePngHeaderValue,
 		httpi.ContentImageJpegHeaderValue,
 		httpi.ContentImageGifHeaderValue,

@@ -44,7 +44,7 @@ func NewRequest(method, url string) *Request {
 	}
 }
 
-func (req *Request) WithClient(c *Client) *Request {
+func (req *Request) Client(c *Client) *Request {
 	req.client = c
 	return req
 }

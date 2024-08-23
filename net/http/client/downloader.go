@@ -33,11 +33,11 @@ func NewDownloader() *Downloader {
 }
 
 func (c *Downloader) Download(filepath string, r *DownloadReq) error {
-	return r.WithDownloader(c).Download(filepath)
+	return r.Downloader(c).Download(filepath)
 }
 
 func (c *Downloader) DownloadReq(url string) *DownloadReq {
-	return NewDownloadReq(url).WithDownloader(c)
+	return NewDownloadReq(url).Downloader(c)
 }
 
 const DownloadKey = fs.DownloadKey

@@ -340,7 +340,7 @@ func (s *Server) token(data map[string]interface{}, header http.Header, statusCo
 	wheader.Set("Cache-Control", "no-store")
 	wheader.Set("Pragma", "no-cache")
 
-	httpi.CopyHttpHeader(header, wheader)
+	httpi.CopyHttpHeader(wheader, header)
 
 	jdata, _ := json.Marshal(data)
 	w.Write(jdata)
