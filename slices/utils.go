@@ -321,3 +321,17 @@ func FilterPlace[S ~[]T, T any](slices S, fn func(T) bool) S {
 func Remove[S ~[]T, T any](slices S, i int) S {
 	return append(slices[:i], slices[i+1:]...)
 }
+
+type Collector[T any] struct {
+}
+
+func (c Collector[T]) Builder() *[]T {
+	s := make([]T, 0)
+	return &s
+}
+func (c Collector[T]) Append(builder *[]T, element T) {
+	*builder = append(*builder, element)
+}
+func (c Collector[T]) Finish(builder *[]T) []T {
+	return *builder
+}

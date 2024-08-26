@@ -3,12 +3,13 @@ package iter
 import (
 	"github.com/hopeio/utils/types"
 	"github.com/hopeio/utils/types/constraints"
+	"github.com/hopeio/utils/types/funcs"
 	"iter"
 	"sort"
 )
 
 // Dont'use please use types.Pair And Seq
-func Filter2[K, V any](seq iter.Seq2[K, V], test Predicate2[K, V]) iter.Seq2[K, V] {
+func Filter2[K, V any](seq iter.Seq2[K, V], test funcs.PredicateKV[K, V]) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		for k, v := range seq {
 			if test(k, v) && !yield(k, v) {
@@ -18,7 +19,7 @@ func Filter2[K, V any](seq iter.Seq2[K, V], test Predicate2[K, V]) iter.Seq2[K, 
 	}
 }
 
-func Map2[K, V, R any](seq iter.Seq2[K, V], f Function2[K, V, R]) iter.Seq[R] {
+func Map2[K, V, R any](seq iter.Seq2[K, V], f funcs.UnaryKVFunction[K, V, R]) iter.Seq[R] {
 	return func(yield func(R) bool) {
 		for k, v := range seq {
 			if !yield(f(k, v)) {
@@ -28,7 +29,7 @@ func Map2[K, V, R any](seq iter.Seq2[K, V], f Function2[K, V, R]) iter.Seq[R] {
 	}
 }
 
-func Map3[K, V, RK, RV any](seq iter.Seq2[K, V], f Function3[K, V, RK, RV]) iter.Seq2[RK, RV] {
+func Map3[K, V, RK, RV any](seq iter.Seq2[K, V], f funcs.UnaryKVFunction2[K, V, RK, RV]) iter.Seq2[RK, RV] {
 	return func(yield func(RK, RV) bool) {
 		for k, v := range seq {
 			if !yield(f(k, v)) {
@@ -38,7 +39,7 @@ func Map3[K, V, RK, RV any](seq iter.Seq2[K, V], f Function3[K, V, RK, RV]) iter
 	}
 }
 
-func FlatMap2[K, V, R any](seq iter.Seq2[K, V], flatten Function2[K, V, iter.Seq[R]]) iter.Seq[R] {
+func FlatMap2[K, V, R any](seq iter.Seq2[K, V], flatten funcs.UnaryKVFunction[K, V, iter.Seq[R]]) iter.Seq[R] {
 	return func(yield func(R) bool) {
 		for k, v := range seq {
 			for v2 := range flatten(k, v) {
@@ -50,7 +51,7 @@ func FlatMap2[K, V, R any](seq iter.Seq2[K, V], flatten Function2[K, V, iter.Seq
 	}
 }
 
-func FlatMap3[K, V, RK, RV any](seq iter.Seq2[K, V], flatten Function2[K, V, iter.Seq2[RK, RV]]) iter.Seq2[RK, RV] {
+func FlatMap3[K, V, RK, RV any](seq iter.Seq2[K, V], flatten funcs.UnaryKVFunction[K, V, iter.Seq2[RK, RV]]) iter.Seq2[RK, RV] {
 	return func(yield func(RK, RV) bool) {
 		for k, v := range seq {
 			for k2, v2 := range flatten(k, v) {
@@ -62,7 +63,7 @@ func FlatMap3[K, V, RK, RV any](seq iter.Seq2[K, V], flatten Function2[K, V, ite
 	}
 }
 
-func Peek2[K, V any](seq iter.Seq2[K, V], accept Consumer2[K, V]) iter.Seq2[K, V] {
+func Peek2[K, V any](seq iter.Seq2[K, V], accept funcs.ConsumerKV[K, V]) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		for k, v := range seq {
 			accept(k, v)
@@ -73,7 +74,7 @@ func Peek2[K, V any](seq iter.Seq2[K, V], accept Consumer2[K, V]) iter.Seq2[K, V
 	}
 }
 
-func Distinct2[K, V any, C comparable](seq iter.Seq2[K, V], f Function2[K, V, C]) iter.Seq2[K, V] {
+func Distinct2[K, V any, C comparable](seq iter.Seq2[K, V], f funcs.UnaryKVFunction[K, V, C]) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		var set = make(map[C]struct{})
 		for k, v := range seq {
@@ -89,7 +90,7 @@ func Distinct2[K, V any, C comparable](seq iter.Seq2[K, V], f Function2[K, V, C]
 	}
 }
 
-func Sorted2[K, V any](it iter.Seq2[K, V], cmp Comparator2[K, V]) iter.Seq2[K, V] {
+func Sorted2[K, V any](it iter.Seq2[K, V], cmp funcs.LessKV[K, V]) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		keys, vals := Collect2(it)
 		sort.SliceStable(vals, func(i, j int) bool {
@@ -103,7 +104,7 @@ func Sorted2[K, V any](it iter.Seq2[K, V], cmp Comparator2[K, V]) iter.Seq2[K, V
 	}
 }
 
-func IsSorted2[K, V any](seq iter.Seq2[K, V], cmp Comparator2[K, V]) bool {
+func IsSorted2[K, V any](seq iter.Seq2[K, V], cmp funcs.LessKV[K, V]) bool {
 	var lastKey K
 	var lastVal V
 	check := func(currKey K, currVal V) bool {
@@ -157,7 +158,7 @@ func Skip2[K, V any, Number constraints.Number](seq iter.Seq2[K, V], skip Number
 	}
 }
 
-func ForEach2[K, V any](seq iter.Seq2[K, V], accept Consumer2[K, V]) {
+func ForEach2[K, V any](seq iter.Seq2[K, V], accept funcs.ConsumerKV[K, V]) {
 	for k, v := range seq {
 		accept(k, v)
 	}
@@ -171,7 +172,7 @@ func Collect2[K, V any](seq iter.Seq2[K, V]) (ks []K, vs []V) {
 	return
 }
 
-func AllMatch2[K, V any](seq iter.Seq2[K, V], test Predicate2[K, V]) bool {
+func AllMatch2[K, V any](seq iter.Seq2[K, V], test funcs.PredicateKV[K, V]) bool {
 	for k, v := range seq {
 		if !test(k, v) {
 			return false
@@ -180,7 +181,7 @@ func AllMatch2[K, V any](seq iter.Seq2[K, V], test Predicate2[K, V]) bool {
 	return true
 }
 
-func NoneMatch2[K, V any](seq iter.Seq2[K, V], test Predicate2[K, V]) bool {
+func NoneMatch2[K, V any](seq iter.Seq2[K, V], test funcs.PredicateKV[K, V]) bool {
 	for k, v := range seq {
 		if test(k, v) {
 			return false
@@ -189,7 +190,7 @@ func NoneMatch2[K, V any](seq iter.Seq2[K, V], test Predicate2[K, V]) bool {
 	return true
 }
 
-func AnyMatch2[K, V any](seq iter.Seq2[K, V], test Predicate2[K, V]) bool {
+func AnyMatch2[K, V any](seq iter.Seq2[K, V], test funcs.PredicateKV[K, V]) bool {
 	for k, v := range seq {
 		if test(k, v) {
 			return true
@@ -198,7 +199,7 @@ func AnyMatch2[K, V any](seq iter.Seq2[K, V], test Predicate2[K, V]) bool {
 	return false
 }
 
-func Reduce2[K, V any](seq iter.Seq2[K, V], acc BinaryOperator2[K, V]) (K, V, bool) {
+func Reduce2[K, V any](seq iter.Seq2[K, V], acc funcs.BinaryKVOperator[K, V]) (K, V, bool) {
 	var resultKey K
 	var resultVal V
 	var has bool
@@ -217,7 +218,7 @@ func Reduce2[K, V any](seq iter.Seq2[K, V], acc BinaryOperator2[K, V]) (K, V, bo
 	return resultKey, resultVal, has
 }
 
-func Fold2[K, V, R any](seq iter.Seq2[K, V], initVal R, acc BiFunction2[R, K, V, R]) (result R) {
+func Fold2[K, V, R any](seq iter.Seq2[K, V], initVal R, acc funcs.BinaryKVFunction[R, K, V, R]) (result R) {
 	result = initVal
 	for k, v := range seq {
 		result = acc(result, k, v)
@@ -225,7 +226,7 @@ func Fold2[K, V, R any](seq iter.Seq2[K, V], initVal R, acc BiFunction2[R, K, V,
 	return result
 }
 
-func Fold3[K, V, RK, RV any](seq iter.Seq2[K, V], initKey RK, initVal RV, acc BiFunction3[RK, RV, K, V, RK, RV]) (resultKey RK, resultVal RV) {
+func Fold3[K, V, RK, RV any](seq iter.Seq2[K, V], initKey RK, initVal RV, acc funcs.BinaryKVFunction2[RK, RV, K, V, RK, RV]) (resultKey RK, resultVal RV) {
 	resultKey, resultVal = initKey, initVal
 	for k, v := range seq {
 		resultKey, resultVal = acc(resultKey, resultVal, k, v)

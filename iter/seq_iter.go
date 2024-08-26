@@ -2,14 +2,15 @@ package iter
 
 import (
 	"github.com/hopeio/utils/types"
+	"github.com/hopeio/utils/types/funcs"
 	"golang.org/x/exp/constraints"
 	"iter"
-	"sort"
+	"slices"
 )
 
 // Filter keep elements which satisfy the Predicate.
 // 保留满足断言的元素
-func Filter[T any](seq iter.Seq[T], test Predicate[T]) iter.Seq[T] {
+func Filter[T any](seq iter.Seq[T], test funcs.Predicate[T]) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for v := range seq {
 			if test(v) && !yield(v) {
@@ -21,7 +22,7 @@ func Filter[T any](seq iter.Seq[T], test Predicate[T]) iter.Seq[T] {
 
 // Map transform the element use Fuction.
 // 使用输入函数对每个元素进行转换
-func Map[T, R any](seq iter.Seq[T], f Function[T, R]) iter.Seq[R] {
+func Map[T, R any](seq iter.Seq[T], f funcs.UnaryFunction[T, R]) iter.Seq[R] {
 	return func(yield func(R) bool) {
 		for v := range seq {
 			if !yield(f(v)) {
@@ -34,7 +35,7 @@ func Map[T, R any](seq iter.Seq[T], f Function[T, R]) iter.Seq[R] {
 // FlatMap transform each element in Seq[T] to a new Seq[R].
 // 将原本序列中的每个元素都转换为一个新的序列，
 // 并将所有转换后的序列依次连接起来生成一个新的序列
-func FlatMap[T, R any](seq iter.Seq[T], flatten Function[T, iter.Seq[R]]) iter.Seq[R] {
+func FlatMap[T, R any](seq iter.Seq[T], flatten funcs.UnaryFunction[T, iter.Seq[R]]) iter.Seq[R] {
 	return func(yield func(R) bool) {
 		for v := range seq {
 			for v2 := range flatten(v) {
@@ -48,7 +49,7 @@ func FlatMap[T, R any](seq iter.Seq[T], flatten Function[T, iter.Seq[R]]) iter.S
 
 // Peek visit every element in the Seq and leave them on the Seq.
 // 访问序列中的每个元素而不消费它
-func Peek[T any](seq iter.Seq[T], accept Consumer[T]) iter.Seq[T] {
+func Peek[T any](seq iter.Seq[T], accept funcs.Consumer[T]) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for v := range seq {
 			accept(v)
@@ -61,7 +62,7 @@ func Peek[T any](seq iter.Seq[T], accept Consumer[T]) iter.Seq[T] {
 
 // Distinct remove duplicate elements.
 // 对序列中的元素去重
-func Distinct[T any, C comparable](seq iter.Seq[T], f Function[T, C]) iter.Seq[T] {
+func Distinct[T any, C comparable](seq iter.Seq[T], f funcs.UnaryFunction[T, C]) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		var set = make(map[C]struct{})
 		for v := range seq {
@@ -79,12 +80,9 @@ func Distinct[T any, C comparable](seq iter.Seq[T], f Function[T, C]) iter.Seq[T
 
 // Sorted sort elements in the Seq by Comparator.
 // 对序列中的元素排序
-func Sorted[T any](it iter.Seq[T], cmp Comparator[T]) iter.Seq[T] {
+func Sorted[T any](it iter.Seq[T], cmp funcs.Comparator[T]) iter.Seq[T] {
 	return func(yield func(T) bool) {
-		vals := Collect(it)
-		sort.SliceStable(vals, func(i, j int) bool {
-			return cmp(vals[i], vals[j])
-		})
+		vals := slices.SortedFunc(it, cmp)
 		for _, v := range vals {
 			if !yield(v) {
 				return
@@ -95,10 +93,10 @@ func Sorted[T any](it iter.Seq[T], cmp Comparator[T]) iter.Seq[T] {
 
 // IsSorted
 // 对序列中的元素是否排序
-func IsSorted[T any](seq iter.Seq[T], cmp Comparator[T]) bool {
+func IsSorted[T any](seq iter.Seq[T], cmp funcs.Comparator[T]) bool {
 	var last T
 	check := func(curr T) bool {
-		if !cmp(last, curr) {
+		if cmp(last, curr) >= 0 {
 			return false
 		}
 		last = curr
@@ -163,7 +161,7 @@ func UntilComparable[T comparable](seq iter.Seq[T], e T) iter.Seq[T] {
 	}
 }
 
-func Until[T any](seq iter.Seq[T], match Predicate[T]) iter.Seq[T] {
+func Until[T any](seq iter.Seq[T], match funcs.Predicate[T]) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for v := range seq {
 			if match(v) {
@@ -178,24 +176,15 @@ func Until[T any](seq iter.Seq[T], match Predicate[T]) iter.Seq[T] {
 
 // ForEach consume every elements in the Seq.
 // 消费序列中的每个元素
-func ForEach[T any](seq iter.Seq[T], accept Consumer[T]) {
+func ForEach[T any](seq iter.Seq[T], accept funcs.Consumer[T]) {
 	for v := range seq {
 		accept(v)
 	}
 }
 
-// Collect return all elements as a slice.
-// 将序列中所有元素收集为切片返回
-func Collect[T any](seq iter.Seq[T]) (result []T) {
-	for v := range seq {
-		result = append(result, v)
-	}
-	return
-}
-
 // AllMatch test if every elements are all match the Predicate.
 // 是否每个元素都满足条件
-func AllMatch[T any](seq iter.Seq[T], test Predicate[T]) bool {
+func AllMatch[T any](seq iter.Seq[T], test funcs.Predicate[T]) bool {
 	for v := range seq {
 		if !test(v) {
 			return false
@@ -206,7 +195,7 @@ func AllMatch[T any](seq iter.Seq[T], test Predicate[T]) bool {
 
 // NoneMatch test if none element matches the Predicate.
 // 是否没有元素满足条件
-func NoneMatch[T any](seq iter.Seq[T], test Predicate[T]) bool {
+func NoneMatch[T any](seq iter.Seq[T], test funcs.Predicate[T]) bool {
 	for v := range seq {
 		if test(v) {
 			return false
@@ -217,7 +206,7 @@ func NoneMatch[T any](seq iter.Seq[T], test Predicate[T]) bool {
 
 // AnyMatch test if any element matches the Predicate.
 // 是否有任意元素满足条件
-func AnyMatch[T any](seq iter.Seq[T], test Predicate[T]) bool {
+func AnyMatch[T any](seq iter.Seq[T], test funcs.Predicate[T]) bool {
 	for v := range seq {
 		if test(v) {
 			return true
@@ -229,7 +218,7 @@ func AnyMatch[T any](seq iter.Seq[T], test Predicate[T]) bool {
 // Reduce accumulate each element using the binary operation.
 // 使用给定的累加函数, 累加序列中的每个元素.
 // 序列中可能没有元素因此返回的是 Optional
-func Reduce[T any](seq iter.Seq[T], acc BinaryOperator[T]) (T, bool) {
+func Reduce[T any](seq iter.Seq[T], acc funcs.BinaryOperator[T]) (T, bool) {
 	var result T
 	var has bool
 	for v := range seq {
@@ -246,10 +235,10 @@ func Reduce[T any](seq iter.Seq[T], acc BinaryOperator[T]) (T, bool) {
 	return result, has
 }
 
-// Fold accumulate each element using the BiFunction
+// Fold accumulate each element using the BinaryFunction
 // starting from the initial value.
 // 从初始值开始, 通过 acc 函数累加每个元素
-func Fold[T, R any](seq iter.Seq[T], initVal R, acc BiFunction[R, T, R]) (result R) {
+func Fold[T, R any](seq iter.Seq[T], initVal R, acc funcs.BinaryFunction[R, T, R]) (result R) {
 	result = initVal
 	for v := range seq {
 		result = acc(result, v)
@@ -287,26 +276,19 @@ func Enumerate[T any](seq iter.Seq[T]) iter.Seq[types.Pair[int, T]] {
 	}
 }
 
-func Zip[T any](seq1 iter.Seq[T], seq2 iter.Seq[T]) iter.Seq[T] {
+func Chain[T any](seqs ...iter.Seq[T]) iter.Seq[T] {
 	return func(yield func(T) bool) {
-		var firstFinished bool
-		if !firstFinished {
-			for v1 := range seq1 {
-				if !yield(v1) {
+		for _, seq := range seqs {
+			for v := range seq {
+				if !yield(v) {
 					return
 				}
-			}
-			firstFinished = true
-		}
-		for v2 := range seq2 {
-			if !yield(v2) {
-				return
 			}
 		}
 	}
 }
 
-func Sum[T any](seq iter.Seq[T], add BinaryOperator[T]) T {
+func Operator[T any](seq iter.Seq[T], add funcs.BinaryOperator[T]) T {
 	var result T
 	var idx int
 	for v := range seq {
