@@ -20,16 +20,6 @@ func SliceAll[T any](input []T) Seq[types.Pair[int, T]] {
 	}
 }
 
-func SliceAll2[T any](input []T) Seq2[int, T] {
-	return func(yield func(int, T) bool) {
-		for i, v := range input {
-			if !yield(i, v) {
-				return
-			}
-		}
-	}
-}
-
 func SliceBackwardValues[T any](input []T) Seq[T] {
 	return func(yield func(T) bool) {
 		n := len(input) - 1
@@ -52,31 +42,10 @@ func SliceBackward[T any](input []T) Seq[types.Pair[int, T]] {
 	}
 }
 
-func SliceBackward2[T any](input []T) Seq2[int, T] {
-	return func(yield func(int, T) bool) {
-		n := len(input) - 1
-		for i := n; n > 0; n-- {
-			if !yield(i, input[i]) {
-				return
-			}
-		}
-	}
-}
-
 func HashMapAll[K comparable, V any](m map[K]V) Seq[types.Pair[K, V]] {
 	return func(yield func(types.Pair[K, V]) bool) {
 		for k, v := range m {
 			if !yield(types.PairOf(k, v)) {
-				return
-			}
-		}
-	}
-}
-
-func HashMapAll2[K comparable, V any](m map[K]V) Seq2[K, V] {
-	return func(yield func(K, V) bool) {
-		for k, v := range m {
-			if !yield(k, v) {
 				return
 			}
 		}
@@ -93,7 +62,7 @@ func StringAll(input string) Seq[types.Pair[int, rune]] {
 	}
 }
 
-func StringAll2(input string) Seq2[int, rune] {
+func StringAll2(input string) iter.Seq2[int, rune] {
 	return func(yield func(int, rune) bool) {
 		for i, v := range input {
 			if !yield(i, v) {
@@ -123,7 +92,7 @@ func ChannelAll[T any](c chan T) Seq[T] {
 	}
 }
 
-func ChannelAll2[T any](c chan T) Seq2[int, T] {
+func ChannelAll2[T any](c chan T) iter.Seq2[int, T] {
 	return func(yield func(int, T) bool) {
 		var count int
 		for v := range c {
@@ -145,7 +114,7 @@ func RangeAll[T constraintsi.Number](begin, end, step T) Seq[T] {
 	}
 }
 
-func RangeAll2[T constraintsi.Number](begin, end, step T) Seq2[int, T] {
+func RangeAll2[T constraintsi.Number](begin, end, step T) iter.Seq2[int, T] {
 	return func(yield func(int, T) bool) {
 		var count int
 		for v := begin; v <= end; v += step {
