@@ -24,7 +24,7 @@ func TestGrowSlic(t *testing.T) {
 	et := reflect.UnpackEface(byte(0)).Type
 	n := make([]byte, 1, 1024)
 	println("n len:", len(n), "cap:", cap(n))
-	v := GrowSlice(et, *(*reflect.GoSlice)(unsafe.Pointer(&n)), 1025)
+	v := GrowSlice(et, *(*reflect.Slice)(unsafe.Pointer(&n)), 1025)
 	println("v len:", v.Len, "cap:", v.Cap)
 	// according to go growslice rule, the next cap must be at most 1.5x of old.Cap
 	if v.Cap > 1536 {

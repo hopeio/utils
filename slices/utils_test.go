@@ -2,6 +2,7 @@ package slices
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 )
@@ -83,4 +84,8 @@ func TestCast(t *testing.T) {
 	//v6 := Interface(v1)
 	//v7:= any(Int8(1)).(Interface)
 	//v8:= Interface(any(Int8(1)))
+}
+
+func TestFilterPlace(t *testing.T) {
+	assert.Equal(t, []int{1, 3}, FilterPlace([]int{1, 2, 3}, func(i int) bool { return i == 2 }))
 }

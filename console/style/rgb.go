@@ -21,7 +21,7 @@ const rbgsBgFormat = "\x1b[48;2;%d;%d;%dm%s"
 const rbgsBgWithResetFormat = rbgsBgFormat + reset
 
 type colorRGB struct {
-	r, g, b int16
+	r, g, b uint16
 }
 
 func (c colorRGB) Format(s string) string {
@@ -29,7 +29,7 @@ func (c colorRGB) Format(s string) string {
 }
 
 func NewRGBColor(r, g, b byte) colorRGB {
-	return colorRGB{r: int16(r), g: int16(g), b: int16(b)}
+	return colorRGB{r: uint16(r), g: uint16(g), b: uint16(b)}
 }
 
 func RGB(s string, r, g, b byte) string {
@@ -54,8 +54,8 @@ func Gradient(text string, begin, end colorRGB) string {
 }
 
 func GradientRandom(text string) string {
-	var begin = colorRGB{r: int16(rand.N(byte(255))), g: int16(rand.N(byte(255))), b: int16(rand.N(byte(255)))}
-	var end = colorRGB{r: int16(rand.N(byte(255))), g: int16(rand.N(byte(255))), b: int16(rand.N(byte(255)))}
+	var begin = colorRGB{r: uint16(rand.N(byte(255))), g: uint16(rand.N(byte(255))), b: uint16(rand.N(byte(255)))}
+	var end = colorRGB{r: uint16(rand.N(byte(255))), g: uint16(rand.N(byte(255))), b: uint16(rand.N(byte(255)))}
 	return Gradient(text, begin, end)
 }
 
@@ -72,8 +72,8 @@ func GradientMultiLineRandom(text string) string {
 	scanner := bufio.NewScanner(strings.NewReader(text))
 	var colorText []string
 	for scanner.Scan() {
-		var begin = colorRGB{r: int16(rand.N(byte(255))), g: int16(rand.N(byte(255))), b: int16(rand.N(byte(255)))}
-		var end = colorRGB{r: int16(rand.N(byte(255))), g: int16(rand.N(byte(255))), b: int16(rand.N(byte(255)))}
+		var begin = colorRGB{r: uint16(rand.N(byte(255))), g: uint16(rand.N(byte(255))), b: uint16(rand.N(byte(255)))}
+		var end = colorRGB{r: uint16(rand.N(byte(255))), g: uint16(rand.N(byte(255))), b: uint16(rand.N(byte(255)))}
 		colorText = append(colorText, Gradient(scanner.Text(), begin, end))
 	}
 	return strings.Join(colorText, "\n")

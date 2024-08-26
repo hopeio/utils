@@ -64,26 +64,30 @@ func angleBetweenVectors(v1, v2 Point) float64 {
 	return math.Atan2(dy, dx)
 }
 
-// 图片就是第四象限,角度90+θ
-func IsPointInRectangle(p Point, rCenter Point, W, H, angleDeg float64) bool {
+func RectangleCorners(rCenter Point, w, h, angleDeg float64) [][]float64 {
 	angleRad := angleDeg * math.Pi / 180.0
 	// Calculate cosine and sine of the angle
 	cosA := math.Cos(angleRad)
 	sinA := math.Sin(angleRad)
 	// 计算矩形四个角的坐标 (A左下-B右下-C右上-D左上)
-	Dx := rCenter.X + (W/2)*cosA - (H/2)*sinA
-	Dy := rCenter.Y + (W/2)*sinA + (H/2)*cosA
-	Ax := rCenter.X - (W/2)*cosA - (H/2)*sinA
-	Ay := rCenter.Y - (W/2)*sinA + (H/2)*cosA
-	Bx := rCenter.X - (W/2)*cosA + (H/2)*sinA
-	By := rCenter.Y - (W/2)*sinA - (H/2)*cosA
-	Cx := rCenter.X + (W/2)*cosA + (H/2)*sinA
-	Cy := rCenter.Y + (W/2)*sinA - (H/2)*cosA
+	Dx := rCenter.X + (w/2)*cosA - (h/2)*sinA
+	Dy := rCenter.Y + (w/2)*sinA + (h/2)*cosA
+	Ax := rCenter.X - (w/2)*cosA - (h/2)*sinA
+	Ay := rCenter.Y - (w/2)*sinA + (h/2)*cosA
+	Bx := rCenter.X - (w/2)*cosA + (h/2)*sinA
+	By := rCenter.Y - (w/2)*sinA - (h/2)*cosA
+	Cx := rCenter.X + (w/2)*cosA + (h/2)*sinA
+	Cy := rCenter.Y + (w/2)*sinA - (h/2)*cosA
+	return [][]float64{{Ax, Ay}, {Bx, By}, {Cx, Cy}, {Dx, Dy}}
+}
+
+// 图片就是第四象限,角度90+θ
+func IsPointInRectangle(p Point, rCenter Point, w, h, angleDeg float64) bool {
 
 	// 射线法判断点是否在矩形内
 	inside := false
 	intersections := 0
-	corners := [][]float64{{Ax, Ay}, {Bx, By}, {Cx, Cy}, {Dx, Dy}}
+	corners := RectangleCorners(rCenter, w, h, angleDeg)
 
 	for i := 0; i < len(corners); i++ {
 		x1, y1 := corners[i][0], corners[i][1]

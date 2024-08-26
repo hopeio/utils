@@ -302,3 +302,22 @@ func Ptr2SlicePtr(s unsafe.Pointer, l int, c int) unsafe.Pointer {
 	}
 	return unsafe.Pointer(slice)
 }
+
+func FilterPlace[S ~[]T, T any](slices S, fn func(T) bool) S {
+	n := len(slices) - 1
+	for i := 0; i <= n; {
+		if fn(slices[i]) {
+			if i < n {
+				Swap(slices, i, n)
+			}
+			n--
+			continue
+		}
+		i++
+	}
+	return slices[:n+1]
+}
+
+func Remove[S ~[]T, T any](slices S, i int) S {
+	return append(slices[:i], slices[i+1:]...)
+}
