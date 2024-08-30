@@ -35,7 +35,7 @@ type UploadReq struct {
 	Url       string
 	uploader  *Uploader
 	ctx       context.Context
-	header    httpi.Header //请求级请求头
+	header    httpi.SliceHeader //请求级请求头
 	boundary  string
 	mode      UploadMode
 	chunkSize int

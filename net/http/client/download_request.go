@@ -36,8 +36,8 @@ type DownloadReq struct {
 	Url        string
 	downloader *Downloader
 	ctx        context.Context
-	header     httpi.Header //请求级请求头
-	mode       DownloadMode // 模式，0-强制覆盖，1-不存在下载，2-断续下载
+	header     httpi.SliceHeader //请求级请求头
+	mode       DownloadMode      // 模式，0-强制覆盖，1-不存在下载，2-断续下载
 }
 
 func NewDownloadReq(url string) *DownloadReq {

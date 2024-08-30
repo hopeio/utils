@@ -78,11 +78,11 @@ func New() *Client {
 	return &Client{httpClient: DefaultHttpClient, logger: DefaultLogger, logLevel: DefaultLogLevel, retryInterval: 200 * time.Millisecond}
 }
 
-func (c *Client) Header(header http.Header) *Client {
+func (c *Client) Header(header httpi.Header) *Client {
 	if c.header == nil {
 		c.header = make(http.Header)
 	}
-	httpi.CopyHttpHeader(c.header, header)
+	header.IntoHttpHeader(c.header)
 	return c
 }
 
@@ -266,11 +266,11 @@ func (c *Client) GetRawX(url string) (RawBytes, error) {
 }
 
 func (c *Client) GetStream(url string, param any) (io.ReadCloser, error) {
-	return NewRequest(http.MethodGet, url).DoStream(param)
+	return NewRequest(http.MethodGet, url).Client(c).DoStream(param)
 }
 
 func (c *Client) GetStreamX(url string) (io.ReadCloser, error) {
-	return NewRequest(http.MethodGet, url).DoStream(nil)
+	return NewRequest(http.MethodGet, url).Client(c).DoStream(nil)
 }
 
 type ResponseBodyCheck interface {

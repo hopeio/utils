@@ -8,19 +8,23 @@ import (
 	"strings"
 )
 
-type Header []string
+type Header interface {
+	IntoHttpHeader(header http.Header)
+}
 
-func NewHeader() *Header {
-	h := make(Header, 0, 6)
+type SliceHeader []string
+
+func NewHeader() *SliceHeader {
+	h := make(SliceHeader, 0, 6)
 	return &h
 }
 
-func (h *Header) Add(k, v string) *Header {
+func (h *SliceHeader) Add(k, v string) *SliceHeader {
 	*h = append(*h, k, v)
 	return h
 }
 
-func (h *Header) Set(k, v string) *Header {
+func (h *SliceHeader) Set(k, v string) *SliceHeader {
 	header := *h
 	for i, s := range header {
 		if s == k {
@@ -31,15 +35,15 @@ func (h *Header) Set(k, v string) *Header {
 	return h.Add(k, v)
 }
 
-func (h Header) IntoHttpHeader(header http.Header) {
+func (h SliceHeader) IntoHttpHeader(header http.Header) {
 	hlen := len(h)
 	for i := 0; i < hlen && i+1 < hlen; i += 2 {
 		header.Set(h[i], h[i+1])
 	}
 }
 
-func (h Header) Clone() Header {
-	newh := make(Header, len(h))
+func (h SliceHeader) Clone() SliceHeader {
+	newh := make(SliceHeader, len(h))
 	copy(newh, h)
 	return newh
 }
@@ -125,4 +129,12 @@ func FormatRange(start, end, total int64) string {
 		return fmt.Sprintf("bytes=%d-%d/*", start, end)
 	}
 	return fmt.Sprintf("bytes=%d-%d/%d", start, end, total)
+}
+
+type MapHeader map[string]string
+
+func (m MapHeader) IntoHttpHeader(header http.Header) {
+	for k, v := range m {
+		header.Set(k, v)
+	}
 }

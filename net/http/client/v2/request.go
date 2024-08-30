@@ -32,7 +32,7 @@ func (r *Request[RES]) Origin() *client.Request {
 	return (*client.Request)(r)
 }
 
-func (req *Request[RES]) Header(header httpi.Header) *Request[RES] {
+func (req *Request[RES]) Header(header httpi.SliceHeader) *Request[RES] {
 	(*client.Request)(req).Header(header)
 	return req
 }

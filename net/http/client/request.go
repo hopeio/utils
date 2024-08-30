@@ -31,7 +31,7 @@ type Request struct {
 	ctx         context.Context
 	Method, Url string
 	contentType ContentType
-	header      httpi.Header //请求级请求头
+	header      httpi.SliceHeader //请求级请求头
 	client      *Client
 }
 
@@ -55,7 +55,7 @@ func (req *Request) SetClient(set func(c *Client)) *Request {
 	return req
 }
 
-func (req *Request) Header(header httpi.Header) *Request {
+func (req *Request) Header(header httpi.SliceHeader) *Request {
 	req.header = header
 	return req
 }
