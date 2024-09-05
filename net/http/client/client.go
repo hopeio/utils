@@ -61,7 +61,7 @@ type Client struct {
 	reqDataHandler     func(data []byte) ([]byte, error)
 
 	// response
-	responseHandler func(response *http.Response) (retry bool, data []byte, err error)
+	responseHandler func(response *http.Response) (retry bool, reader io.Reader, err error)
 	resDataHandler  func(data []byte) ([]byte, error)
 
 	// logger
@@ -118,7 +118,7 @@ func (c *Client) ParseTag(tag string) *Client {
 }
 
 // handler 返回值:是否重试,返回数据,错误
-func (c *Client) ResponseHandler(handler func(response *http.Response) (retry bool, data []byte, err error)) *Client {
+func (c *Client) ResponseHandler(handler func(response *http.Response) (retry bool, reader io.Reader, err error)) *Client {
 	c.responseHandler = handler
 	return c
 }

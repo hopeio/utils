@@ -118,6 +118,7 @@ func (c *DownloadReq) GetResponse() (*http.Response, error) {
 }
 
 func (c *DownloadReq) GetReader() (io.ReadCloser, error) {
+Retry:
 	resp, err := c.GetResponse()
 	if err != nil {
 		return nil, err
@@ -135,8 +136,18 @@ func (c *DownloadReq) GetReader() (io.ReadCloser, error) {
 
 	d := c.downloader
 	reader := resp.Body
+	if d.responseHandler != nil {
+		retry, reader2, err := d.responseHandler(resp)
+		if retry {
+			goto Retry
+		}
+		if err != nil {
+			return nil, err
+		}
+		reader = ioi.WrapCloser(reader2)
+	}
 	if d.resDataHandler != nil {
-		data, err := io.ReadAll(resp.Body)
+		data, err := io.ReadAll(reader)
 		if err != nil {
 			return nil, err
 		}

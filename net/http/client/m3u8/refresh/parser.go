@@ -14,31 +14,32 @@ import (
 )
 
 var reqClient = client.DefaultHeaderClient().RetryTimes(20).DisableLog()
-var reqClient2 = reqClient.Clone().ResponseHandler(func(response *http.Response) (retry bool, data []byte, err error) {
-	data, err = io.ReadAll(response.Body)
+var reqClient2 = reqClient.Clone().ResponseHandler(func(response *http.Response) (retry bool, reader io.Reader, err error) {
+	data, err := io.ReadAll(response.Body)
 	if err != nil {
 		return false, nil, err
 	}
+	response.Body.Close()
 	if bytesp.HasPrefix(data, []byte("<html>")) {
 		return true, nil, nil
 	}
 	if len(data) == 0 {
 		return false, nil, fmt.Errorf("no key")
 	}
-	return false, data, err
+	return false, bytesp.NewReader(data), err
 })
-var reqClient3 = reqClient.Clone().ResponseHandler(func(response *http.Response) (retry bool, data []byte, err error) {
-	data, err = io.ReadAll(response.Body)
+var reqClient3 = reqClient.Clone().ResponseHandler(func(response *http.Response) (retry bool, reader io.Reader, err error) {
+	data, err := io.ReadAll(response.Body)
 	if err != nil {
 		return false, nil, err
 	}
 	if len(data) == 0 {
-		return false, data, errors.New("empty response body")
+		return false, nil, errors.New("empty response body")
 	}
 	if bytesp.HasPrefix(data, []byte("<html>")) {
 		return true, nil, nil
 	}
-	return false, data, err
+	return false, bytesp.NewReader(data), err
 })
 
 type Result struct {

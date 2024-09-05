@@ -324,8 +324,7 @@ Retry:
 	var respBytes []byte
 	if c.responseHandler != nil {
 		var retry bool
-		retry, respBytes, err = c.responseHandler(resp)
-		resp.Body.Close()
+		retry, reader, err = c.responseHandler(resp)
 
 		if retry {
 			if c.logLevel > LogLevelSilent {
@@ -335,13 +334,14 @@ Retry:
 		} else if err != nil {
 			return err
 		}
-	} else {
-		respBytes, err = io.ReadAll(reader)
-		resp.Body.Close()
-		if err != nil {
-			return err
-		}
 	}
+
+	respBytes, err = io.ReadAll(reader)
+	resp.Body.Close()
+	if err != nil {
+		return err
+	}
+
 	respBody.Data = respBytes
 	if len(respBytes) > 0 && response != nil {
 		contentType := resp.Header.Get(httpi.HeaderContentType)
