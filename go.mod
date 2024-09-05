@@ -83,6 +83,7 @@ require (
 	github.com/ugorji/go v1.2.12
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	go.opentelemetry.io/otel/trace v1.27.0
+	gocv.io/x/gocv v0.37.0
 	golang.org/x/crypto v0.24.0
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	golang.org/x/image v0.16.0
