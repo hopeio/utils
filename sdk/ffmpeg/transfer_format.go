@@ -21,13 +21,13 @@ func TransferFormatGPU(filePath, dst string) error {
 const TransferFormatCmd = CommonCmd + ` -c copy -y "%s"`
 
 func TransferFormat(filePath, dst string) error {
-	return ffmpegCmd(fmt.Sprintf(TransferFormatCmd, filePath, dst))
+	return Run(fmt.Sprintf(TransferFormatCmd, filePath, dst))
 }
 
 const ConcatCmd = ` -f concat -safe 0  -i "%s" -c copy -y "%s"`
 
 func ConcatByFile(filePath, dst string) error {
-	return ffmpegCmd(fmt.Sprintf(ConcatCmd, filePath, dst))
+	return Run(fmt.Sprintf(ConcatCmd, filePath, dst))
 }
 
 func Concat(dir, dst string) error {

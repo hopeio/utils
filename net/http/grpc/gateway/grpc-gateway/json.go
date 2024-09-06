@@ -1,4 +1,4 @@
-package runtime
+package grpc_gateway
 
 import (
 	"github.com/hopeio/utils/encoding/json"

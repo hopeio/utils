@@ -14,7 +14,7 @@ func ImgToWebpLossless(filePath, dst string) error {
 	if strings.HasSuffix(dst, ".webp") {
 		dst = dst[:len(dst)-5]
 	}
-	return ffmpegCmd(fmt.Sprintf(ImgToWebpLosslessCmd, filePath, dst))
+	return Run(fmt.Sprintf(ImgToWebpLosslessCmd, filePath, dst))
 }
 
 const ImgToWebpCmd = CommonCmd + `-c:v libwebp -quality %d "%s.webp"`
@@ -27,7 +27,7 @@ func ImgToWebp(filePath, dst string, quality int) error {
 	if strings.HasSuffix(dst, ".webp") {
 		dst = dst[:len(dst)-5]
 	}
-	return ffmpegCmd(fmt.Sprintf(ImgToWebpCmd, filePath, quality, dst))
+	return Run(fmt.Sprintf(ImgToWebpCmd, filePath, quality, dst))
 }
 
 const ImgToTAvifCmd = CommonCmd + `-c:v libaom-av1 -crf %d -cpu-used %d -row-mt 1 "%s.avif"`
@@ -41,7 +41,7 @@ func ImgToAvif(filePath, dst string, crf, cpuUsed int) error {
 	if strings.HasSuffix(dst, ".avif") {
 		dst = dst[:len(dst)-5]
 	}
-	return ffmpegCmd(fmt.Sprintf(ImgToTAvifCmd, filePath, crf, cpuUsed, dst))
+	return Run(fmt.Sprintf(ImgToTAvifCmd, filePath, crf, cpuUsed, dst))
 }
 
 const ImgToHeicCmd = CommonCmd + `-crf 20 -c:v libx265 -preset veryslow %s.mp4`
@@ -53,7 +53,7 @@ func ImgToHeic(filePath, dst string) error {
 	if strings.HasSuffix(dst, ".heic") {
 		dst = dst[:len(dst)-5]
 	}
-	err := ffmpegCmd(fmt.Sprintf(ImgToHeicCmd, filePath, dst))
+	err := Run(fmt.Sprintf(ImgToHeicCmd, filePath, dst))
 	if err != nil {
 		return err
 	}
@@ -79,5 +79,5 @@ func ImgToJxl(filePath, dst string) error {
 		dst = dst[:len(dst)-4]
 	}
 
-	return ffmpegCmd(fmt.Sprintf(ImgToJxlCmd, filePath, dst))
+	return Run(fmt.Sprintf(ImgToJxlCmd, filePath, dst))
 }

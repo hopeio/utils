@@ -1,4 +1,4 @@
-package runtime
+package grpc_gateway
 
 import (
 	"context"
@@ -13,8 +13,7 @@ import (
 
 type GatewayHandler func(context.Context, *runtime.ServeMux)
 
-func Gateway(gatewayHandle GatewayHandler) *runtime.ServeMux {
-	ctx := context.Background()
+func New() *runtime.ServeMux {
 
 	gwmux := runtime.NewServeMux(
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, &JSONPb{}),
@@ -69,8 +68,6 @@ func Gateway(gatewayHandle GatewayHandler) *runtime.ServeMux {
 	runtime.WithForwardResponseOption(gateway.CookieHook)(gwmux)
 	runtime.WithRoutingErrorHandler(RoutingErrorHandler)(gwmux)
 	runtime.WithErrorHandler(CustomHttpError)(gwmux)
-	if gatewayHandle != nil {
-		gatewayHandle(ctx, gwmux)
-	}
+
 	return gwmux
 }

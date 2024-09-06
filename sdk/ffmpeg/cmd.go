@@ -20,7 +20,7 @@ func SetExecPath(path string) {
 	execPath = path
 }
 
-func ffmpegCmd(cmd string) error {
+func Run(cmd string) error {
 	cmd = execPath + " " + cmd
 	log.Debug("exec:", cmd)
 	err := execi.ContainQuotedStdoutCMD(cmd)

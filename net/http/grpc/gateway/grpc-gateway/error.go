@@ -1,4 +1,4 @@
-package runtime
+package grpc_gateway
 
 import (
 	"context"
