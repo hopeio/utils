@@ -9,16 +9,11 @@ import (
 	"syscall"
 )
 
-func ContainQuotedCMD(s string) (string, error) {
-	exe := s
-	for i, c := range s {
-		if c == ' ' {
-			exe = s[:i]
-			break
-		}
+func RunGetOutContainQuoted(s string, opts ...Option) (string, error) {
+	cmd := ContainQuotedCMD(s)
+	for _, opt := range opts {
+		opt(cmd)
 	}
-	cmd := exec.Command(exe)
-	cmd.SysProcAttr = &syscall.SysProcAttr{CmdLine: s[len(exe):], HideWindow: true}
 	buf, err := cmd.CombinedOutput()
 	if err != nil {
 		return stringsi.BytesToString(buf), err
@@ -29,7 +24,17 @@ func ContainQuotedCMD(s string) (string, error) {
 	return stringsi.BytesToString(buf), nil
 }
 
-func ContainQuotedStdoutCMD(s string) error {
+func RunContainQuoted(s string, opts ...Option) error {
+	cmd := ContainQuotedCMD(s)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	for _, opt := range opts {
+		opt(cmd)
+	}
+	return cmd.Run()
+}
+
+func ContainQuotedCMD(s string, opts ...Option) *exec.Cmd {
 	exe := s
 	for i, c := range s {
 		if c == ' ' {
@@ -39,7 +44,8 @@ func ContainQuotedStdoutCMD(s string) error {
 	}
 	cmd := exec.Command(exe)
 	cmd.SysProcAttr = &syscall.SysProcAttr{CmdLine: s[len(exe):], HideWindow: true}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	for _, opt := range opts {
+		opt(cmd)
+	}
+	return cmd
 }

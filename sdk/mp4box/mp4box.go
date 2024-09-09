@@ -8,6 +8,6 @@ import (
 const Mp4BoxCmd = `mp4box -add-image %s.hevc:primary -ab heic -new %s.heic`
 
 func Heic(filePath, dst string) error {
-	_, err := execi.Cmd(Mp4BoxCmd)
+	_, err := execi.RunGetOut(Mp4BoxCmd)
 	return err
 }

@@ -34,6 +34,6 @@ func GetFrame(src string, f Frame) error {
 	dst := filepath.Clean(filepath.Dir(src)) + f.String() + "Frame"
 	fs.Mkdir(dst)
 	cmd := fmt.Sprintf(GetFrameCmd, src, f.String(), dst)
-	_, err := execi.ContainQuotedCMD(cmd)
+	_, err := execi.RunGetOutContainQuoted(cmd)
 	return err
 }

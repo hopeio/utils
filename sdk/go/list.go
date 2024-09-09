@@ -34,10 +34,10 @@ func GetDepDir(dep string) string {
 }
 
 func modDepDir(dep string) string {
-	depPath, err := execi.Cmd(GoListDir + dep)
+	depPath, err := execi.RunGetOut(GoListDir + dep)
 	if err != nil || depPath == "" {
-		execi.Cmd("go get " + dep)
-		depPath, _ = execi.Cmd(GoListDir + dep)
+		execi.RunGetOut("go get " + dep)
+		depPath, _ = execi.RunGetOut(GoListDir + dep)
 	}
 	return depPath
 }

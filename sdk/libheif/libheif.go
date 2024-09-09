@@ -16,7 +16,7 @@ func ImgToHeif(filePath, dst string) error {
 	if strings.HasSuffix(dst, ".heif") {
 		dst = dst[:len(dst)-5]
 	}
-	_, err := execi.ContainQuotedCMD(fmt.Sprintf(ImgToHeifCmd, filePath, dst))
+	_, err := execi.RunGetOutContainQuoted(fmt.Sprintf(ImgToHeifCmd, filePath, dst))
 
 	return err
 }

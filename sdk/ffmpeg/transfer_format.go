@@ -14,7 +14,7 @@ const TransferFormatGPUCmd = ` -hwaccel qsv -i "%s" -c copy -y "%s"`
 func TransferFormatGPU(filePath, dst string) error {
 	command := fmt.Sprintf(execPath+TransferFormatGPUCmd, filePath, dst)
 	log.Println(command)
-	_, err := execi.Cmd(command)
+	_, err := execi.RunGetOut(command)
 	return err
 }
 

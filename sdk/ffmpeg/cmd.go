@@ -23,7 +23,7 @@ func SetExecPath(path string) {
 func Run(cmd string) error {
 	cmd = execPath + " " + cmd
 	log.Debug("exec:", cmd)
-	err := execi.ContainQuotedStdoutCMD(cmd)
+	err := execi.RunContainQuoted(cmd)
 	if err != nil {
 		log.Error(err)
 		return err

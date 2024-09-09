@@ -15,6 +15,6 @@ func ImgToJxl(filePath, dst string, quality int) error {
 	if strings.HasSuffix(dst, ".jxl") {
 		dst = dst[:len(dst)-4]
 	}
-	_, err := execi.Cmd(fmt.Sprintf(ImgToJxlCmd, filePath, dst, quality))
+	_, err := execi.RunGetOut(fmt.Sprintf(ImgToJxlCmd, filePath, dst, quality))
 	return err
 }

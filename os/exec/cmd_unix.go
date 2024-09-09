@@ -2,10 +2,15 @@
 
 package exec
 
-func ContainQuotedCMD(s string) (string, error) {
-	return Cmd(s)
+func RunGetOutContainQuoted(s string) (string, error) {
+	return RunGetOut(s)
 }
 
-func ContainQuotedStdoutCMD(s string) error {
-	return StdOutCmd(s)
+func RunContainQuoted(s string) error {
+	return Run(s)
+}
+
+func ContainQuotedCMD(s string) *exec.Cmd {
+	words := Split(s)
+	return exec.Command(words[0], words[1:]...)
 }

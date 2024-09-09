@@ -2,7 +2,6 @@ package exec
 
 import (
 	"fmt"
-	stringsi "github.com/hopeio/utils/strings"
 	"log"
 	"os"
 	"os/exec"
@@ -13,29 +12,12 @@ import (
 	"syscall"
 )
 
-func Cmd(s string) (string, error) {
-	words := Split(s)
-	cmd := exec.Command(words[0], words[1:]...)
-	buf, err := cmd.CombinedOutput()
-	if err != nil {
-		return stringsi.BytesToString(buf), err
-	}
-	if len(buf) == 0 {
-		return "", nil
-	}
-	lastIndex := len(buf) - 1
-	if buf[lastIndex] == '\n' {
-		buf = buf[:lastIndex]
-	}
-	return stringsi.BytesToString(buf), nil
-}
-
-func StdOutCmd(s string) error {
+func CMD(s string) *exec.Cmd {
 	words := Split(s)
 	cmd := exec.Command(words[0], words[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	return cmd
 }
 
 func Split(line string) []string {
@@ -100,34 +82,6 @@ func expandVar(word string) string {
 		}
 	}
 	return os.Getenv(word)
-}
-
-func CmdLog(s string) (string, error) {
-	out, err := Cmd(s)
-	if err != nil {
-		log.Printf(`exec:"%s" failed,out:%v,err:%v`, s, out, err)
-		return out, err
-	}
-	log.Printf(`exec:"%s"`, s)
-	return out, err
-}
-
-func CmdInDir(s, dir string) (string, error) {
-	words := Split(s)
-	cmd := exec.Command(words[0], words[1:]...)
-	cmd.Dir = dir
-	buf, err := cmd.CombinedOutput()
-	if err != nil {
-		return stringsi.BytesToString(buf), err
-	}
-	if len(buf) == 0 {
-		return "", nil
-	}
-	lastIndex := len(buf) - 1
-	if buf[lastIndex] == '\n' {
-		buf = buf[:lastIndex]
-	}
-	return stringsi.BytesToString(buf), nil
 }
 
 func WaitShutdown() {
