@@ -1,18 +1,20 @@
 package image
 
 import (
-	"golang.org/x/image/webp"
-	"image/jpeg"
+	"image"
+	"io"
 	"os"
-	"path"
 )
 
-func WebpToJpg(src string, quality int) error {
+type Decode func(r io.Reader) (image.Image, error)
+type Encode func(io.Writer, image.Image) error
+
+func Transfer(src, dst string, decode Decode, encode Encode) error {
 	file, err := os.Open(src)
 	if err != nil {
 		return err
 	}
-	image, err := webp.Decode(file)
+	img, err := decode(file)
 	if err != nil {
 		return err
 	}
@@ -24,13 +26,13 @@ func WebpToJpg(src string, quality int) error {
 	if err != nil {
 		return err
 	}
-	jpegfile, err := os.Create(path.Dir(src) + ".jpg")
+	dstImg, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	err = jpeg.Encode(jpegfile, image, &jpeg.Options{Quality: quality})
+	err = encode(dstImg, img)
 	if err != nil {
 		return err
 	}
-	return jpegfile.Close()
+	return dstImg.Close()
 }
