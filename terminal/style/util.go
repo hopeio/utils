@@ -3,13 +3,14 @@ package style
 import (
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 )
 
 var supportLevel int
 
-/*func init() {
+func init() {
 	if EnableColor() {
 		colorDepth, _ := ColorDepth()
 		if runtime.GOOS == "windows" || colorDepth >= 256 {
@@ -20,7 +21,7 @@ var supportLevel int
 			supportLevel = 1
 		}
 	}
-}*/
+}
 
 func EnableColor() bool {
 	if _, exists := os.LookupEnv("NO_COLOR"); exists {

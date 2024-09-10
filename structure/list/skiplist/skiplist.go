@@ -15,6 +15,7 @@ type SkipList[K constraints.Ordered, V any] struct {
 	len      int
 	MaxLevel int
 	compare  cmp.LessFunc[K]
+	zero     V
 }
 
 // New returns a skiplist.
@@ -32,7 +33,7 @@ func (s *SkipList[K, V]) Len() int {
 }
 
 // Set sets given k and v pair into the skiplist.
-func (s *SkipList[K, V]) Set(k interface{}, v interface{}) {
+func (s *SkipList[K, V]) Set(k K, v V) {
 	// s.level starts from 0, we need to allocate one
 	update := make([]*skiplistitem[K, V], s.level()+1, s.effectiveMaxLevel()+1) // make(type, len, cap)
 
@@ -63,7 +64,7 @@ func (s *SkipList[K, V]) Set(k interface{}, v interface{}) {
 	s.len++
 }
 
-func (s *SkipList[K, V]) path(x *skiplistitem[K, V], update []*skiplistitem[K, V], k interface{}) (candidate *skiplistitem[K, V]) {
+func (s *SkipList[K, V]) path(x *skiplistitem[K, V], update []*skiplistitem[K, V], k K) (candidate *skiplistitem[K, V]) {
 	depth := len(x.forward) - 1
 	for i := depth; i >= 0; i-- {
 		for x.forward[i] != nil && s.compare(x.forward[i].k, k) {
@@ -83,16 +84,16 @@ func (s *SkipList[K, V]) randomLevel() (n int) {
 }
 
 // Get returns corresponding v with given k.
-func (s *SkipList[K, V]) Get(k interface{}) (v interface{}, ok bool) {
+func (s *SkipList[K, V]) Get(k K) (v V, ok bool) {
 	x := s.path(s.header, nil, k)
 	if x == nil || (s.compare(x.k, k) || s.compare(x.k, k)) {
-		return nil, false
+		return s.zero, false
 	}
 	return x.v, true
 }
 
 // Search returns true if k is founded in the skiplist.
-func (s *SkipList[K, V]) Search(k interface{}) (ok bool) {
+func (s *SkipList[K, V]) Search(k K) (ok bool) {
 	x := s.path(s.header, nil, k)
 	if x != nil {
 		ok = true
@@ -102,7 +103,7 @@ func (s *SkipList[K, V]) Search(k interface{}) (ok bool) {
 }
 
 // Range interates `from` to `to` with `op`.
-func (s *SkipList[K, V]) Range(from, to interface{}, op func(v interface{})) {
+func (s *SkipList[K, V]) Range(from, to K, op func(v V)) {
 	for start := s.path(s.header, nil, from); start.next() != nil; start = start.next() {
 		if !s.compare(start.k, to) {
 			return

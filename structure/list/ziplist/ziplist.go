@@ -50,7 +50,7 @@ type zlentry struct {
 }
 
 // 底层是一个环形数组，
-type ziplist struct {
+type Ziplist struct {
 	// 内存池，用于分配和释放内存
 	bytes []byte
 	// 元素数量
@@ -62,14 +62,14 @@ type ziplist struct {
 }
 
 // 新建一个ziplist
-func newZiplist() *ziplist {
-	z := &ziplist{}
+func New() *Ziplist {
+	z := &Ziplist{}
 	z.bytes = make([]byte, 0, 1024)
 	return z
 }
 
 // 在ziplist中添加一个元素
-func (z *ziplist) push(value []byte) error {
+func (z *Ziplist) push(value []byte) error {
 	var prelen uint32
 	if z.tail != 0 && z.length > 0 {
 		if z.bytes[z.tail+4] == ZIPLIST_ENCODING_RAW {
@@ -102,7 +102,7 @@ func (z *ziplist) push(value []byte) error {
 }
 
 // 在ziplist中添加一个int类型的元素
-func (z *ziplist) pushInt(value int64) error {
+func (z *Ziplist) pushInt(value int64) error {
 
 	var prelen uint32
 	if z.tail != 0 && z.length > 0 {

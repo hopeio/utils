@@ -2,11 +2,8 @@ package linkedlist
 
 import (
 	"errors"
-	"fmt"
 	"github.com/hopeio/utils/cmp"
 	"golang.org/x/exp/constraints"
-
-	"github.com/hopeio/utils/log"
 )
 
 // 链表结点
@@ -22,9 +19,9 @@ type LinkedList[T cmp.CompareKey[V], V constraints.Ordered] struct {
 }
 
 // 新建空链表，即创建Node指针head，用来指向链表第一个结点，初始为空
-func New[T cmp.CompareKey[V], V constraints.Ordered]() LinkedList[T, V] {
+func New[T cmp.CompareKey[V], V constraints.Ordered]() *LinkedList[T, V] {
 	l := LinkedList[T, V]{}
-	return l
+	return &l
 }
 
 // 是否为空链表
@@ -33,7 +30,7 @@ func (l *LinkedList[T, V]) IsEmpty() bool {
 }
 
 // 获取链表长度
-func (l *LinkedList[T, V]) GetLength() int {
+func (l *LinkedList[T, V]) Len() int {
 	return l.size
 }
 
@@ -206,14 +203,4 @@ func (l *LinkedList[T, V]) traverse(f func(T)) {
 		}
 		p = p.next
 	}
-}
-
-// 打印链表信息
-func (l *LinkedList[T, V]) PrintInfo() {
-	fmt.Println("###############################################")
-	fmt.Println("链表长度为：", l.GetLength())
-	fmt.Println("链表是否为空:", l.IsEmpty())
-	fmt.Print("遍历链表：")
-	l.traverse(func(data T) { log.Info(data, " ") })
-	fmt.Println("###############################################")
 }

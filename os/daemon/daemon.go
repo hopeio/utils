@@ -8,9 +8,8 @@ import (
 	"github.com/hopeio/utils/log"
 )
 
-var d bool
-
 func init() {
+	var d bool
 	flag.BoolVar(&d, "d", false, "守护进程")
 	if !flag.Parsed() {
 		flag.Parse()

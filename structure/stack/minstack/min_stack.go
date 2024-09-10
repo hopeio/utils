@@ -28,16 +28,16 @@ func (ms *MinStack) Push(x int) {
 }
 
 // Pop ...
-func (ms *MinStack) Pop() {
+func (ms *MinStack[T]) Pop() {
 	ms.store.Remove(ms.store.Front())
 }
 
 // Top ...
-func (ms *MinStack) Top() int {
+func (ms *MinStack[T]) Top() T {
 	return ms.store.Front().Value.(*node).value
 }
 
 // GetMin ...
-func (ms *MinStack) GetMin() int {
+func (ms *MinStack[T]) GetMin() T {
 	return ms.store.Front().Value.(*node).min
 }

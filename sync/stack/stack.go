@@ -5,7 +5,7 @@
 package stack
 
 import (
-	"github.com/hopeio/utils/structure/sync"
+	"github.com/hopeio/utils/sync"
 	"sync/atomic"
 	"unsafe"
 )

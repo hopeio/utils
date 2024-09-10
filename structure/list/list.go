@@ -11,12 +11,12 @@ type List[T any] struct {
 	zero       T
 }
 
-func New[T any]() List[T] {
+func New[T any]() *List[T] {
 	l := List[T]{}
 	l.head = nil //head指向头部结点
 	l.tail = nil //tail指向尾部结点
 	l.size = 0
-	return l
+	return &l
 }
 
 func (l *List[T]) Len() uint {
@@ -65,6 +65,18 @@ func (l *List[T]) Pop() (T, bool) {
 	return p.Value, true
 }
 
+func (l *List[T]) PushFront(v T) {
+	node := &Node[T]{v, l.head}
+	if l.size == 0 {
+		l.head = node
+		l.tail = node
+		l.size++
+		return
+	}
+	l.head = node
+	l.size++
+}
+
 func (l *List[T]) Push(v T) {
 	node := &Node[T]{v, nil}
 	if l.size == 0 {
@@ -76,4 +88,12 @@ func (l *List[T]) Push(v T) {
 	l.tail.Next = node
 	l.tail = node
 	l.size++
+}
+
+type ListIface[T any] interface {
+	First() (T, bool)
+	Last() (T, bool)
+	Pop() (T, bool)
+	Push(v T)
+	Len() uint
 }

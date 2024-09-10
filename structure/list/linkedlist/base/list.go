@@ -2,9 +2,6 @@ package linkedlist
 
 import (
 	"errors"
-	"fmt"
-
-	"github.com/hopeio/utils/log"
 )
 
 // 链表结点
@@ -13,16 +10,25 @@ type Node[T any] struct {
 	next, prev *Node[T]
 }
 
+func (n *Node[T]) Previous() *Node[T] {
+	return n.prev
+}
+
+func (n *Node[T]) Next() *Node[T] {
+	return n.next
+}
+
 // 链表
 type LinkedList[T comparable] struct {
 	head, tail *Node[T]
 	size       int
+	zero       T
 }
 
 // 新建空链表，即创建Node指针head，用来指向链表第一个结点，初始为空
-func New[T comparable]() LinkedList[T] {
+func New[T comparable]() *LinkedList[T] {
 	l := LinkedList[T]{}
-	return l
+	return &l
 }
 
 // 是否为空链表
@@ -31,7 +37,7 @@ func (l *LinkedList[T]) IsEmpty() bool {
 }
 
 // 获取链表长度
-func (l *LinkedList[T]) GetLength() int {
+func (l *LinkedList[T]) Len() int {
 	return l.size
 }
 
@@ -206,12 +212,30 @@ func (l *LinkedList[T]) traverse(f func(T)) {
 	}
 }
 
-// 打印链表信息
-func (l *LinkedList[T]) PrintInfo() {
-	fmt.Println("###############################################")
-	fmt.Println("链表长度为：", l.GetLength())
-	fmt.Println("链表是否为空:", l.IsEmpty())
-	fmt.Print("遍历链表：")
-	l.traverse(func(data T) { log.Info(data, " ") })
-	fmt.Println("###############################################")
+func (q *LinkedList[T]) Push(data T) {
+	n := &Node[T]{data: data, next: nil}
+
+	if q.tail == nil {
+		q.head = n
+		q.tail = n
+	} else {
+		q.tail.next = n
+		q.tail = n
+	}
+
+	return
+}
+
+func (q *LinkedList[T]) Pop() (T, bool) {
+	if q.head == nil {
+		return q.zero, false
+	}
+
+	data := q.head.data
+	q.head = q.head.next
+	if q.head == nil {
+		q.tail = nil
+	}
+
+	return data, true
 }
