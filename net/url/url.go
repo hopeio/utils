@@ -160,7 +160,7 @@ func Base(url string) string {
 }
 
 // 获取url中的文件名
-func PathBase(url string) string {
+func URIBase(url string) string {
 	return stringsi.ReverseCutPart(Base(url), "/")
 }
 
@@ -177,3 +177,25 @@ func RelativeURLToAbsoluteURL(curURL string, baseURL string) (string, error) {
 	curURLData = baseURLData.ResolveReference(curURLData)
 	return curURLData.String(), nil
 }
+
+/*
+空格 - %20
+" - %22
+# - %23
+% - %25
+& - %26
+( - %28
+) - %29
++ - %2B
+, - %2C
+/ - %2F
+: - %3A
+; - %3B
+< - %3C
+= - %3D
+> - %3E
+? - %3F
+@ - %40
+\ - %5C
+| - %7C
+*/

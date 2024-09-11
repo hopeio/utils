@@ -274,5 +274,5 @@ func ImageOption(req *http.Request) {
 }
 
 func DownloadToDir(dir, url string) error {
-	return NewDownloadReq(url).Download(dir + fs2.PathSeparator + urli.PathBase(url))
+	return NewDownloadReq(url).Download(dir + fs2.PathSeparator + urli.URIBase(url))
 }

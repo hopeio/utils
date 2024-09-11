@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func GetClient() *http.Client {
+func NewClient() *http.Client {
 	return &http.Client{
 		Transport: &http3.RoundTripper{},
 	}
