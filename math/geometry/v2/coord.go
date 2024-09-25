@@ -20,8 +20,8 @@ type Point[T constraintsi.Number] struct {
 	Y T
 }
 
-// TransformPoint transforms a point from coordinate system a2 to a1
-func TransformPoint[T constraintsi.Number](p1InO2, p2InO1, p2InO2 Point[T], angleDeg float64) Point[T] {
+// TransformPointByOnePointAndRotationAngle transforms a point from coordinate system a2 to a1
+func TransformPointByOnePointAndRotationAngle[T constraintsi.Number](p1InO2, p2InO1, p2InO2 Point[T], angleDeg float64) Point[T] {
 
 	// Convert angle from degrees to radians
 	angleRad := angleDeg * math.Pi / 180.0
