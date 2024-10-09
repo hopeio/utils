@@ -12,10 +12,10 @@ func TestTransformPoint(t *testing.T) {
 	point2B := Point{5.0, -3.0}
 	point2A := Point{X: 7.826025403784439, Y: -8.09602540378444}
 	// {7.826025403784439 8.09602540378444}
-	assert.Equal(t, point2A, TransformPointByOnePointAndRotationAngle(point2B, point1B, point1A, angle))
-	angle = CalculateRotationAngle(point1A, point1B, point2A, point2B)
+	assert.Equal(t, point2A, TranslateRotationTransformByPointAndAngle(point2B, point1B, point1A, angle))
+	angle = AngleBetweenVectors(point1A, point1B, point2A, point2B)
 	t.Log(angle)
-	t.Log(TransformPointByOnePointAndRotationAngle(point2B, point1B, point1A, -angle))
+	t.Log(TranslateRotationTransformByPointAndAngle(point2B, point1B, point1A, -angle))
 }
 
 func TestIsPointInRectangle(t *testing.T) {
@@ -52,4 +52,20 @@ func FuzzIsPointInRectangle(f *testing.F) {
 		assert.Equal(t, IsPointInRectangle(Point{x, y}, Point{cx, cy}, w, h, angle), IsPointInRectangle(Point{x, -y},
 			Point{cx, -cy}, w, h, -angle))
 	})
+}
+
+func TestAffineMatrix(t *testing.T) {
+	p1, p2, p3, q1, q2, q3 := Point{2000, 7000}, Point{48000, 80000}, Point{2000, 85000}, Point{3558, 17895}, Point{11016, 5997}, Point{3538, 5182}
+	transformMatrix, err := calculateAffineTransform(p1, p2, p3, q1, q2, q3)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// 对某个点应用变换
+	p := Point{X: 48000, Y: 13000}
+	q, err := applyAffineTransform(transformMatrix, p)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(q)
 }
