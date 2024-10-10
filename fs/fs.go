@@ -123,7 +123,7 @@ func FindFiles2(path string, deep int8, num int) ([]string, error) {
 		file <- filepath1
 	}
 
-	ctx.Run(func() {
+	ctx.AddFunc(func() {
 		err := subDirFiles2(wd, path, "", file, deep, 0, ctx)
 		if err != nil {
 			log.Error(err)
@@ -172,9 +172,7 @@ func subDirFiles2(dir, path, exclude string, file chan string, deep, step int8, 
 				}
 			}
 
-			mi.Run(func() {
-				//TODO: subDirFiles2(filepath.Join(dir, fileInfos[i].Name()), path, "", file, deep, step, ctx) 这种语句有问题,不清楚原因,i会错乱?
-				// 还是go1.22之前的问题，升级go mod go 标签到1.22
+			mi.AddFunc(func() {
 				err := subDirFiles2(filepath.Join(dir, fileInfos[i].Name()), path, "", file, deep, step, mi)
 				if err != nil {
 					log.Error(err)
@@ -205,7 +203,7 @@ func supDirFiles2(dir, path string, file chan string, deep, step int8, mi *monit
 		}
 	}
 
-	mi.Run(func() {
+	mi.AddFunc(func() {
 		err := subDirFiles2(dir, path, dirName, file, deep, 0, mi)
 		if err != nil {
 			log.Error(err)

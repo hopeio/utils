@@ -28,23 +28,20 @@ func Run(tasks []funcs.FuncWithErr) error {
 }
 
 type Parallel struct {
-	taskCh  chan interfaces.FuncContinue
-	workNum uint
-	wg      sync.WaitGroup
+	taskCh chan interfaces.FuncContinue
+	wg     sync.WaitGroup
 }
 
 func New(workNum uint, opts ...Option) *Parallel {
-	return &Parallel{taskCh: make(chan interfaces.FuncContinue, workNum), workNum: workNum}
-}
-
-func (p *Parallel) Run() {
+	taskCh := make(chan interfaces.FuncContinue, workNum)
+	p := &Parallel{taskCh: taskCh}
 	g := func() {
 		defer func() {
 			if err := recover(); err != nil {
 				log.StackError(err)
 			}
 		}()
-		for task := range p.taskCh {
+		for task := range taskCh {
 			var times = uint(1)
 			for task.Do(times) {
 				times++
@@ -52,9 +49,10 @@ func (p *Parallel) Run() {
 			p.wg.Done()
 		}
 	}
-	for _ = range p.workNum {
+	for range workNum {
 		go g()
 	}
+	return p
 }
 
 func (p *Parallel) AddFunc(task funcs.FuncContinue) {
