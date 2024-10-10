@@ -2,17 +2,15 @@ package monitor
 
 import (
 	"context"
-
-	"go.uber.org/atomic"
+	"sync"
+	"sync/atomic"
 )
 
-// 监测子协程是否跑完，需要代码层面的配合
-// 一点都不优雅
-// 没什么优不优雅，这就像wg.Add(1)
 type Monitor struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
-	run, end *atomic.Int32
+	num, end atomic.Int32
+	running  atomic.Bool
 	callback func()
 }
 
@@ -24,22 +22,30 @@ func New(ctx context.Context, callback func()) *Monitor {
 	return &Monitor{
 		ctx:      ctx,
 		cancel:   cancel,
-		run:      atomic.NewInt32(0),
-		end:      atomic.NewInt32(0),
-		callback: callback,
+		callback: sync.OnceFunc(callback),
 	}
 }
 
+type Task func() []Task
+
 // 有没有可能父协程return后，子协程还没开始执行
-func (ng *Monitor) Run(fn func()) {
-	ng.run.Add(1)
-	go func() {
-		fn()
-		ng.end.Add(1)
-		if ng.run.Load() == ng.end.Load() {
-			ng.callback()
-		}
-	}()
+// 这里有问题，存在协程快速执行完后直接执行回调的情况，此时并非所有任务完成
+func (ng *Monitor) Run(fns ...func()) error {
+	/*	if !ng.running.CompareAndSwap(false, true) {
+		return errors.New("monitor is running")
+	}*/
+	ng.num.Add(int32(len(fns)))
+	for _, fn := range fns {
+		go func() {
+			fn()
+			ng.end.Add(1)
+			if ng.num.Load() == ng.end.Load() {
+				//ng.running.Store(false)
+				ng.callback()
+			}
+		}()
+	}
+	return nil
 }
 
 func (ng *Monitor) Context() context.Context {

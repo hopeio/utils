@@ -128,14 +128,13 @@ func FindFiles2(path string, deep int8, num int) ([]string, error) {
 		if err != nil {
 			log.Error(err)
 		}
-	})
-
-	ctx.Run(func() {
-		err := supDirFiles2(wd+string(os.PathSeparator), path, file, deep, 0, ctx)
+	}, func() {
+		err := supDirFiles2(wd+PathSeparator, path, file, deep, 0, ctx)
 		if err != nil {
 			log.Error(err)
 		}
 	})
+
 	var files []string
 	for filepath1 := range file {
 		if files = append(files, filepath1); len(files) == num {
@@ -147,10 +146,10 @@ func FindFiles2(path string, deep int8, num int) ([]string, error) {
 }
 
 func subDirFiles2(dir, path, exclude string, file chan string, deep, step int8, mi *monitor.Monitor) error {
-	step += 1
-	if step-1 == deep {
+	if step == deep {
 		return nil
 	}
+	step += 1
 	fileInfos, err := os.ReadDir(dir)
 	if err != nil {
 		return err
@@ -188,10 +187,10 @@ func subDirFiles2(dir, path, exclude string, file chan string, deep, step int8, 
 }
 
 func supDirFiles2(dir, path string, file chan string, deep, step int8, mi *monitor.Monitor) error {
-	step += 1
-	if step-1 == deep {
+	if step == deep {
 		return nil
 	}
+	step += 1
 	dir, dirName := filepath.Split(dir[:len(dir)-1])
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		return err
@@ -211,8 +210,7 @@ func supDirFiles2(dir, path string, file chan string, deep, step int8, mi *monit
 		if err != nil {
 			log.Error(err)
 		}
-	})
-	mi.Run(func() {
+	}, func() {
 		err := supDirFiles2(dir, path, file, deep, step, mi)
 		if err != nil {
 			log.Error(err)

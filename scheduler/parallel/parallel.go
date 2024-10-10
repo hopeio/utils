@@ -4,13 +4,13 @@ import (
 	"github.com/hopeio/utils/errors/multierr"
 	"github.com/hopeio/utils/log"
 	"github.com/hopeio/utils/types/funcs"
+	"github.com/hopeio/utils/types/interfaces"
 	"sync"
 )
 
 func Run(tasks []funcs.FuncWithErr) error {
 	ch := make(chan error)
 	for _, task := range tasks {
-		task := task // 兼容!go1.22
 		go func() {
 			ch <- task()
 		}()
@@ -28,13 +28,13 @@ func Run(tasks []funcs.FuncWithErr) error {
 }
 
 type Parallel struct {
-	taskCh  chan funcs.FuncContinue
+	taskCh  chan interfaces.FuncContinue
 	workNum uint
 	wg      sync.WaitGroup
 }
 
 func New(workNum uint, opts ...Option) *Parallel {
-	return &Parallel{taskCh: make(chan funcs.FuncContinue, workNum), workNum: workNum}
+	return &Parallel{taskCh: make(chan interfaces.FuncContinue, workNum), workNum: workNum}
 }
 
 func (p *Parallel) Run() {
@@ -46,7 +46,7 @@ func (p *Parallel) Run() {
 		}()
 		for task := range p.taskCh {
 			var times = uint(1)
-			for task(times) {
+			for task.Do(times) {
 				times++
 			}
 			p.wg.Done()
@@ -57,7 +57,12 @@ func (p *Parallel) Run() {
 	}
 }
 
-func (p *Parallel) AddTask(task funcs.FuncContinue) {
+func (p *Parallel) AddFunc(task funcs.FuncContinue) {
+	p.wg.Add(1)
+	p.taskCh <- task
+}
+
+func (p *Parallel) AddTask(task interfaces.FuncContinue) {
 	p.wg.Add(1)
 	p.taskCh <- task
 }
@@ -72,3 +77,17 @@ func (p *Parallel) Stop() {
 }
 
 type Option func(p *Parallel)
+
+type TaskChain []func() error
+
+func (t *TaskChain) Do(times uint) bool {
+	taskChain := *t
+	for i := 0; i < len(taskChain); i++ {
+		err := taskChain[i]()
+		if err != nil {
+			*t = taskChain[i:]
+			return true
+		}
+	}
+	return false
+}
