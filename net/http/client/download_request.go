@@ -183,7 +183,7 @@ func (c *DownloadReq) Download(filepath string) error {
 		if err == nil {
 			return nil
 		}
-		log.Warn(err)
+		log.Warn(err, c.Url, filepath)
 	}
 	return err
 }
