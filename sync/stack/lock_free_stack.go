@@ -10,19 +10,19 @@ import (
 	"unsafe"
 )
 
-// Stack implements lock-free freelist based stack.
-type Stack struct {
+// LockFreeStack implements lock-free freelist based stack.
+type LockFreeStack struct {
 	top unsafe.Pointer
 	len uint64
 }
 
-// New creates a new lock-free queue.
-func New() *Stack {
-	return &Stack{}
+// NewLockFreeStack creates a new lock-free queue.
+func NewLockFreeStack() *LockFreeStack {
+	return &LockFreeStack{}
 }
 
 // Pop pops value from the top of the stack.
-func (s *Stack) Pop() interface{} {
+func (s *LockFreeStack) Pop() interface{} {
 	var top, next unsafe.Pointer
 	var item *sync.DirectItem
 	for {
@@ -40,7 +40,7 @@ func (s *Stack) Pop() interface{} {
 }
 
 // Push pushes a value on top of the stack.
-func (s *Stack) Push(v interface{}) {
+func (s *LockFreeStack) Push(v interface{}) {
 	item := sync.DirectItem{V: v}
 	var top unsafe.Pointer
 	for {

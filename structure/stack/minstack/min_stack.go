@@ -1,29 +1,30 @@
 package minstack
 
-import "container/list"
+import (
+	"container/list"
+	"github.com/hopeio/utils/cmp"
+)
 
 // MinStack ...
-type MinStack struct {
+type MinStack[T cmp.Comparable[T]] struct {
 	store *list.List
 }
-type node struct {
-	min   int
-	value int
+type node[T cmp.Comparable[T]] struct {
+	min   T
+	value T
 }
 
 // NewMinStack ...
-func NewMinStack() MinStack {
-	return MinStack{store: list.New()}
+func NewMinStack[T cmp.Comparable[T]]() MinStack[T] {
+	return MinStack[T]{store: list.New()}
 }
 
 // Push ...
-func (ms *MinStack) Push(x int) {
-	if ms.store.Front() != nil && ms.store.Front().Value.(*node).min > x {
-		ms.store.PushFront(&node{value: x, min: x})
-	} else if ms.store.Front() != nil && ms.store.Front().Value.(*node).min <= x {
-		ms.store.PushFront(&node{value: x, min: ms.store.Front().Value.(*node).min})
+func (ms *MinStack[T]) Push(x T) {
+	if ms.store.Front() != nil && ms.store.Front().Value.(*node[T]).min.Compare(x) <= 0 {
+		ms.store.PushFront(&node[T]{value: x, min: ms.store.Front().Value.(*node[T]).min})
 	} else {
-		ms.store.PushFront(&node{value: x, min: x})
+		ms.store.PushFront(&node[T]{value: x, min: x})
 	}
 }
 
@@ -34,10 +35,10 @@ func (ms *MinStack[T]) Pop() {
 
 // Top ...
 func (ms *MinStack[T]) Top() T {
-	return ms.store.Front().Value.(*node).value
+	return ms.store.Front().Value.(*node[T]).value
 }
 
 // GetMin ...
 func (ms *MinStack[T]) GetMin() T {
-	return ms.store.Front().Value.(*node).min
+	return ms.store.Front().Value.(*node[T]).min
 }

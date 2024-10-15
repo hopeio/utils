@@ -13,14 +13,14 @@ import (
 )
 
 func TestQueueDequeueEmpty(t *testing.T) {
-	q := New()
+	q := NewLockFreeQueue()
 	if q.Dequeue() != nil {
 		t.Fatalf("dequeue empty queue returns non-nil")
 	}
 }
 
 func TestQueue_Length(t *testing.T) {
-	q := New()
+	q := NewLockFreeQueue()
 	if q.Length() != 0 {
 		t.Fatalf("empty queue has non-zero length")
 	}
@@ -37,7 +37,7 @@ func TestQueue_Length(t *testing.T) {
 }
 
 func ExampleQueue() {
-	q := New()
+	q := NewLockFreeQueue()
 
 	q.Enqueue("1st item")
 	q.Enqueue("2nd item")
@@ -91,7 +91,7 @@ func BenchmarkQueue(b *testing.B) {
 	for i := 0; i < length; i++ {
 		inputs = append(inputs, rand.Int())
 	}
-	q, mq := New(), newMutexQueue()
+	q, mq := NewLockFreeQueue(), newMutexQueue()
 	b.ResetTimer()
 
 	for _, q := range [...]queueInterface{q, mq} {

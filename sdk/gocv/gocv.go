@@ -70,6 +70,7 @@ func MergeImage(imgs [][]int, getImage func(int) ([]byte, error), bounds image.R
 	result := gocv.NewMatWithSize(resultHeight, resultWidth, img0.Type())
 
 	var rbounds = bounds
+	var img gocv.Mat
 	// 将 img1 复制到结果图片中
 	for i, rimg := range imgs {
 		for j, imgIdx := range rimg {
@@ -79,7 +80,7 @@ func MergeImage(imgs [][]int, getImage func(int) ([]byte, error), bounds image.R
 					return err
 				}
 			}
-			img, err := gocv.IMDecode(data, gocv.IMReadAnyColor|gocv.IMReadAnyDepth)
+			img, err = gocv.IMDecode(data, gocv.IMReadAnyColor|gocv.IMReadAnyDepth)
 			if err != nil {
 				return err
 			}

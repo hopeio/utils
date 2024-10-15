@@ -28,8 +28,8 @@ type CompareKey[T constraints.Ordered] interface {
 	CompareKey() T
 }
 
-type ComparableKey[T CompareKey[V], V constraints.Ordered] interface {
-	Compare(T) int
+type ComparableKey[T Comparable[T]] interface {
+	CompareKey() T
 }
 
 // 可以直接用-号

@@ -90,6 +90,28 @@ func (l *List[T]) Push(v T) {
 	l.size++
 }
 
+func (l *List[T]) PushAt(idx int, v T) {
+	if idx < 0 || idx > int(l.size) {
+		panic("index out of range")
+	}
+	node := &Node[T]{v, nil}
+	if idx == 0 {
+		l.PushFront(v)
+		return
+	}
+	if idx == int(l.size) {
+		l.Push(v)
+		return
+	}
+	tmpNode := l.head
+	for range idx {
+		tmpNode = tmpNode.Next
+	}
+	node.Next = tmpNode.Next
+	tmpNode.Next = node
+	l.size++
+}
+
 type ListIface[T any] interface {
 	First() (T, bool)
 	Last() (T, bool)

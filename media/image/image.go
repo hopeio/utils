@@ -129,11 +129,11 @@ func MergeImages(imgs [][]int, getImage func(int) image.Image, bounds image.Rect
 	// 创建一个新的 RGBA 图片，用于存储合并后的图片
 	result := image.NewRGBA(image.Rect(0, 0, resultWidth, resultHeight))
 	var rbounds = bounds
-
+	var img image.Image
 	// 将 img1 复制到结果图片中
 	for i, rimg := range imgs {
 		for j, imgIdx := range rimg {
-			img := getImage(imgIdx)
+			img = getImage(imgIdx)
 			draw.Draw(result, rbounds, img, image.Point{}, draw.Src)
 			if j < len(horizontalOverlaps) {
 				rbounds.Min.X += bounds.Dx() - horizontalOverlaps[j]

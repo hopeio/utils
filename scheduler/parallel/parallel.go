@@ -1,31 +1,11 @@
 package parallel
 
 import (
-	"github.com/hopeio/utils/errors/multierr"
 	"github.com/hopeio/utils/log"
 	"github.com/hopeio/utils/types/funcs"
 	"github.com/hopeio/utils/types/interfaces"
 	"sync"
 )
-
-func Run(tasks []funcs.FuncWithErr) error {
-	ch := make(chan error)
-	for _, task := range tasks {
-		go func() {
-			ch <- task()
-		}()
-	}
-	var errs multierr.MultiError
-	for err := range ch {
-		if err != nil {
-			errs.Append(err)
-		}
-	}
-	if errs.HasErrors() {
-		return errs
-	}
-	return nil
-}
 
 type Parallel struct {
 	taskCh chan interfaces.FuncContinue
@@ -55,7 +35,7 @@ func New(workNum uint, opts ...Option) *Parallel {
 	return p
 }
 
-func (p *Parallel) AddFunc(task funcs.FuncContinue) {
+func (p *Parallel) AddFunc(task funcs.FuncRetry) {
 	p.wg.Add(1)
 	p.taskCh <- task
 }

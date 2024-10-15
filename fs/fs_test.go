@@ -59,12 +59,20 @@ func isDuplicate2(files []string) (string, int, int) {
 
 // 0.0170 ns/op
 func BenchmarkFindFiles(b *testing.B) {
-	FindFiles("BUILD.bazel", 5, 0)
+	files2, err := FindFiles("BUILD.bazel", 5, 0)
+	if err != nil {
+		b.Error(err)
+	}
+	b.Log(files2)
 }
 
 // 0.0130 ns/op
 func BenchmarkFindFiles2(b *testing.B) {
-	FindFiles2("BUILD.bazel", 5, 0)
+	files2, err := FindFiles2("BUILD.bazel", 5, 0)
+	if err != nil {
+		b.Error(err)
+	}
+	b.Log(files2)
 }
 
 func TestGo(t *testing.T) {

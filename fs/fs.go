@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hopeio/utils/log"
-	"github.com/hopeio/utils/scheduler/monitor"
+	lightengine "github.com/hopeio/utils/scheduler/engine/light"
 	"os"
 	"path/filepath"
 	"slices"
@@ -113,9 +113,8 @@ func FindFiles2(path string, deep int8, num int) ([]string, error) {
 	}
 	var file = make(chan string, 1)
 	//属于回调而不是通知
-	ctx := monitor.New(context.Background(), func() {
-		close(file)
-	})
+	ctx := lightengine.New(context.Background())
+	ctx.OnStop(func() { close(file) })
 	defer ctx.Cancel()
 	// 当前目录下先找
 	filepath1 := filepath.Join(wd, path)
@@ -123,16 +122,18 @@ func FindFiles2(path string, deep int8, num int) ([]string, error) {
 		file <- filepath1
 	}
 
-	ctx.AddFunc(func() {
-		err := subDirFiles2(wd, path, "", file, deep, 0, ctx)
+	ctx.AddTask(func() []lightengine.Task {
+		subTasks, err := subDirFiles2(wd, path, "", file, deep, 0)
 		if err != nil {
 			log.Error(err)
 		}
-	}, func() {
-		err := supDirFiles2(wd+PathSeparator, path, file, deep, 0, ctx)
+		return subTasks
+	}, func() []lightengine.Task {
+		subTasks, err := supDirFiles2(wd+PathSeparator, path, file, deep, 0)
 		if err != nil {
 			log.Error(err)
 		}
+		return subTasks
 	})
 
 	var files []string
@@ -145,16 +146,16 @@ func FindFiles2(path string, deep int8, num int) ([]string, error) {
 	return files, nil
 }
 
-func subDirFiles2(dir, path, exclude string, file chan string, deep, step int8, mi *monitor.Monitor) error {
+func subDirFiles2(dir, path, exclude string, file chan string, deep, step int8) ([]lightengine.Task, error) {
 	if step == deep {
-		return nil
+		return nil, nil
 	}
 	step += 1
 	fileInfos, err := os.ReadDir(dir)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	ctx := mi.Context()
+	var tasks []lightengine.Task
 	for i := range fileInfos {
 		if fileInfos[i].IsDir() {
 			if exclude != "" && fileInfos[i].Name() == exclude {
@@ -163,58 +164,49 @@ func subDirFiles2(dir, path, exclude string, file chan string, deep, step int8, 
 			subDir := filepath.Join(dir, fileInfos[i].Name())
 			filepath1 := filepath.Join(subDir, path)
 			if _, err = os.Stat(filepath1); !os.IsNotExist(err) {
-				//①如果给出了default语句，那么就会执行default的流程，同时程序的执行会从select语句后的语句中恢复。
-				//②如果没有default语句，那么select语句将被阻塞，直到至少有一个case可以进行下去。
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				case file <- filepath1:
-				}
+				file <- filepath1
 			}
-
-			mi.AddFunc(func() {
-				err := subDirFiles2(filepath.Join(dir, fileInfos[i].Name()), path, "", file, deep, step, mi)
+			tasks = append(tasks, func() []lightengine.Task {
+				subTasks, err := subDirFiles2(filepath.Join(dir, fileInfos[i].Name()), path, "", file, deep, step)
 				if err != nil {
 					log.Error(err)
 				}
+				return subTasks
 			})
-
 		}
 	}
-	return nil
+	return tasks, nil
 }
 
-func supDirFiles2(dir, path string, file chan string, deep, step int8, mi *monitor.Monitor) error {
+func supDirFiles2(dir, path string, file chan string, deep, step int8) ([]lightengine.Task, error) {
 	if step == deep {
-		return nil
+		return nil, nil
 	}
 	step += 1
 	dir, dirName := filepath.Split(dir[:len(dir)-1])
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		return err
+		return nil, err
 	}
 	filepath1 := filepath.Join(dir, path)
-	ctx := mi.Context()
 	if _, err := os.Stat(filepath1); !os.IsNotExist(err) {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case file <- filepath1:
-		}
+		file <- filepath1
 	}
 
-	mi.AddFunc(func() {
-		err := subDirFiles2(dir, path, dirName, file, deep, 0, mi)
-		if err != nil {
-			log.Error(err)
-		}
-	}, func() {
-		err := supDirFiles2(dir, path, file, deep, step, mi)
-		if err != nil {
-			log.Error(err)
-		}
-	})
-	return nil
+	return []lightengine.Task{
+		func() []lightengine.Task {
+			subTasks, err := subDirFiles2(dir, path, dirName, file, deep, 0)
+			if err != nil {
+				log.Error(err)
+			}
+			return subTasks
+		}, func() []lightengine.Task {
+			subTasks, err := supDirFiles2(dir, path, file, deep, step)
+			if err != nil {
+				log.Error(err)
+			}
+			return subTasks
+		},
+	}, nil
 }
 
 func Mkdir(src string) error {

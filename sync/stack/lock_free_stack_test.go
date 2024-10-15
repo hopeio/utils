@@ -13,14 +13,14 @@ import (
 )
 
 func TestStackPopEmpty(t *testing.T) {
-	s := New()
+	s := NewLockFreeStack()
 	if s.Pop() != nil {
 		t.Fatal("pop empty stack returns non-nil")
 	}
 }
 
 func ExampleStack() {
-	s := New()
+	s := NewLockFreeStack()
 
 	s.Push(1)
 	s.Push(2)
@@ -70,7 +70,7 @@ func BenchmarkStack(b *testing.B) {
 	for i := 0; i < length; i++ {
 		inputs = append(inputs, rand.Int())
 	}
-	s, ms := New(), newMutexStack()
+	s, ms := NewLockFreeStack(), newMutexStack()
 	b.ResetTimer()
 	for _, s := range [...]stackInterface{s, ms} {
 		b.Run(fmt.Sprintf("%T", s), func(b *testing.B) {

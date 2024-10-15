@@ -10,25 +10,25 @@ import (
 	"unsafe"
 )
 
-// Queue implements lock-free FIFO freelist based queue.
+// LockFreeQueue implements lock-free FIFO freelist based queue.
 // ref: https://dl.acm.org/citation.cfm?doid=248052.248106
-type Queue struct {
+type LockFreeQueue struct {
 	head unsafe.Pointer
 	tail unsafe.Pointer
 	len  uint64
 }
 
-// New creates a new lock-free queue.
-func New() *Queue {
+// NewLockFreeQueue creates a new lock-free queue.
+func NewLockFreeQueue() *LockFreeQueue {
 	head := sync.DirectItem{Next: nil, V: nil} // allocate a free item
-	return &Queue{
+	return &LockFreeQueue{
 		tail: unsafe.Pointer(&head), // both head and tail points
 		head: unsafe.Pointer(&head), // to the free item
 	}
 }
 
 // Enqueue puts the given value v at the tail of the queue.
-func (q *Queue) Enqueue(v interface{}) {
+func (q *LockFreeQueue) Enqueue(v interface{}) {
 	i := &sync.DirectItem{Next: nil, V: v} // allocate new item
 	var last, lastnext *sync.DirectItem
 	for {
@@ -50,7 +50,7 @@ func (q *Queue) Enqueue(v interface{}) {
 
 // Dequeue removes and returns the value at the head of the queue.
 // It returns nil if the queue is empty.
-func (q *Queue) Dequeue() interface{} {
+func (q *LockFreeQueue) Dequeue() interface{} {
 	var first, last, firstnext *sync.DirectItem
 	for {
 		first = sync.LoadItem(&q.head)
@@ -74,6 +74,6 @@ func (q *Queue) Dequeue() interface{} {
 }
 
 // Length returns the length of the queue.
-func (q *Queue) Length() uint64 {
+func (q *LockFreeQueue) Length() uint64 {
 	return atomic.LoadUint64(&q.len)
 }
