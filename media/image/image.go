@@ -110,17 +110,18 @@ func RGBToGray(c color.RGBA) uint8 {
 	return uint8(0.299*float64(c.R) + 0.587*float64(c.G) + 0.114*float64(c.B))
 }
 
-func MergeImages(imgs [][]int, getImage func(int) image.Image, bounds image.Rectangle, horizontalOverlaps,
-	verticalOverlaps []int) image.Image {
+// 有一定重合的固定大小的图片拼图
+func MergeImagesByOverlap(imgIdxs [][]int, getImage func(int) image.Image, imgWidth, imgHeight int,
+	horizontalOverlaps, verticalOverlaps []int) image.Image {
 	var resultWidth, resultHeight int
-	for i := range imgs[0] {
-		resultWidth += bounds.Dx()
+	for i := range imgIdxs[0] {
+		resultWidth += imgWidth
 		if i < len(horizontalOverlaps) {
 			resultWidth -= horizontalOverlaps[i]
 		}
 	}
-	for i := range imgs {
-		resultHeight += bounds.Dy()
+	for i := range imgIdxs {
+		resultHeight += imgHeight
 		if i < len(verticalOverlaps) {
 			resultWidth -= verticalOverlaps[i]
 		}
@@ -128,54 +129,39 @@ func MergeImages(imgs [][]int, getImage func(int) image.Image, bounds image.Rect
 
 	// 创建一个新的 RGBA 图片，用于存储合并后的图片
 	result := image.NewRGBA(image.Rect(0, 0, resultWidth, resultHeight))
-	var rbounds = bounds
+	slideWin := image.Rect(0, 0, imgWidth, imgHeight)
 	var img image.Image
 	// 将 img1 复制到结果图片中
-	for i, rimg := range imgs {
-		for j, imgIdx := range rimg {
+	for i, rowimgs := range imgIdxs {
+		for j, imgIdx := range rowimgs {
 			img = getImage(imgIdx)
-			draw.Draw(result, rbounds, img, image.Point{}, draw.Src)
+			draw.Draw(result, slideWin, img, image.Point{}, draw.Src)
 			if j < len(horizontalOverlaps) {
-				rbounds.Min.X += bounds.Dx() - horizontalOverlaps[j]
-				rbounds.Max.X += bounds.Dx() + rbounds.Min.X
+				slideWin.Min.X += slideWin.Dx() - horizontalOverlaps[j]
+				slideWin.Max.X += slideWin.Dx() + slideWin.Min.X
 			}
 		}
 		if i < len(verticalOverlaps) {
-			rbounds.Min.Y += bounds.Dy() - verticalOverlaps[i]
-			rbounds.Max.Y += bounds.Dy() + rbounds.Min.Y
-			rbounds.Min.X = 0
-			rbounds.Max.X = bounds.Dx()
+			slideWin.Min.Y += slideWin.Dy() - verticalOverlaps[i]
+			slideWin.Max.Y += slideWin.Dy() + slideWin.Min.Y
+			slideWin.Min.X = 0
+			slideWin.Max.X = slideWin.Dx()
 		}
 	}
 
 	return result
 }
 
-type BGR struct {
-	Pix []uint8
-	// Stride is the Pix stride (in bytes) between vertically adjacent pixels.
-	Stride int // 3 * r.Dx()
-	// Rect is the image's bounds.
-	Rect image.Rectangle
-}
-
-func (r *BGR) ColorModel() color.Model {
-	return color.RGBAModel
-}
-
-func (r *BGR) Bounds() image.Rectangle {
-	return r.Rect
-}
-
-func (p *BGR) PixOffset(x, y int) int {
-	return (y-p.Rect.Min.Y)*p.Stride + (x-p.Rect.Min.X)*3
-}
-
-func (r *BGR) At(x, y int) color.Color {
-	if !(image.Point{X: x, Y: y}.In(r.Rect)) {
-		return color.RGBA64{}
+func RectRotateByCenter(x, y, l, w int, angle float64) []image.Point {
+	rad := angle / 180 * math.Pi
+	lSinYAxis := int(float64(l) / 2 * math.Sin(rad))
+	lCosXAxis := int(float64(l) / 2 * math.Cos(rad))
+	wSinXAxis := int(float64(w) / 2 * math.Sin(rad))
+	wCosYAxis := int(float64(w) / 2 * math.Cos(rad))
+	return []image.Point{
+		{X: x - lCosXAxis - wSinXAxis, Y: y + lSinYAxis - wCosYAxis},
+		{X: x + lCosXAxis - wSinXAxis, Y: y - lSinYAxis - wCosYAxis},
+		{X: x + lCosXAxis + wSinXAxis, Y: y - lSinYAxis + wCosYAxis},
+		{X: x - lCosXAxis + wSinXAxis, Y: y + lSinYAxis + wCosYAxis},
 	}
-	i := r.PixOffset(x, y)
-	b, g, cr := r.Pix[i], r.Pix[i+1], r.Pix[i+2]
-	return color.RGBA{R: cr, G: g, B: b, A: 255}
 }

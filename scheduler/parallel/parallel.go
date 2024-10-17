@@ -8,12 +8,12 @@ import (
 )
 
 type Parallel struct {
-	taskCh chan interfaces.FuncContinue
+	taskCh chan interfaces.TaskRetry
 	wg     sync.WaitGroup
 }
 
 func New(workNum uint, opts ...Option) *Parallel {
-	taskCh := make(chan interfaces.FuncContinue, workNum)
+	taskCh := make(chan interfaces.TaskRetry, workNum)
 	p := &Parallel{taskCh: taskCh}
 	g := func() {
 		defer func() {
@@ -40,7 +40,7 @@ func (p *Parallel) AddFunc(task funcs.FuncRetry) {
 	p.taskCh <- task
 }
 
-func (p *Parallel) AddTask(task interfaces.FuncContinue) {
+func (p *Parallel) AddTask(task interfaces.TaskRetry) {
 	p.wg.Add(1)
 	p.taskCh <- task
 }

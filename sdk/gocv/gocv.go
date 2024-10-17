@@ -1,6 +1,7 @@
 package gocv
 
 import (
+	imagei "github.com/hopeio/utils/media/image"
 	"gocv.io/x/gocv"
 	"image"
 )
@@ -43,22 +44,24 @@ func SearchCircle(path string, rect image.Rectangle) (circles []Circle, err erro
 	return
 }
 
-func MergeImage(imgs [][]int, getImage func(int) ([]byte, error), bounds image.Rectangle,
-	horizontalOverlaps,
-	verticalOverlaps []int, dst string) error {
+// 有一定重合的固定大小的图片拼图
+func MergeImagesByOverlap(imgIdxs [][]int, getImage func(int) ([]byte, error), imgWidth, imgHeight int,
+	horizontalOverlaps, verticalOverlaps []int, dst string) error {
 	var resultWidth, resultHeight int
-	for i := range imgs[0] {
-		resultWidth += bounds.Dx()
+
+	for i := range imgIdxs[0] {
+		resultWidth += imgWidth
 		if i < len(horizontalOverlaps) {
 			resultWidth -= horizontalOverlaps[i]
 		}
 	}
-	for i := range imgs {
-		resultHeight += bounds.Dy()
+	for i := range imgIdxs {
+		resultHeight += imgHeight
 		if i < len(verticalOverlaps) {
 			resultHeight -= verticalOverlaps[i]
 		}
 	}
+
 	data, err := getImage(0)
 	if err != nil {
 		return err
@@ -72,13 +75,15 @@ func MergeImage(imgs [][]int, getImage func(int) ([]byte, error), bounds image.R
 	var rbounds = bounds
 	var img gocv.Mat
 	// 将 img1 复制到结果图片中
-	for i, rimg := range imgs {
-		for j, imgIdx := range rimg {
+	for i, rowimgs := range imgIdxs {
+		for j, imgIdx := range rowimgs {
 			if imgIdx != 0 {
 				data, err = getImage(imgIdx)
 				if err != nil {
 					return err
 				}
+			} else {
+				img = img0
 			}
 			img, err = gocv.IMDecode(data, gocv.IMReadAnyColor|gocv.IMReadAnyDepth)
 			if err != nil {
@@ -86,6 +91,7 @@ func MergeImage(imgs [][]int, getImage func(int) ([]byte, error), bounds image.R
 			}
 			rect := result.Region(rbounds)
 			img.CopyTo(&rect)
+			img.Close()
 			if j < len(horizontalOverlaps) {
 				rbounds.Min.X += bounds.Dx() - horizontalOverlaps[j]
 				rbounds.Max.X = bounds.Dx() + rbounds.Min.X
@@ -151,4 +157,27 @@ func AffineTransform(p1, p2, p3, q1, q2, q3 image.Point, points []image.Point) [
 		ret[i].X, ret[i].Y = int(oMat.GetFloatAt(i, 0)), int(oMat.GetFloatAt(i, 1))
 	}
 	return ret
+}
+
+func CropRotated(img gocv.Mat, centerX, centerY, length, width float64, angle float64) gocv.Mat {
+	points := imagei.RectRotateByCenter(int(centerX), int(centerY), int(length), int(width), angle)
+	srcPoints := gocv.NewPointVectorFromPoints(points)
+	dstPoints := gocv.NewPointVectorFromPoints([]image.Point{
+		{X: 0, Y: 0},
+		{X: int(length), Y: 0},
+		{X: int(length), Y: int(width)},
+		{X: 0, Y: int(width)},
+	})
+	// count perspective transform matrix
+	transformMat := gocv.GetPerspectiveTransform(srcPoints, dstPoints)
+	srcPoints.Close()
+	dstPoints.Close()
+	// warp perspective
+	dst := gocv.NewMatWithSize(int(length), int(width), img.Type())
+	gocv.WarpPerspective(img, &dst, transformMat, image.Point{
+		X: int(length),
+		Y: int(width),
+	})
+	transformMat.Close()
+	return dst
 }

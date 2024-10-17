@@ -1,5 +1,5 @@
 package interfaces
 
-type FuncContinue interface {
+type TaskRetry interface {
 	Do(times uint) (retry bool)
 }
