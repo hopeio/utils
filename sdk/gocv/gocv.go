@@ -72,7 +72,7 @@ func MergeImagesByOverlap(imgIdxs [][]int, getImage func(int) ([]byte, error), i
 	}
 	result := gocv.NewMatWithSize(resultHeight, resultWidth, img0.Type())
 
-	var rbounds = bounds
+	var bounds = image.Rect(0, 0, imgWidth, imgHeight)
 	var img gocv.Mat
 	// 将 img1 复制到结果图片中
 	for i, rowimgs := range imgIdxs {
@@ -89,19 +89,19 @@ func MergeImagesByOverlap(imgIdxs [][]int, getImage func(int) ([]byte, error), i
 			if err != nil {
 				return err
 			}
-			rect := result.Region(rbounds)
+			rect := result.Region(bounds)
 			img.CopyTo(&rect)
 			img.Close()
 			if j < len(horizontalOverlaps) {
-				rbounds.Min.X += bounds.Dx() - horizontalOverlaps[j]
-				rbounds.Max.X = bounds.Dx() + rbounds.Min.X
+				bounds.Min.X += bounds.Dx() - horizontalOverlaps[j]
+				bounds.Max.X = bounds.Dx() + bounds.Min.X
 			}
 		}
 		if i < len(verticalOverlaps) {
-			rbounds.Min.Y += bounds.Dy() - verticalOverlaps[i]
-			rbounds.Max.Y = bounds.Dy() + rbounds.Min.Y
-			rbounds.Min.X = 0
-			rbounds.Max.X = bounds.Dx()
+			bounds.Min.Y += bounds.Dy() - verticalOverlaps[i]
+			bounds.Max.Y = bounds.Dy() + bounds.Min.Y
+			bounds.Min.X = 0
+			bounds.Max.X = bounds.Dx()
 		}
 	}
 	gocv.IMWrite(dst, result)
@@ -144,13 +144,16 @@ func AffineMat(p1, p2, p3, q1, q2, q3 image.Point) gocv.Mat {
 
 func AffineTransform(p1, p2, p3, q1, q2, q3 image.Point, points []image.Point) []image.Point {
 	amat := AffineMat(p1, p2, p3, q1, q2, q3)
+	defer amat.Close()
 	n := len(points)
 	mat := gocv.NewMatWithSize(n, 1, gocv.MatTypeCV32FC2)
+	defer mat.Close()
 	for i, p := range points {
 		mat.SetFloatAt(i, 0, float32(p.X))
 		mat.SetFloatAt(i, 1, float32(p.Y))
 	}
 	oMat := gocv.NewMat()
+	defer oMat.Close()
 	gocv.Transform(mat, &oMat, amat)
 	ret := make([]image.Point, n)
 	for i := 0; i < n; i++ {
