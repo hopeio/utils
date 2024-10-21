@@ -7,7 +7,7 @@ import (
 	"syscall"
 )
 
-func GetCreateTime(path string) int64 {
+func CreateTime(path string) int64 {
 	fileInfo, _ := os.Stat(path)
 	wFileSys := fileInfo.Sys().(*syscall.Win32FileAttributeData)
 	tNanSeconds := wFileSys.CreationTime.Nanoseconds() /// 返回的是纳秒
