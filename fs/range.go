@@ -10,6 +10,7 @@ import (
 )
 
 type RangeCallback = func(dir string, entry os.DirEntry) error
+type RangeUntilCallback = func(dir string, entry os.DirEntry) (stop bool, err error)
 
 // 遍历根目录中的每个文件，为每个文件调用callback,包括文件夹,与filepath.WalkDir不同的是回调函数的参数不同,filepath.WalkDir的第一个参数是文件完整路径,RangeFile是文件所在目录的路径
 func Range(dir string, callback RangeCallback) error {
@@ -56,7 +57,30 @@ func RangeFile(dir string, callback RangeCallback) error {
 		if entry.IsDir() {
 			err = multierr.Append(err, RangeFile(dir+PathSeparator+entry.Name(), callback))
 		} else {
-			err = multierr.Append(err, callback(dir, entry))
+			if rerr := callback(dir, entry); rerr != nil {
+				err = multierr.Append(err, rerr)
+			}
+		}
+	}
+
+	return err
+}
+
+func RangeFileUntil(dir string, callback RangeUntilCallback) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			err = multierr.Append(err, RangeFileUntil(dir+PathSeparator+entry.Name(), callback))
+		} else {
+			stop, rerr := callback(dir, entry)
+			err = multierr.Append(err, rerr)
+			if stop {
+				return err
+			}
 		}
 	}
 

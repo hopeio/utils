@@ -17,3 +17,14 @@ func CreateTime(path string) time.Time {
 	stat_t := fileInfo.Sys().(*syscall.Stat_t)
 	return time.Unix(int64(stat_t.Ctim.Sec), 0)
 }
+
+func CreateTimeByInfo(fileInfo os.FileInfo) time.Time {
+	stat_t := fileInfo.Sys().(*syscall.Stat_t)
+	return time.Unix(int64(stat_t.Ctim.Sec), 0)
+}
+
+func CreateTimeByEntry(entry os.DirEntry) time.Time {
+	fileInfo, _ := entry.Info()
+	stat_t := fileInfo.Sys().(*syscall.Stat_t)
+	return time.Unix(int64(stat_t.Ctim.Sec), 0)
+}
