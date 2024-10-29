@@ -57,6 +57,7 @@ func parseApertureID(word string) (string, error) {
 	return word[:1+digits], nil
 }
 
+// *1,1,$1,$2*
 type circlePrimitive struct {
 	Exposure bool
 	Diameter float64
@@ -64,6 +65,7 @@ type circlePrimitive struct {
 	CenterY  float64
 }
 
+// *21,1,$1,$2,0,0,$3*
 type rectPrimitive struct {
 	Exposure    bool
 	Width       float64
@@ -74,6 +76,20 @@ type rectPrimitive struct {
 	SetVariable []func(p *rectPrimitive, f float64)
 }
 
+// *1,1,$1,$2,$3*1,1,$1,$4,$5*20,1,$1,$2,$3,$4,$5,0*
+// 斜焊盘的特殊处理，由两端圆+连线组成
+type obroundPrimitive struct {
+	Exposure    bool
+	Width       float64 // 线宽也是直径
+	StartX      float64 // 第一个圆x
+	StartY      float64
+	EndX        float64 // 第二个圆x
+	EndY        float64
+	Rotation    float64
+	SetVariable []func(p *rectPrimitive, f float64)
+}
+
+// *20(or 2),$1,$2,$3,$4,$5,$6,$7*
 type vectorLinePrimitive struct {
 	Exposure bool
 	Width    float64
@@ -84,6 +100,7 @@ type vectorLinePrimitive struct {
 	Rotation float64
 }
 
+// *4,$1,...,$9*
 type outlinePrimitive struct {
 	Exposure    bool
 	NumVertices int
@@ -91,6 +108,7 @@ type outlinePrimitive struct {
 	Rotation    float64
 }
 
+// *22,$1,$2,$3,$4,$5,$6*
 type lowerLeftLinePrimitive struct {
 	Exposure bool
 	Width    float64
