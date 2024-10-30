@@ -20,7 +20,7 @@ type Processor interface {
 	// Rectangle draws a rectangle.
 	Rectangle(Rectangle)
 
-	// Obround draws an obround.
+	// Obround(oval) draws an olav.
 	Obround(Obround)
 
 	// Contour draws a contour.
@@ -34,7 +34,7 @@ type Processor interface {
 
 	// SetViewbox sets the viewbox of the Gerber image.
 	// It is called by the Parser when parsing has completed.
-	SetViewbox(minX, maxX, minY, maxY int)
+	SetViewBox(minX, maxX, minY, maxY int)
 }
 
 func parseApertureID(word string) (string, error) {
@@ -65,28 +65,70 @@ type circlePrimitive struct {
 	CenterY  float64
 }
 
+type circlePrimitiveTemplate []primitiveValue
+
+func (o circlePrimitiveTemplate) Primitive() circlePrimitive {
+	return circlePrimitive{
+		Exposure: o[0].value == 1,
+		Diameter: o[1].value,
+		CenterX:  o[2].value,
+		CenterY:  o[3].value,
+	}
+}
+
 // *21,1,$1,$2,0,0,$3*
 type rectPrimitive struct {
-	Exposure    bool
-	Width       float64
-	Height      float64
-	CenterX     float64
-	CenterY     float64
-	Rotation    float64
-	SetVariable []func(p *rectPrimitive, f float64)
+	Exposure bool
+	Width    float64
+	Height   float64
+	CenterX  float64
+	CenterY  float64
+	Rotation float64
+}
+
+type rectPrimitiveTemplate []primitiveValue
+
+func (o rectPrimitiveTemplate) Primitive() rectPrimitive {
+	return rectPrimitive{
+		Exposure: o[0].value == 1,
+		Width:    o[1].value,
+		Height:   o[2].value,
+		CenterX:  o[3].value,
+		CenterY:  o[4].value,
+		Rotation: o[5].value,
+	}
 }
 
 // *1,1,$1,$2,$3*1,1,$1,$4,$5*20,1,$1,$2,$3,$4,$5,0*
 // 斜焊盘的特殊处理，由两端圆+连线组成
+type ovalPrimitive struct {
+	Exposure bool
+	Width    float64 // 线宽也是直径
+	StartX   float64 // 第一个圆x
+	StartY   float64
+	EndX     float64 // 第二个圆x
+	EndY     float64
+	Rotation float64
+}
+type ovalPrimitiveTemplate []primitiveValue
 type obroundPrimitive struct {
-	Exposure    bool
-	Width       float64 // 线宽也是直径
-	StartX      float64 // 第一个圆x
-	StartY      float64
-	EndX        float64 // 第二个圆x
-	EndY        float64
-	Rotation    float64
-	SetVariable []func(p *rectPrimitive, f float64)
+	Exposure bool
+	Width    float64
+	Height   float64
+	CenterX  float64
+	CenterY  float64
+	Rotation float64
+}
+
+type obroundPrimitiveTemplate []primitiveValue
+
+func (o obroundPrimitiveTemplate) Primitive() obroundPrimitive {
+	dx, dy := o[4].value-o[2].value, o[5].value-o[3].value
+	rotation := math.Atan2(dy, dx) * (180.0 / math.Pi)
+	if rotation < 0 {
+		rotation += 360
+	}
+	return obroundPrimitive{Height: math.Sqrt(dx*dx + dy*dy), Rotation: 360 - rotation, Width: o[1].value, Exposure: o[0].value == 1}
 }
 
 // *20(or 2),$1,$2,$3,$4,$5,$6,$7*
@@ -100,12 +142,42 @@ type vectorLinePrimitive struct {
 	Rotation float64
 }
 
+type vectorLinePrimitiveTemplate []primitiveValue
+
+func (o vectorLinePrimitiveTemplate) Primitive() vectorLinePrimitive {
+
+	return vectorLinePrimitive{
+		Exposure: o[0].value == 1,
+		Width:    o[1].value,
+		StartX:   o[2].value,
+		StartY:   o[3].value,
+		EndX:     o[4].value,
+		EndY:     o[5].value,
+		Rotation: o[6].value,
+	}
+}
+
 // *4,$1,...,$9*
 type outlinePrimitive struct {
-	Exposure    bool
-	NumVertices int
-	Points      [][2]float64
-	Rotation    float64
+	Exposure bool
+	PointNum int
+	Points   [][2]float64
+	Rotation float64
+}
+
+type outlinePrimitiveTemplate []primitiveValue
+
+func (o outlinePrimitiveTemplate) Primitive() outlinePrimitive {
+	var points [][2]float64
+	for i := 0; i < int(o[1].value)+1; i++ {
+		points = append(points, [2]float64{o[2+i*2].value, o[3+i*2].value})
+	}
+
+	return outlinePrimitive{
+		Exposure: o[0].value == 1,
+		PointNum: int(o[1].value),
+		Rotation: o[len(o)-1].value,
+	}
 }
 
 // *22,$1,$2,$3,$4,$5,$6*
@@ -118,10 +190,60 @@ type lowerLeftLinePrimitive struct {
 	Rotation float64
 }
 
+type lowerLeftLinePrimitiveTemplate []primitiveValue
+
+func (o lowerLeftLinePrimitiveTemplate) Primitive() lowerLeftLinePrimitive {
+	if len(o) != 6 {
+		panic("lowerLeftLinePrimitiveTemplate.Primitive()")
+	}
+	return lowerLeftLinePrimitive{
+		Exposure: o[0].value == 1,
+		Width:    o[1].value,
+		Height:   o[2].value,
+		X:        o[3].value,
+		Y:        o[4].value,
+		Rotation: o[5].value,
+	}
+}
+
+type primitive struct {
+	code  int
+	value []primitiveValue
+}
+
+type primitiveValue struct {
+	value    float64
+	varIndex int
+}
+
+func (p primitive) SetParams(params []float64) {
+	for i := 0; i < len(p.value); i++ {
+		if p.value[i].varIndex > -1 {
+			p.value[i].value = params[p.value[i].varIndex]
+		}
+	}
+}
+
+func (p primitive) Parse() any {
+	switch p.code {
+	case primitiveCodeCircle:
+		return circlePrimitiveTemplate(p.value).Primitive()
+	case primitiveCodeVectorLine:
+		return vectorLinePrimitiveTemplate(p.value).Primitive()
+	case primitiveCodeOutline:
+		return outlinePrimitiveTemplate(p.value).Primitive()
+	case primitiveCodeLowerLeftLine:
+		return lowerLeftLinePrimitiveTemplate(p.value).Primitive()
+	case primitiveCodeRect:
+		return rectPrimitiveTemplate(p.value).Primitive()
+	}
+	return nil
+}
+
 type template struct {
 	Line       int
 	Name       string
-	Primitives []interface{}
+	Primitives []primitive
 }
 
 type LinePrimitiveNotClosedError struct {
@@ -136,231 +258,77 @@ func (err LinePrimitiveNotClosedError) Error() string {
 	return fmt.Sprintf("line primitive not closed %d %#v %#v", err.Line, err.First, err.Last)
 }
 
-func parsePrimitive(lineIdx int, word string) (interface{}, error) {
+func parsePrimitive(lineIdx int, word string) (primitive, error) {
+	var p primitive
 	splitted := strings.Split(word, primitiveDelimiter)
 	if len(splitted) == 0 {
-		return nil, fmt.Errorf("no splitted")
+		return p, fmt.Errorf("no splitted")
 	}
 	curLine := lineIdx
 	if strings.Contains(splitted[0], "\n") {
 		curLine++
+		splitted[0] = strings.ReplaceAll(splitted[0], "\n", "")
 	}
 	code, err := strconv.Atoi(strings.TrimSpace(splitted[0]))
 	if err != nil {
-		return nil, err
+		return p, err
+	}
+	p.value = make([]primitiveValue, len(splitted)-1)
+	for i := 1; i < len(splitted); i++ {
+		if strings.Contains(splitted[i], "\n") {
+			curLine++
+			splitted[i] = strings.ReplaceAll(splitted[i], "\n", "")
+		}
+		v, err := parsePrimitiveValue(strings.TrimSpace(splitted[i]))
+		if err != nil {
+			return p, err
+		}
+		p.value[i-1] = v
 	}
 	switch code {
 	case primitiveCodeCircle:
 		if len(splitted) != 5 {
-			return nil, fmt.Errorf("%+v", splitted)
+			return p, fmt.Errorf("%+v", splitted)
 		}
-		circle := circlePrimitive{}
-		exposure, err := strconv.Atoi(strings.TrimSpace(splitted[1]))
-		if err != nil {
-			return nil, err
-		}
-		if exposure == 1 {
-			circle.Exposure = true
-		}
-		circle.Diameter, err = strconv.ParseFloat(strings.TrimSpace(splitted[2]), 64)
-		if err != nil {
-			return nil, err
-		}
-		circle.CenterX, err = strconv.ParseFloat(strings.TrimSpace(splitted[3]), 64)
-		if err != nil {
-			return nil, err
-		}
-		circle.CenterY, err = strconv.ParseFloat(strings.TrimSpace(splitted[4]), 64)
-		if err != nil {
-			return nil, err
-		}
-		return circle, nil
 	case primitiveCodeVectorLine:
 		if len(splitted) != 8 {
-			return nil, fmt.Errorf("%+v", splitted)
+			return p, fmt.Errorf("%+v", splitted)
 		}
-		line := vectorLinePrimitive{}
-		exposure, err := strconv.Atoi(strings.TrimSpace(splitted[1]))
-		if err != nil {
-			return nil, err
-		}
-		if exposure == 1 {
-			line.Exposure = true
-		}
-		line.Width, err = strconv.ParseFloat(strings.TrimSpace(splitted[2]), 64)
-		if err != nil {
-			return nil, err
-		}
-		line.StartX, err = strconv.ParseFloat(strings.TrimSpace(splitted[3]), 64)
-		if err != nil {
-			return nil, err
-		}
-		line.StartY, err = strconv.ParseFloat(strings.TrimSpace(splitted[4]), 64)
-		if err != nil {
-			return nil, err
-		}
-		line.EndX, err = strconv.ParseFloat(strings.TrimSpace(splitted[5]), 64)
-		if err != nil {
-			return nil, err
-		}
-		line.EndY, err = strconv.ParseFloat(strings.TrimSpace(splitted[6]), 64)
-		if err != nil {
-			return nil, err
-		}
-		line.Rotation, err = strconv.ParseFloat(strings.TrimSpace(splitted[7]), 64)
-		if err != nil {
-			return nil, err
-		}
-		return line, nil
 	case primitiveCodeOutline:
 		line := outlinePrimitive{}
 		if len(splitted) < 3 {
-			return nil, fmt.Errorf("%+v", splitted)
+			return p, fmt.Errorf("%+v", splitted)
 		}
 
 		if strings.Contains(splitted[1], "\n") {
 			curLine++
 		}
-		exposure, err := strconv.Atoi(strings.TrimSpace(splitted[1]))
-		if err != nil {
-			return nil, err
-		}
-		if exposure == 1 {
-			line.Exposure = true
-		}
 
 		if strings.Contains(splitted[2], "\n") {
 			curLine++
 		}
-		line.NumVertices, err = strconv.Atoi(strings.TrimSpace(splitted[2]))
+		line.PointNum, err = strconv.Atoi(strings.TrimSpace(splitted[2]))
 		if err != nil {
-			return nil, err
+			return p, err
 		}
-		if len(splitted) != 6+2*line.NumVertices {
-			return nil, fmt.Errorf("%d", len(splitted))
-		}
-
-		points := make([][2]string, 0)
-		for i := 0; i < line.NumVertices+1; i++ {
-			if strings.Contains(splitted[2*i+3], "\n") {
-				curLine++
-			}
-			x, err := strconv.ParseFloat(strings.TrimSpace(splitted[2*i+3]), 64)
-			if err != nil {
-				return nil, fmt.Errorf("%d %w", i, err)
-			}
-
-			if strings.Contains(splitted[2*i+4], "\n") {
-				curLine++
-			}
-			y, err := strconv.ParseFloat(strings.TrimSpace(splitted[2*i+4]), 64)
-			if err != nil {
-				return nil, fmt.Errorf("%d %w", i, err)
-			}
-			line.Points = append(line.Points, [2]float64{x, y})
-			points = append(points, [2]string{strings.TrimSpace(splitted[2*i+3]), strings.TrimSpace(splitted[2*i+4])})
+		if len(splitted) != 6+2*line.PointNum {
+			return p, fmt.Errorf("%d", len(splitted))
 		}
 
 		// The last point must be the same as the starting point.
-		if line.Points[0] != line.Points[len(line.Points)-1] {
-			return nil, LinePrimitiveNotClosedError{Line: curLine, First: line.Points[0], Last: line.Points[len(line.Points)-1], FirstStr: points[0], LastStr: points[len(points)-1]}
+		if splitted[2] != splitted[len(splitted)-3] || splitted[3] != splitted[len(splitted)-2] {
+			return p, LinePrimitiveNotClosedError{Line: curLine, FirstStr: [2]string{splitted[2], splitted[3]}, LastStr: [2]string{splitted[len(splitted)-3], splitted[len(splitted)-2]}}
 		}
-		line.Points = line.Points[:len(line.Points)-1]
-
-		line.Rotation, err = strconv.ParseFloat(strings.TrimSpace(splitted[len(splitted)-1]), 64)
-		if err != nil {
-			return nil, fmt.Errorf("%+v", splitted)
-		}
-		return line, nil
 	case primitiveCodeLowerLeftLine:
 		if len(splitted) != 7 {
-			return nil, fmt.Errorf("%+v", splitted)
+			return p, fmt.Errorf("%+v", splitted)
 		}
-		line := lowerLeftLinePrimitive{}
-		exposure, err := strconv.Atoi(strings.TrimSpace(splitted[1]))
-		if err != nil {
-			return nil, err
-		}
-		if exposure == 1 {
-			line.Exposure = true
-		}
-		line.Width, err = strconv.ParseFloat(strings.TrimSpace(splitted[2]), 64)
-		if err != nil {
-			return nil, err
-		}
-		line.Height, err = strconv.ParseFloat(strings.TrimSpace(splitted[3]), 64)
-		if err != nil {
-			return nil, err
-		}
-		line.X, err = strconv.ParseFloat(strings.TrimSpace(splitted[4]), 64)
-		if err != nil {
-			return nil, err
-		}
-		line.Y, err = strconv.ParseFloat(strings.TrimSpace(splitted[5]), 64)
-		if err != nil {
-			return nil, err
-		}
-		line.Rotation, err = strconv.ParseFloat(strings.TrimSpace(splitted[6]), 64)
-		if err != nil {
-			return nil, err
-		}
-		return line, nil
 	case primitiveCodeRect:
 		if len(splitted) != 7 {
-			return nil, fmt.Errorf("%+v", splitted)
+			return p, fmt.Errorf("%+v", splitted)
 		}
-		rect := rectPrimitive{}
-		exposure, err := strconv.Atoi(strings.TrimSpace(splitted[1]))
-		if err != nil {
-			return nil, err
-		}
-		if exposure == 1 {
-			rect.Exposure = true
-		}
-		if isVar, err := injectFloat(&rect.Width, splitted[2]); err != nil {
-			return nil, err
-		} else if isVar {
-			rect.SetVariable = append(rect.SetVariable, func(p *rectPrimitive, f float64) {
-				p.Width = f
-			})
-		}
-
-		if isVar, err := injectFloat(&rect.Height, splitted[3]); err != nil {
-			return nil, err
-		} else if isVar {
-			rect.SetVariable = append(rect.SetVariable, func(p *rectPrimitive, f float64) {
-				p.Height = f
-			})
-		}
-
-		if isVar, err := injectFloat(&rect.CenterX, splitted[4]); err != nil {
-			return nil, err
-		} else if isVar {
-			rect.SetVariable = append(rect.SetVariable, func(p *rectPrimitive, f float64) {
-				p.CenterX = f
-			})
-		}
-
-		if isVar, err := injectFloat(&rect.CenterY, splitted[5]); err != nil {
-			return nil, err
-		} else if isVar {
-			rect.SetVariable = append(rect.SetVariable, func(p *rectPrimitive, f float64) {
-				p.CenterY = f
-			})
-		}
-
-		if isVar, err := injectFloat(&rect.Rotation, splitted[6]); err != nil {
-			return nil, err
-		} else if isVar {
-			rect.SetVariable = append(rect.SetVariable, func(p *rectPrimitive, f float64) {
-				p.Rotation = f
-			})
-		}
-
-		return rect, nil
-	default:
-		return nil, fmt.Errorf("%+v", splitted)
 	}
+	return p, fmt.Errorf("%+v", splitted)
 }
 
 type aperture struct {
@@ -483,6 +451,8 @@ const (
 	primitiveCodeRect          = 21
 	primitiveCodeOutline       = 4
 	primitiveCodeLowerLeftLine = 22
+
+	primitiveCodeOval = 1122 // 非标准，自定义
 
 	primitiveDelimiter = ","
 
@@ -628,7 +598,7 @@ func (p *commandProcessor) processWord(lineIdx int, word string) error {
 		words := strings.Split(word, wordTerminator)
 		return p.processExtended(lineIdx, words)
 	case word == commandM02:
-		p.pc.SetViewbox(p.minX, p.maxX, p.minY, p.maxY)
+		p.pc.SetViewBox(p.minX, p.maxX, p.minY, p.maxY)
 		return nil
 	default:
 		return fmt.Errorf("unknown command")
@@ -758,7 +728,8 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 		return fmt.Errorf("%v", p.polarity)
 	}
 	for i, primitive := range p.ap.Template.Primitives {
-		switch pm := primitive.(type) {
+		primitive.SetParams(p.ap.Params)
+		switch pm := primitive.Parse().(type) {
 		case circlePrimitive:
 			if !pm.Exposure {
 				return fmt.Errorf("%d %+v", i, pm)
@@ -807,11 +778,6 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 		case rectPrimitive:
 			if !pm.Exposure {
 				return fmt.Errorf("%d %+v", i, pm)
-			}
-			if pm.SetVariable != nil {
-				for i, f := range pm.SetVariable {
-					f(&pm, p.ap.Params[i])
-				}
 			}
 			r := Rectangle{Line: lineIdx, X: p.x + p.u(pm.CenterX), Y: p.y + p.u(pm.CenterY), Width: p.u(pm.Width),
 				Height: p.u(pm.Height), Polarity: p.polarity, Rotation: pm.Rotation}
@@ -1071,7 +1037,6 @@ func (p *commandProcessor) processExtended(lineIdx int, words []string) error {
 	if len(words) == 0 {
 		return fmt.Errorf("no words")
 	}
-
 	switch {
 	case strings.HasPrefix(words[0], commandAM):
 		tmpl := template{Line: lineIdx, Name: words[0][len(commandAM):]}
@@ -1189,12 +1154,17 @@ func (parser *Parser) Parse(r io.Reader) error {
 	return nil
 }
 
-func injectFloat(v *float64, s string) (isVariable bool, err error) {
+func parsePrimitiveValue(s string) (primitiveValue, error) {
 	if strings.HasPrefix(s, variableKey) {
-		return true, nil
+		if len(s) == 2 {
+			return primitiveValue{varIndex: int(s[1] - '1')}, nil
+		}
 	}
-	*v, err = strconv.ParseFloat(strings.TrimSpace(s), 64)
-	return
+	v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	if err != nil {
+		return primitiveValue{}, err
+	}
+	return primitiveValue{value: v, varIndex: -1}, nil
 }
 
 type Loayer string

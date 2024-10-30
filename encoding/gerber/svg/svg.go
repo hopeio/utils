@@ -404,7 +404,7 @@ func (p *Processor) Arc(garc gerber.Arc) error {
 	return nil
 }
 
-func (p *Processor) SetViewbox(minX, maxX, minY, maxY int) {
+func (p *Processor) SetViewBox(minX, maxX, minY, maxY int) {
 	p.MinX = minX
 	p.MaxX = maxX
 	p.MinY = minY

@@ -1,7 +1,6 @@
 package math
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -14,8 +13,4 @@ func TestConvInt(t *testing.T) {
 	t.Log(ParseUint("gk7tnzw", 36, 64))
 	t.Log(ParseUint("j53344mo7wk2", 36, 64))
 	t.Log(FormatUint(4389580, 36))
-}
-
-func TestConv(t *testing.T) {
-	fmt.Println(ToBytes(333))
 }

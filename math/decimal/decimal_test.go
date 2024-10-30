@@ -2,7 +2,7 @@ package decimal
 
 import (
 	"fmt"
-	"github.com/hopeio/utils/math"
+	"github.com/hopeio/utils/math/bits"
 	"gorm.io/gorm"
 	"log"
 	"math/big"
@@ -32,7 +32,7 @@ func Test_Decimal(t *testing.T) {
 	fmt.Println(e.Div(*f, HALFUP))
 	g := &Decimal{mant: []byte("123456"), exp: 10}
 	fmt.Println(g)
-	math.ViewBin(9007199254741004.0)
+	bits.ViewBin(9007199254741004.0)
 	h := uint64(111)
 	fmt.Println(*(*float64)(unsafe.Pointer(&h)))
 }

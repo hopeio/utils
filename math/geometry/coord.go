@@ -263,3 +263,19 @@ func gaussJordanElimination(A [][]float64, b []float64) ([]float64, error) {
 
 	return solution, nil
 }
+
+// VectorLength 计算两点之间的向量长度
+func VectorLength(p1, p2 Point) float64 {
+	dx := p2.X - p1.X
+	dy := p2.Y - p1.Y
+	return math.Sqrt(dx*dx + dy*dy)
+}
+
+// VectorAngle 计算向量与 x 轴之间的角度（以度为单位）
+func VectorAngle(p1, p2 Point) float64 {
+	dx := p2.X - p1.X
+	dy := p2.Y - p1.Y
+	angleRadians := math.Atan2(dy, dx)
+	angleDegrees := angleRadians * (180.0 / math.Pi)
+	return angleDegrees
+}
