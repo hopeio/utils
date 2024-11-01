@@ -41,23 +41,27 @@ func CalculateOverlap(img1, img2 image.Image, row bool, minOverlap, maxOverlap i
 		maxY2 = minX2 + dx
 		dy = dx
 	}
-	data1 := make([]uint8, 0, maxOverlap*dy)
+	data1 := make([]uint8, maxOverlap*dy)
 	// 遍历原始图像的每个像素并转换为灰度值
+	var i int
 	for x := maxX1 - maxOverlap; x < maxX1; x++ {
 		for y := minY1; y < maxY1; y++ {
 			r, g, b, _ := img1.At(x, y).RGBA()
 			// 使用加权平均公式计算灰度值
 			gray := uint8(0.299*float64(r>>8) + 0.587*float64(g>>8) + 0.114*float64(b>>8))
-			data1 = append(data1, gray)
+			data1[i] = gray
+			i++
 		}
 	}
-	data2 := make([]uint8, 0, maxOverlap*dy)
-	for x := minX2; x <= maxOverlap; x++ {
+	data2 := make([]uint8, maxOverlap*dy)
+	var j int
+	for x := minX2; x < maxOverlap; x++ {
 		for y := minY2; y < maxY2; y++ {
 			r, g, b, _ := img2.At(x, y).RGBA()
 			// 使用加权平均公式计算灰度值
 			gray := uint8(0.299*float64(r>>8) + 0.587*float64(g>>8) + 0.114*float64(b>>8))
-			data2 = append(data2, gray)
+			data2[j] = gray
+			j++
 		}
 	}
 	n := len(data1)
@@ -152,6 +156,50 @@ func MergeImagesByOverlap(imgIdxs [][]int, getImage func(int) image.Image, imgWi
 	return result
 }
 
+func MergeImagesByOverlapOptimize(imgIdxs [][]int, getImage func(int) image.Image, imgWidth, imgHeight int,
+	horizontalOverlaps, verticalOverlaps []int, result *image.RGBA) {
+	if result == nil {
+		panic("result is nil")
+	}
+	if len(result.Pix) == 0 {
+		var resultWidth, resultHeight int
+		for i := range imgIdxs[0] {
+			resultWidth += imgWidth
+			if i < len(horizontalOverlaps) {
+				resultWidth -= horizontalOverlaps[i]
+			}
+		}
+		for i := range imgIdxs {
+			resultHeight += imgHeight
+			if i < len(verticalOverlaps) {
+				resultWidth -= verticalOverlaps[i]
+			}
+		}
+
+		// 创建一个新的 RGBA 图片，用于存储合并后的图片
+		result = image.NewRGBA(image.Rect(0, 0, resultWidth, resultHeight))
+	}
+	slideWin := image.Rect(0, 0, imgWidth, imgHeight)
+	var img image.Image
+	// 将 img1 复制到结果图片中
+	for i, rowimgs := range imgIdxs {
+		for j, imgIdx := range rowimgs {
+			img = getImage(imgIdx)
+			draw.Draw(result, slideWin, img, image.Point{}, draw.Src)
+			if j < len(horizontalOverlaps) {
+				slideWin.Min.X += slideWin.Dx() - horizontalOverlaps[j]
+				slideWin.Max.X += slideWin.Dx() + slideWin.Min.X
+			}
+		}
+		if i < len(verticalOverlaps) {
+			slideWin.Min.Y += slideWin.Dy() - verticalOverlaps[i]
+			slideWin.Max.Y += slideWin.Dy() + slideWin.Min.Y
+			slideWin.Min.X = 0
+			slideWin.Max.X = slideWin.Dx()
+		}
+	}
+}
+
 func RectRotateByCenter(x, y, l, w int, angle float64) []image.Point {
 	rad := angle / 180 * math.Pi
 	lSinYAxis := int(float64(l) / 2 * math.Sin(rad))
@@ -163,5 +211,29 @@ func RectRotateByCenter(x, y, l, w int, angle float64) []image.Point {
 		{X: x + lCosXAxis - wSinXAxis, Y: y - lSinYAxis - wCosYAxis},
 		{X: x + lCosXAxis + wSinXAxis, Y: y - lSinYAxis + wCosYAxis},
 		{X: x - lCosXAxis + wSinXAxis, Y: y + lSinYAxis + wCosYAxis},
+	}
+}
+
+type MergeImage struct {
+	imgs                                 [][]image.Image
+	horizontalOverlaps, verticalOverlaps []int
+	width, height                        int
+}
+
+func NewMergeImage(imgs [][]image.Image, horizontalOverlaps, verticalOverlaps []int) {
+	img := imgs[0][0]
+	imgWidth, imgHeight := img.Bounds().Dx(), img.Bounds().Dy()
+	var resultWidth, resultHeight int
+	for i := range imgs[0] {
+		resultWidth += imgWidth
+		if i < len(horizontalOverlaps) {
+			resultWidth -= horizontalOverlaps[i]
+		}
+	}
+	for i := range imgs {
+		resultHeight += imgHeight
+		if i < len(verticalOverlaps) {
+			resultWidth -= verticalOverlaps[i]
+		}
 	}
 }
