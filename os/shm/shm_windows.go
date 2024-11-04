@@ -143,3 +143,11 @@ func (shm *SharedMemory) WriteMemory(begin, end int, data any) (err error) {
 	}
 	return nil
 }
+
+func (shm *SharedMemory) Close() error {
+	err := windows.UnmapViewOfFile(shm.addr)
+	if err != nil {
+		return err
+	}
+	return windows.CloseHandle(windows.Handle(shm.handle))
+}

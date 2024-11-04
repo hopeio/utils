@@ -3,7 +3,6 @@ package image
 import (
 	"image"
 	"image/color"
-	"image/draw"
 	"math"
 )
 
@@ -24,7 +23,7 @@ func Union(rect image.Rectangle, p image.Point) image.Rectangle {
 }
 
 // 计算两张图的重合像素,第一张的图的后半部分和第二张的前半部分
-func CalculateOverlap(img1, img2 image.Image, row bool, minOverlap, maxOverlap int) int {
+func CalculateOverlap(img1, img2 image.Image, col bool, minOverlap, maxOverlap int) int {
 	bounds1, bounds2 := img1.Bounds(), img2.Bounds()
 	dx1, dy1 := bounds1.Dx(), bounds1.Dy()
 	dx2, dy2 := bounds2.Dx(), bounds2.Dy()
@@ -34,7 +33,7 @@ func CalculateOverlap(img1, img2 image.Image, row bool, minOverlap, maxOverlap i
 	maxX1, maxY1 := minX1+dx, minY1+dy
 	maxY2 := minY2 + dy
 	maxOverlap = min(maxOverlap, dy)
-	if row {
+	if col {
 		minX1, minY1 = max(bounds1.Min.Y, bounds1.Max.Y-dy), bounds1.Min.X
 		minX2, minY2 = bounds2.Min.Y, bounds2.Min.X
 		maxX1, maxY1 = minY1+dy, minX1+dx
@@ -44,11 +43,17 @@ func CalculateOverlap(img1, img2 image.Image, row bool, minOverlap, maxOverlap i
 	data1 := make([]uint8, maxOverlap*dy)
 	// 遍历原始图像的每个像素并转换为灰度值
 	var i int
+	var c color.Color
 	for x := maxX1 - maxOverlap; x < maxX1; x++ {
 		for y := minY1; y < maxY1; y++ {
-			r, g, b, _ := img1.At(x, y).RGBA()
+			if col {
+				c = img1.At(y, x)
+			} else {
+				c = img1.At(x, y)
+			}
+			r, g, b, _ := c.RGBA()
 			// 使用加权平均公式计算灰度值
-			gray := uint8(0.299*float64(r>>8) + 0.587*float64(g>>8) + 0.114*float64(b>>8))
+			gray := uint8((19595*r + 38470*g + 7471*b + 1<<15) >> 24)
 			data1[i] = gray
 			i++
 		}
@@ -57,9 +62,14 @@ func CalculateOverlap(img1, img2 image.Image, row bool, minOverlap, maxOverlap i
 	var j int
 	for x := minX2; x < maxOverlap; x++ {
 		for y := minY2; y < maxY2; y++ {
-			r, g, b, _ := img2.At(x, y).RGBA()
+			if col {
+				c = img2.At(y, x)
+			} else {
+				c = img2.At(x, y)
+			}
+			r, g, b, _ := c.RGBA()
 			// 使用加权平均公式计算灰度值
-			gray := uint8(0.299*float64(r>>8) + 0.587*float64(g>>8) + 0.114*float64(b>>8))
+			gray := uint8((19595*r + 38470*g + 7471*b + 1<<15) >> 24)
 			data2[j] = gray
 			j++
 		}
@@ -87,117 +97,80 @@ func CalculateOverlap(img1, img2 image.Image, row bool, minOverlap, maxOverlap i
 	return overlap
 }
 
-func ColorToGray(c color.Color) uint8 {
-	if g, ok := c.(color.Gray); ok {
-		return g.Y
+func CalculateOverlapReuseMemory(img1, img2 image.Image, col bool, minOverlap, maxOverlap int, gary1, gary2 []uint8) int {
+	bounds1, bounds2 := img1.Bounds(), img2.Bounds()
+	dx1, dy1 := bounds1.Dx(), bounds1.Dy()
+	dx2, dy2 := bounds2.Dx(), bounds2.Dy()
+	dx, dy := min(dx1, dx2), min(dy1, dy2)
+	minX1, minY1 := max(bounds1.Min.X, bounds1.Max.X-dx), bounds1.Min.Y
+	minX2, minY2 := bounds2.Min.X, bounds2.Min.Y
+	maxX1, maxY1 := minX1+dx, minY1+dy
+	maxY2 := minY2 + dy
+	maxOverlap = min(maxOverlap, dy)
+	if col {
+		minX1, minY1 = max(bounds1.Min.Y, bounds1.Max.Y-dy), bounds1.Min.X
+		minX2, minY2 = bounds2.Min.Y, bounds2.Min.X
+		maxX1, maxY1 = minY1+dy, minX1+dx
+		maxY2 = minX2 + dx
+		dy = dx
 	}
-	r, g, b, _ := c.RGBA()
-
-	// These coefficients (the fractions 0.299, 0.587 and 0.114) are the same
-	// as those given by the JFIF specification and used by func RGBToYCbCr in
-	// ycbcr.go.
-	//
-	// Note that 19595 + 38470 + 7471 equals 65536.
-	//
-	// The 24 is 16 + 8. The 16 is the same as used in RGBToYCbCr. The 8 is
-	// because the return value is 8 bit color, not 16 bit color.
-	y := (19595*r + 38470*g + 7471*b + 1<<15) >> 24
-
-	return uint8(y)
-}
-
-func RGBAToGray(c color.RGBA) uint8 {
-	return uint8(0.299*float64(c.R) + 0.587*float64(c.G) + 0.114*float64(c.B))
-}
-
-func RGBToGray(c color.RGBA) uint8 {
-	return uint8(0.299*float64(c.R) + 0.587*float64(c.G) + 0.114*float64(c.B))
-}
-
-// 有一定重合的固定大小的图片拼图
-func MergeImagesByOverlap(imgIdxs [][]int, getImage func(int) image.Image, imgWidth, imgHeight int,
-	horizontalOverlaps, verticalOverlaps []int) image.Image {
-	var resultWidth, resultHeight int
-	for i := range imgIdxs[0] {
-		resultWidth += imgWidth
-		if i < len(horizontalOverlaps) {
-			resultWidth -= horizontalOverlaps[i]
-		}
+	if len(gary1) == 0 {
+		gary1 = make([]uint8, maxOverlap*dy)
 	}
-	for i := range imgIdxs {
-		resultHeight += imgHeight
-		if i < len(verticalOverlaps) {
-			resultWidth -= verticalOverlaps[i]
-		}
-	}
-
-	// 创建一个新的 RGBA 图片，用于存储合并后的图片
-	result := image.NewRGBA(image.Rect(0, 0, resultWidth, resultHeight))
-	slideWin := image.Rect(0, 0, imgWidth, imgHeight)
-	var img image.Image
-	// 将 img1 复制到结果图片中
-	for i, rowimgs := range imgIdxs {
-		for j, imgIdx := range rowimgs {
-			img = getImage(imgIdx)
-			draw.Draw(result, slideWin, img, image.Point{}, draw.Src)
-			if j < len(horizontalOverlaps) {
-				slideWin.Min.X += slideWin.Dx() - horizontalOverlaps[j]
-				slideWin.Max.X += slideWin.Dx() + slideWin.Min.X
+	// 遍历原始图像的每个像素并转换为灰度值
+	var i int
+	var c color.Color
+	for x := maxX1 - maxOverlap; x < maxX1; x++ {
+		for y := minY1; y < maxY1; y++ {
+			if col {
+				c = img1.At(y, x)
+			} else {
+				c = img1.At(x, y)
 			}
+			r, g, b, _ := c.RGBA()
+			// 使用加权平均公式计算灰度值
+			gary1[i] = uint8((19595*r + 38470*g + 7471*b + 1<<15) >> 24)
+			i++
 		}
-		if i < len(verticalOverlaps) {
-			slideWin.Min.Y += slideWin.Dy() - verticalOverlaps[i]
-			slideWin.Max.Y += slideWin.Dy() + slideWin.Min.Y
-			slideWin.Min.X = 0
-			slideWin.Max.X = slideWin.Dx()
+	}
+	if len(gary2) == 0 {
+		gary2 = make([]uint8, maxOverlap*dy)
+	}
+	var j int
+	for x := minX2; x < maxOverlap; x++ {
+		for y := minY2; y < maxY2; y++ {
+			if col {
+				c = img2.At(y, x)
+			} else {
+				c = img2.At(x, y)
+			}
+			r, g, b, _ := c.RGBA()
+			// 使用加权平均公式计算灰度值
+			gary2[j] = uint8((19595*r + 38470*g + 7471*b + 1<<15) >> 24)
+			j++
+		}
+	}
+	n := len(gary1)
+	minMean := math.MaxInt
+	y := bounds2.Dy()
+	var overlap int
+	for o := minOverlap; o <= maxOverlap; o++ {
+		var sum int
+		m := o * y
+		subimg1 := gary1[n-m:]
+		subimg2 := gary2[:m]
+		for i := range m {
+			v := int(subimg1[i]) - int(subimg2[i])
+			sum += v * v
+		}
+		mse := sum / m
+		if mse < minMean {
+			minMean = mse
+			overlap = o
 		}
 	}
 
-	return result
-}
-
-func MergeImagesByOverlapOptimize(imgIdxs [][]int, getImage func(int) image.Image, imgWidth, imgHeight int,
-	horizontalOverlaps, verticalOverlaps []int, result *image.RGBA) {
-	if result == nil {
-		panic("result is nil")
-	}
-	if len(result.Pix) == 0 {
-		var resultWidth, resultHeight int
-		for i := range imgIdxs[0] {
-			resultWidth += imgWidth
-			if i < len(horizontalOverlaps) {
-				resultWidth -= horizontalOverlaps[i]
-			}
-		}
-		for i := range imgIdxs {
-			resultHeight += imgHeight
-			if i < len(verticalOverlaps) {
-				resultWidth -= verticalOverlaps[i]
-			}
-		}
-
-		// 创建一个新的 RGBA 图片，用于存储合并后的图片
-		result = image.NewRGBA(image.Rect(0, 0, resultWidth, resultHeight))
-	}
-	slideWin := image.Rect(0, 0, imgWidth, imgHeight)
-	var img image.Image
-	// 将 img1 复制到结果图片中
-	for i, rowimgs := range imgIdxs {
-		for j, imgIdx := range rowimgs {
-			img = getImage(imgIdx)
-			draw.Draw(result, slideWin, img, image.Point{}, draw.Src)
-			if j < len(horizontalOverlaps) {
-				slideWin.Min.X += slideWin.Dx() - horizontalOverlaps[j]
-				slideWin.Max.X += slideWin.Dx() + slideWin.Min.X
-			}
-		}
-		if i < len(verticalOverlaps) {
-			slideWin.Min.Y += slideWin.Dy() - verticalOverlaps[i]
-			slideWin.Max.Y += slideWin.Dy() + slideWin.Min.Y
-			slideWin.Min.X = 0
-			slideWin.Max.X = slideWin.Dx()
-		}
-	}
+	return overlap
 }
 
 func RectRotateByCenter(x, y, l, w int, angle float64) []image.Point {
@@ -218,22 +191,4 @@ type MergeImage struct {
 	imgs                                 [][]image.Image
 	horizontalOverlaps, verticalOverlaps []int
 	width, height                        int
-}
-
-func NewMergeImage(imgs [][]image.Image, horizontalOverlaps, verticalOverlaps []int) {
-	img := imgs[0][0]
-	imgWidth, imgHeight := img.Bounds().Dx(), img.Bounds().Dy()
-	var resultWidth, resultHeight int
-	for i := range imgs[0] {
-		resultWidth += imgWidth
-		if i < len(horizontalOverlaps) {
-			resultWidth -= horizontalOverlaps[i]
-		}
-	}
-	for i := range imgs {
-		resultHeight += imgHeight
-		if i < len(verticalOverlaps) {
-			resultWidth -= verticalOverlaps[i]
-		}
-	}
 }

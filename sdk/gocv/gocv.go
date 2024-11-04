@@ -45,7 +45,7 @@ func SearchCircle(path string, rect image.Rectangle) (circles []Circle, err erro
 }
 
 // 有一定重合的固定大小的图片拼图
-func MergeImagesByOverlap(imgIdxs [][]int, getImage func(int) ([]byte, error), imgWidth, imgHeight int,
+func MergeUniformBoundsImagesByOverlap(imgIdxs [][]int, getImage func(int) ([]byte, error), imgWidth, imgHeight int,
 	horizontalOverlaps, verticalOverlaps []int, dst string) error {
 	var resultWidth, resultHeight int
 
