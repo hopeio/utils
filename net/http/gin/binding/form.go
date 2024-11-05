@@ -5,6 +5,7 @@
 package binding
 
 import (
+	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/net/http/binding"
 	"net/http"
 
@@ -27,8 +28,8 @@ func (formBinding) Bind(ctx *gin.Context, obj interface{}) error {
 			return err
 		}
 	}
-	args := binding.ArgSource{binding.FormSource(ctx.Request.Form)}
-	if err := binding.MapForm(obj, args); err != nil {
+	args := encoding.PeekVsSource{encoding.KVsSource(ctx.Request.Form)}
+	if err := encoding.MapFormByTag(obj, args, binding.Tag); err != nil {
 		return err
 	}
 	return Validate(obj)
@@ -43,8 +44,8 @@ func (formPostBinding) Bind(ctx *gin.Context, obj interface{}) error {
 		return err
 	}
 
-	args := binding.ArgSource{binding.FormSource(ctx.Request.Form)}
-	if err := binding.MapForm(obj, args); err != nil {
+	args := encoding.PeekVsSource{encoding.KVsSource(ctx.Request.Form)}
+	if err := encoding.MapFormByTag(obj, args, binding.Tag); err != nil {
 		return err
 	}
 	return Validate(obj)
@@ -58,7 +59,7 @@ func (formMultipartBinding) Bind(ctx *gin.Context, obj interface{}) error {
 	if err := ctx.Request.ParseMultipartForm(defaultMemory); err != nil {
 		return err
 	}
-	if err := binding.MappingByPtr(obj, (*binding.MultipartSource)(ctx.Request), binding.Tag); err != nil {
+	if err := encoding.MapFormByTag(obj, (*binding.MultipartSource)(ctx.Request), binding.Tag); err != nil {
 		return err
 	}
 

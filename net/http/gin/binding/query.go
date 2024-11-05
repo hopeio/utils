@@ -6,6 +6,7 @@ package binding
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/net/http/binding"
 )
 
@@ -17,7 +18,7 @@ func (queryBinding) Name() string {
 
 func (queryBinding) Bind(ctx *gin.Context, obj interface{}) error {
 	values := ctx.Request.URL.Query()
-	if err := binding.MapForm(obj, binding.FormSource(values)); err != nil {
+	if err := encoding.MapFormByTag(obj, encoding.KVsSource(values), binding.Tag); err != nil {
 		return err
 	}
 	return Validate(obj)

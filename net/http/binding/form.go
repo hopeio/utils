@@ -6,6 +6,7 @@ package binding
 
 import (
 	"errors"
+	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/reflect/mtos"
 	"mime/multipart"
 	"net/http"
@@ -40,7 +41,7 @@ func (formMultipartBinding) Bind(req *http.Request, obj interface{}) error {
 	if err := req.ParseMultipartForm(defaultMemory); err != nil {
 		return err
 	}
-	if err := MappingByPtr(obj, (*MultipartSource)(req), Tag); err != nil {
+	if err := encoding.MapFormByTag(obj, (*MultipartSource)(req), Tag); err != nil {
 		return err
 	}
 
@@ -49,18 +50,18 @@ func (formMultipartBinding) Bind(req *http.Request, obj interface{}) error {
 
 type MultipartSource http.Request
 
-var _ Setter = (*MultipartSource)(nil)
+var _ encoding.Setter = (*MultipartSource)(nil)
 
 // TrySet tries to set a value by the multipart request with the binding a form file
-func (r *MultipartSource) TrySet(value reflect.Value, field reflect.StructField, key string, opt SetOptions) (isSet bool, err error) {
+func (r *MultipartSource) TrySet(value reflect.Value, field *reflect.StructField, key string, opt encoding.SetOptions) (isSet bool, err error) {
 	if files := r.MultipartForm.File[key]; len(files) != 0 {
 		return SetByMultipartFormFile(value, field, files)
 	}
 
-	return SetByKV(value, field, FormSource(r.MultipartForm.Value), key, opt)
+	return encoding.SetByKVs(value, field, encoding.KVsSource(r.MultipartForm.Value), key, opt)
 }
 
-func SetByMultipartFormFile(value reflect.Value, field reflect.StructField, files []*multipart.FileHeader) (isSet bool, err error) {
+func SetByMultipartFormFile(value reflect.Value, field *reflect.StructField, files []*multipart.FileHeader) (isSet bool, err error) {
 	switch value.Kind() {
 	case reflect.Ptr:
 		switch value.Interface().(type) {
@@ -88,7 +89,7 @@ func SetByMultipartFormFile(value reflect.Value, field reflect.StructField, file
 	return false, errors.New("unsupported field type for multipart.FileHeader")
 }
 
-func setArrayOfMultipartFormFiles(value reflect.Value, field reflect.StructField, files []*multipart.FileHeader) (isSet bool, err error) {
+func setArrayOfMultipartFormFiles(value reflect.Value, field *reflect.StructField, files []*multipart.FileHeader) (isSet bool, err error) {
 	if value.Len() != len(files) {
 		return false, errors.New("unsupported len of array for []*multipart.FileHeader")
 	}

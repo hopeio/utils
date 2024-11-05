@@ -2,6 +2,7 @@ package binding
 
 import (
 	"github.com/gofiber/fiber/v3"
+	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/net/http/binding"
 	fbinding "github.com/hopeio/utils/net/http/fasthttp/binding"
 )
@@ -14,7 +15,7 @@ func (headerBinding) Name() string {
 
 func (headerBinding) Bind(req fiber.Ctx, obj interface{}) error {
 
-	if err := binding.MappingByPtr(obj, (*fbinding.HeaderSource)(&req.Request().Header), binding.Tag); err != nil {
+	if err := encoding.MapFormByTag(obj, (*fbinding.HeaderSource)(&req.Request().Header), binding.Tag); err != nil {
 		return err
 	}
 

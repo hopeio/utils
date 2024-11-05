@@ -10,7 +10,27 @@ import (
 )
 
 // only example
-func Handler[REQ, RES any](service funcs.GrpcServiceMethod[*REQ, *RES]) gin.HandlerFunc {
+
+type GinService[REQ, RES any] func(*gin.Context, REQ) (RES, error)
+
+func HandlerWrap[REQ, RES any](service GinService[*REQ, *RES]) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		req := new(REQ)
+		err := binding.Bind(ctx, req)
+		if err != nil {
+			ctx.JSON(http.StatusOK, errcode.InvalidArgument.Wrap(err))
+			return
+		}
+		res, err := service(ctx, req)
+		if err != nil {
+			ctx.JSON(http.StatusOK, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, httpi.NewSuccessResData(res))
+	}
+}
+
+func HandlerWrapCompatibleGRPC[REQ, RES any](service funcs.GrpcServiceMethod[*REQ, *RES]) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		req := new(REQ)
 		err := binding.Bind(ctx, req)

@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gofiber/fiber/v3"
+	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/net/http/binding"
 	stringsi "github.com/hopeio/utils/strings"
 	"net/http"
+	"strings"
 )
 
 type Binding interface {
@@ -59,17 +61,17 @@ func Bind(c fiber.Ctx, obj interface{}) error {
 		tag = b.Name()
 	}
 
-	var args binding.ArgSource
+	var args encoding.PeekVsSource
 
 	args = append(args, (*uriSource)(c.(*fiber.DefaultCtx)))
 
 	if query := c.Queries(); len(query) > 0 {
-		args = append(args, binding.KVSource(query))
+		args = append(args, QuerySource(query))
 	}
 	if headers := c.GetReqHeaders(); len(headers) > 0 {
 		args = append(args, binding.HeaderSource(headers))
 	}
-	err := binding.MapFormByTag(obj, args, tag)
+	err := encoding.MapFormByTag(obj, args, tag)
 	if err != nil {
 		return fmt.Errorf("args bind error: %w", err)
 	}
@@ -84,4 +86,14 @@ func RegisterBodyBinding(name string, unmarshaller func(data []byte, obj any) er
 
 func SetTag(tag string) {
 	binding.SetTag(tag)
+}
+
+type QuerySource map[string]string
+
+func (q QuerySource) Peek(key string) ([]string, bool) {
+	v, ok := q[key]
+	if strings.Contains(v, ",") {
+		return strings.Split(v, ","), true
+	}
+	return []string{v}, ok
 }

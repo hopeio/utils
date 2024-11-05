@@ -5,6 +5,7 @@
 package binding
 
 import (
+	"github.com/hopeio/utils/encoding"
 	"net/http"
 )
 
@@ -16,7 +17,7 @@ func (queryBinding) Name() string {
 
 func (queryBinding) Bind(req *http.Request, obj interface{}) error {
 	values := req.URL.Query()
-	if err := MapForm(obj, FormSource(values)); err != nil {
+	if err := encoding.MapFormByTag(obj, encoding.KVsSource(values), Tag); err != nil {
 		return err
 	}
 	return Validate(obj)

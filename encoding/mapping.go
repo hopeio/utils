@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT style
 // license that can be found in the LICENSE file.
 
-package binding
+package encoding
 
 import (
 	"errors"
@@ -17,28 +17,21 @@ import (
 
 var errUnknownType = errors.New("unknown type")
 
-func MapForm(ptr interface{}, set Setter) error {
-	return MapFormByTag(ptr, set, Tag)
-}
-
-var emptyField = reflect.StructField{}
-
-func MapFormByTag(ptr interface{}, set Setter, tag string) error {
-	return MappingByPtr(ptr, set, tag)
-}
-
 // Setter tries to set value on a walking by fields of a struct
 type Setter interface {
-	TrySet(value reflect.Value, field reflect.StructField, key string, opt SetOptions) (isSet bool, err error)
+	TrySet(value reflect.Value, field *reflect.StructField, key string, opt SetOptions) (isSet bool, err error)
 }
 
-func MappingByPtr(ptr interface{}, setter Setter, tag string) error {
-	_, err := mapping(reflect.ValueOf(ptr), emptyField, setter, tag)
+func MapFormByTag(ptr interface{}, setter Setter, tag string) error {
+	_, err := mapping(reflect.ValueOf(ptr), nil, setter, tag)
 	return err
 }
 
-func mapping(value reflect.Value, field reflect.StructField, setter Setter, tag string) (bool, error) {
-	tagValue := field.Tag.Get(tag)
+func mapping(value reflect.Value, field *reflect.StructField, setter Setter, tag string) (bool, error) {
+	var tagValue string
+	if field != nil {
+		tagValue = field.Tag.Get(tag)
+	}
 	if tagValue == "-" { // just ignoring this field
 		return false, nil
 	}
@@ -81,7 +74,7 @@ func mapping(value reflect.Value, field reflect.StructField, setter Setter, tag 
 			if sf.PkgPath != "" && !sf.Anonymous { // unexported
 				continue
 			}
-			ok, err := mapping(value.Field(i), tValue.Field(i), setter, tag)
+			ok, err := mapping(value.Field(i), &sf, setter, tag)
 			if err != nil {
 				return false, err
 			}
@@ -97,7 +90,7 @@ type SetOptions struct {
 	defaultValue    string
 }
 
-func tryToSetValue(value reflect.Value, field reflect.StructField, setter Setter, tagValue string) (bool, error) {
+func tryToSetValue(value reflect.Value, field *reflect.StructField, setter Setter, tagValue string) (bool, error) {
 
 	var setOpt SetOptions
 	tagValue, opts := head(tagValue, ",")
@@ -122,7 +115,7 @@ func tryToSetValue(value reflect.Value, field reflect.StructField, setter Setter
 	return setter.TrySet(value, field, tagValue, setOpt)
 }
 
-func setWithProperType(val string, value reflect.Value, field reflect.StructField) error {
+func setWithProperType(val string, value reflect.Value, field *reflect.StructField) error {
 	switch value.Kind() {
 	case reflect.Int:
 		return setIntField(val, 0, value)
@@ -214,7 +207,7 @@ func setFloatField(val string, bitSize int, field reflect.Value) error {
 	return err
 }
 
-func setTimeField(val string, structField reflect.StructField, value reflect.Value) error {
+func setTimeField(val string, structField *reflect.StructField, value reflect.Value) error {
 	timeFormat := structField.Tag.Get("time_format")
 	if timeFormat == "" {
 		timeFormat = time.RFC3339
@@ -265,7 +258,7 @@ func setTimeField(val string, structField reflect.StructField, value reflect.Val
 	return nil
 }
 
-func setArray(vals []string, value reflect.Value, field reflect.StructField) error {
+func setArray(vals []string, value reflect.Value, field *reflect.StructField) error {
 	for i, s := range vals {
 		err := setWithProperType(s, value.Index(i), field)
 		if err != nil {
@@ -275,7 +268,7 @@ func setArray(vals []string, value reflect.Value, field reflect.StructField) err
 	return nil
 }
 
-func setSlice(vals []string, value reflect.Value, field reflect.StructField) error {
+func setSlice(vals []string, value reflect.Value, field *reflect.StructField) error {
 	slice := reflect.MakeSlice(value.Type(), len(vals), len(vals))
 	err := setArray(vals, slice, field)
 	if err != nil {
@@ -285,7 +278,7 @@ func setSlice(vals []string, value reflect.Value, field reflect.StructField) err
 	return nil
 }
 
-func setTimeDuration(val string, value reflect.Value, field reflect.StructField) error {
+func setTimeDuration(val string, value reflect.Value, field *reflect.StructField) error {
 	d, err := time.ParseDuration(val)
 	if err != nil {
 		return err

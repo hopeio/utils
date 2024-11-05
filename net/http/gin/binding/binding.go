@@ -85,17 +85,17 @@ func Bind(c *gin.Context, obj interface{}) error {
 		tag = b.Name()
 	}
 
-	var args binding.ArgSource
+	var args encoding.PeekVsSource
 	if len(c.Params) > 0 {
 		args = append(args, uriSource(c.Params))
 	}
 	if len(c.Request.URL.RawQuery) > 0 {
-		args = append(args, binding.FormSource(c.Request.URL.Query()))
+		args = append(args, encoding.KVsSource(c.Request.URL.Query()))
 	}
 	if len(c.Request.Header) > 0 {
 		args = append(args, binding.HeaderSource(c.Request.Header))
 	}
-	err := binding.MapFormByTag(obj, args, tag)
+	err := encoding.MapFormByTag(obj, args, tag)
 	if err != nil {
 		return fmt.Errorf("args bind error: %w", err)
 	}
@@ -110,5 +110,5 @@ func RegisterBodyBinding(name string, unmarshaller func(data []byte, obj any) er
 func RegisterBodyBindingByDecoder(name string, newDecoder func(io.Reader) encoding.Decoder) {
 	binding.SetTag(name)
 	CustomBody.name = name
-	CustomBody.newDecoder = newDecoder
+	CustomBody.decoder = newDecoder
 }

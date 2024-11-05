@@ -14,24 +14,13 @@ func NewReq[REQ any](c *fasthttp.RequestCtx) (*REQ, error) {
 	return req, nil
 }
 
-// BindJSON is a shortcut for c.MustBindWith(obj, binding.JSON).
-func BindJSON(r *fasthttp.RequestCtx, obj interface{}) error {
-	return MustBindWith(r, obj, JSON)
-}
-
-// BindXML is a shortcut for c.MustBindWith(obj, binding.BindXML).
-func BindXML(r *fasthttp.RequestCtx, obj interface{}) error {
-	return MustBindWith(r, obj, XML)
+func BindBody(r *fasthttp.RequestCtx, obj interface{}) error {
+	return MustBindWith(r, obj, CustomBody)
 }
 
 // BindQuery is a shortcut for c.MustBindWith(obj, binding.Query).
 func BindQuery(r *fasthttp.RequestCtx, obj interface{}) error {
 	return MustBindWith(r, obj, Query)
-}
-
-// BindYAML is a shortcut for c.MustBindWith(obj, binding.YAML).
-func BindYAML(r *fasthttp.RequestCtx, obj interface{}) error {
-	return MustBindWith(r, obj, YAML)
 }
 
 // MustBindWith binds the passed struct pointer using the specified binding engine.
@@ -56,24 +45,13 @@ func ShouldBind(r *fasthttp.RequestCtx, obj interface{}) error {
 	return ShouldBindWith(r, obj, b)
 }
 
-// ShouldBindJSON is a shortcut for c.ShouldBindWith(obj, binding.JSON).
-func ShouldBindJSON(r *fasthttp.RequestCtx, obj interface{}) error {
-	return ShouldBindWith(r, obj, JSON)
-}
-
-// ShouldBindXML is a shortcut for c.ShouldBindWith(obj, binding.XML).
-func ShouldBindXML(r *fasthttp.RequestCtx, obj interface{}) error {
-	return ShouldBindWith(r, obj, XML)
+func ShouldBindBody(r *fasthttp.RequestCtx, obj interface{}) error {
+	return ShouldBindWith(r, obj, CustomBody)
 }
 
 // ShouldBindQuery is a shortcut for c.ShouldBindWith(obj, binding.Query).
 func ShouldBindQuery(r *fasthttp.RequestCtx, obj interface{}) error {
 	return ShouldBindWith(r, obj, Query)
-}
-
-// ShouldBindYAML is a shortcut for c.ShouldBindWith(obj, binding.YAML).
-func ShouldBindYAML(r *fasthttp.RequestCtx, obj interface{}) error {
-	return ShouldBindWith(r, obj, YAML)
 }
 
 // ShouldBindWith binds the passed struct pointer using the specified binding engine.

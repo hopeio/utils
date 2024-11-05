@@ -9,7 +9,7 @@ import (
 type bodyBinding struct {
 	name         string
 	unmarshaller func([]byte, any) error
-	newDecoder   func(io.Reader) encoding.Decoder
+	decoder      func(io.Reader) encoding.Decoder
 }
 
 func (b bodyBinding) Name() string {

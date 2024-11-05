@@ -2,6 +2,7 @@ package binding
 
 import (
 	"github.com/gofiber/fiber/v3"
+	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/net/http/binding"
 	binding2 "github.com/hopeio/utils/net/http/fasthttp/binding"
 )
@@ -14,7 +15,7 @@ func (formMultipartBinding) Name() string {
 }
 
 func (formMultipartBinding) Bind(ctx fiber.Ctx, obj interface{}) error {
-	if err := binding.MappingByPtr(obj, (*binding2.MultipartRequest)(ctx.Request()), binding.Tag); err != nil {
+	if err := encoding.MapFormByTag(obj, (*binding2.MultipartRequest)(ctx.Request()), binding.Tag); err != nil {
 		return err
 	}
 
@@ -26,7 +27,7 @@ func (formPostBinding) Name() string {
 }
 
 func (formPostBinding) Bind(ctx fiber.Ctx, obj interface{}) error {
-	if err := binding.MapForm(obj, (*binding2.ArgsSource)(ctx.Request().PostArgs())); err != nil {
+	if err := encoding.MapFormByTag(obj, (*binding2.ArgsSource)(ctx.Request().PostArgs()), binding.Tag); err != nil {
 		return err
 	}
 	return binding.Validate(obj)

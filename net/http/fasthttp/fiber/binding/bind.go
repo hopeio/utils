@@ -13,24 +13,13 @@ func NewReq[REQ any](c fiber.Ctx) (*REQ, error) {
 	return req, nil
 }
 
-// BindJSON is a shortcut for c.MustBindWith(obj, binding.JSON).
-func BindJSON(c fiber.Ctx, obj interface{}) error {
-	return MustBindWith(c, obj, JSON)
-}
-
-// BindXML is a shortcut for c.MustBindWith(obj, binding.BindXML).
-func BindXML(c fiber.Ctx, obj interface{}) error {
-	return MustBindWith(c, obj, XML)
+func BindBody(r fiber.Ctx, obj interface{}) error {
+	return MustBindWith(r, obj, CustomBody)
 }
 
 // BindQuery is a shortcut for c.MustBindWith(obj, binding.Query).
 func BindQuery(c fiber.Ctx, obj interface{}) error {
 	return MustBindWith(c, obj, Query)
-}
-
-// BindYAML is a shortcut for c.MustBindWith(obj, binding.YAML).
-func BindYAML(c fiber.Ctx, obj interface{}) error {
-	return MustBindWith(c, obj, YAML)
 }
 
 // MustBindWith binds the passed struct pointer using the specified binding engine.
@@ -62,24 +51,13 @@ func ShouldBind(c fiber.Ctx, obj interface{}) error {
 	return ShouldBindWith(c, obj, b)
 }
 
-// ShouldBindJSON is a shortcut for c.ShouldBindWith(obj, binding.JSON).
-func ShouldBindJSON(c fiber.Ctx, obj interface{}) error {
-	return ShouldBindWith(c, obj, JSON)
-}
-
-// ShouldBindXML is a shortcut for c.ShouldBindWith(obj, binding.XML).
-func ShouldBindXML(c fiber.Ctx, obj interface{}) error {
-	return ShouldBindWith(c, obj, XML)
+func ShouldBindBody(c fiber.Ctx, obj interface{}) error {
+	return ShouldBindWith(c, obj, CustomBody)
 }
 
 // ShouldBindQuery is a shortcut for c.ShouldBindWith(obj, binding.Query).
 func ShouldBindQuery(c fiber.Ctx, obj interface{}) error {
 	return ShouldBindWith(c, obj, Query)
-}
-
-// ShouldBindYAML is a shortcut for c.ShouldBindWith(obj, binding.YAML).
-func ShouldBindYAML(c fiber.Ctx, obj interface{}) error {
-	return ShouldBindWith(c, obj, YAML)
 }
 
 // ShouldBindUri binds the passed struct pointer using the specified binding engine.

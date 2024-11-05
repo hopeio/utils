@@ -1,6 +1,7 @@
 package binding
 
 import (
+	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/net/http/binding"
 	"github.com/valyala/fasthttp"
 )
@@ -13,7 +14,7 @@ func (formMultipartBinding) Name() string {
 }
 
 func (formMultipartBinding) Bind(req *fasthttp.RequestCtx, obj interface{}) error {
-	if err := binding.MappingByPtr(obj, (*MultipartRequest)(&req.Request), binding.Tag); err != nil {
+	if err := encoding.MapFormByTag(obj, (*MultipartRequest)(&req.Request), binding.Tag); err != nil {
 		return err
 	}
 
@@ -24,7 +25,7 @@ func (formPostBinding) Name() string {
 	return "form-urlencoded"
 }
 func (formPostBinding) Bind(req *fasthttp.RequestCtx, obj interface{}) error {
-	if err := binding.MapForm(obj, (*ArgsSource)(req.PostArgs())); err != nil {
+	if err := encoding.MapFormByTag(obj, (*ArgsSource)(req.PostArgs()), binding.Tag); err != nil {
 		return err
 	}
 	return binding.Validate(obj)

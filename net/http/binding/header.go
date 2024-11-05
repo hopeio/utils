@@ -1,6 +1,7 @@
 package binding
 
 import (
+	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/reflect/mtos"
 	"net/http"
 	"net/textproto"
@@ -23,18 +24,18 @@ func (headerBinding) Bind(req *http.Request, obj interface{}) error {
 }
 
 func MapHeader(ptr interface{}, h map[string][]string) error {
-	return MappingByPtr(ptr, HeaderSource(h), "header")
+	return encoding.MapFormByTag(ptr, HeaderSource(h), "header")
 }
 
 type HeaderSource map[string][]string
 
-var _ Setter = HeaderSource(nil)
+var _ encoding.Setter = HeaderSource(nil)
 
 func (hs HeaderSource) Peek(key string) ([]string, bool) {
 	v, ok := hs[textproto.CanonicalMIMEHeaderKey(key)]
 	return v, ok
 }
 
-func (hs HeaderSource) TrySet(value reflect.Value, field reflect.StructField, tagValue string, opt SetOptions) (isSet bool, err error) {
-	return SetByKV(value, field, hs, tagValue, opt)
+func (hs HeaderSource) TrySet(value reflect.Value, field reflect.StructField, tagValue string, opt encoding.SetOptions) (isSet bool, err error) {
+	return encoding.SetByKVs(value, field, hs, tagValue, opt)
 }

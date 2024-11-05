@@ -3,6 +3,7 @@ package binding
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/net/http/binding"
 	stringsi "github.com/hopeio/utils/strings"
 	"github.com/valyala/fasthttp"
@@ -58,13 +59,13 @@ func Bind(c *fasthttp.RequestCtx, obj interface{}) error {
 		tag = binding.Tag
 	}
 
-	var args binding.ArgSource
+	var args encoding.PeekVsSource
 
 	if query := c.QueryArgs(); query != nil {
 		args = append(args, (*ArgsSource)(query))
 	}
 	args = append(args, (*HeaderSource)(&c.Request.Header))
-	err := binding.MapFormByTag(obj, args, tag)
+	err := encoding.MapFormByTag(obj, args, tag)
 	if err != nil {
 		return fmt.Errorf("args bind error: %w", err)
 	}

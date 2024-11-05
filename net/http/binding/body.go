@@ -12,7 +12,7 @@ import (
 type bodyBinding struct {
 	name         string
 	unmarshaller func([]byte, any) error
-	newDecoder   func(io.Reader) encoding.Decoder
+	decoder      func(io.Reader) encoding.Decoder
 }
 
 func (b bodyBinding) Name() string {
@@ -20,8 +20,8 @@ func (b bodyBinding) Name() string {
 }
 
 func (b bodyBinding) Bind(req *http.Request, obj interface{}) error {
-	if b.newDecoder != nil {
-		return b.newDecoder(req.Body).Decode(obj)
+	if b.decoder != nil {
+		return b.decoder(req.Body).Decode(obj)
 	}
 	data, err := io.ReadAll(req.Body)
 	if err != nil {

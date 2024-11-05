@@ -1,6 +1,7 @@
 package binding
 
 import (
+	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/net/http/binding"
 	"github.com/valyala/fasthttp"
 	"reflect"
@@ -8,10 +9,10 @@ import (
 
 type MultipartRequest fasthttp.Request
 
-var _ binding.Setter = (*MultipartRequest)(nil)
+var _ encoding.Setter = (*MultipartRequest)(nil)
 
 // TrySet tries to set a value by the multipart request with the binding a form file
-func (r *MultipartRequest) TrySet(value reflect.Value, field reflect.StructField, key string, opt binding.SetOptions) (isSet bool, err error) {
+func (r *MultipartRequest) TrySet(value reflect.Value, field *reflect.StructField, key string, opt encoding.SetOptions) (isSet bool, err error) {
 	req := (*fasthttp.Request)(r)
 	form, err := req.MultipartForm()
 	if err != nil {
@@ -21,5 +22,5 @@ func (r *MultipartRequest) TrySet(value reflect.Value, field reflect.StructField
 		return binding.SetByMultipartFormFile(value, field, files)
 	}
 
-	return binding.SetByKV(value, field, binding.FormSource(form.Value), key, opt)
+	return encoding.SetByKVs(value, field, encoding.KVsSource(form.Value), key, opt)
 }
