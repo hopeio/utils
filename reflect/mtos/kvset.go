@@ -1,9 +1,11 @@
-package encoding
+package mtos
 
 import (
+	"encoding"
 	"fmt"
 	"github.com/hopeio/utils/reflect/converter"
 	"reflect"
+	"strings"
 )
 
 type PeekV interface {
@@ -29,7 +31,7 @@ func SetByKV(value reflect.Value, field *reflect.StructField, kv PeekV, tagValue
 	if !ok {
 		return false, nil
 	}
-	err = converter.SetValueByString(value, vs)
+	err = SetValueByString(value, vs)
 	if err != nil {
 		return false, err
 	}
@@ -127,4 +129,79 @@ func SetByKVs(value reflect.Value, field *reflect.StructField, kv PeekVs, tagVal
 		}
 		return true, setWithProperType(val, value, field)
 	}
+}
+
+func SetFieldByString(dst any, field, value string) error {
+	if value == "" {
+		return nil
+	}
+
+	fieldValue := reflect.ValueOf(dst).Elem().FieldByName(field)
+	return SetValueByString(fieldValue, value)
+}
+
+func SetValueByString(field reflect.Value, value string) error {
+	if value == "" {
+		return nil
+	}
+
+	v := field.Interface()
+	if t, ok := v.(encoding.TextUnmarshaler); ok {
+		return t.UnmarshalText([]byte(value))
+	}
+	kind := field.Kind()
+	switch kind {
+	case reflect.String:
+		field.Set(reflect.ValueOf(value))
+	case reflect.Ptr:
+		if field.IsNil() {
+			field.Set(reflect.New(field.Type().Elem()))
+		}
+		return SetValueByString(field.Elem(), value)
+	case reflect.Array, reflect.Slice:
+		subType := field.Type().Elem()
+		eKind := subType.Kind()
+		if eKind == reflect.Array || eKind == reflect.Slice || eKind == reflect.Map {
+			return fmt.Errorf("unsupported sub type %v", subType)
+		}
+		strs := strings.Split(value, ",")
+		if kind == reflect.Slice {
+			field.Set(reflect.MakeSlice(field.Type(), len(strs), len(strs)))
+		}
+		for i := 0; i < field.Len(); i++ {
+			if err := SetValueByString(field.Index(i), strs[i]); err != nil {
+				return err
+			}
+		}
+		return nil
+	case reflect.Map:
+		subType := field.Type().Elem()
+		eKind := subType.Kind()
+		if eKind == reflect.Array || eKind == reflect.Slice || eKind == reflect.Map {
+			return fmt.Errorf("unsupported sub type %v", subType)
+		}
+		strs := strings.Split(value, ",")
+		field.Set(reflect.MakeMapWithSize(field.Type(), len(strs)/2))
+		for i := 0; i < len(strs)/2; i += 2 {
+			key := reflect.New(field.Type().Key())
+			err := SetValueByString(key, strs[i])
+			if err != nil {
+				return err
+			}
+			v := reflect.New(field.Type().Elem())
+			err = SetValueByString(v, strs[i+1])
+			if err != nil {
+				return err
+			}
+			field.SetMapIndex(key, v)
+		}
+		return nil
+	}
+
+	cv, err := converter.StringConvert(kind, value)
+	if err == nil {
+		field.Set(reflect.ValueOf(cv))
+		return nil
+	}
+	return err
 }

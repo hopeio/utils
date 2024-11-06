@@ -3,8 +3,8 @@ package binding
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/net/http/binding"
+	"github.com/hopeio/utils/reflect/mtos"
 	stringsi "github.com/hopeio/utils/strings"
 	"github.com/valyala/fasthttp"
 	"net/http"
@@ -59,13 +59,13 @@ func Bind(c *fasthttp.RequestCtx, obj interface{}) error {
 		tag = binding.Tag
 	}
 
-	var args encoding.PeekVsSource
+	var args mtos.PeekVsSource
 
 	if query := c.QueryArgs(); query != nil {
 		args = append(args, (*ArgsSource)(query))
 	}
 	args = append(args, (*HeaderSource)(&c.Request.Header))
-	err := encoding.MapFormByTag(obj, args, tag)
+	err := mtos.MapFormByTag(obj, args, tag)
 	if err != nil {
 		return fmt.Errorf("args bind error: %w", err)
 	}

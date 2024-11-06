@@ -6,7 +6,6 @@ package binding
 
 import (
 	"errors"
-	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/reflect/mtos"
 	"mime/multipart"
 	"net/http"
@@ -41,7 +40,7 @@ func (formMultipartBinding) Bind(req *http.Request, obj interface{}) error {
 	if err := req.ParseMultipartForm(defaultMemory); err != nil {
 		return err
 	}
-	if err := encoding.MapFormByTag(obj, (*MultipartSource)(req), Tag); err != nil {
+	if err := mtos.MapFormByTag(obj, (*MultipartSource)(req), Tag); err != nil {
 		return err
 	}
 
@@ -50,15 +49,15 @@ func (formMultipartBinding) Bind(req *http.Request, obj interface{}) error {
 
 type MultipartSource http.Request
 
-var _ encoding.Setter = (*MultipartSource)(nil)
+var _ mtos.Setter = (*MultipartSource)(nil)
 
 // TrySet tries to set a value by the multipart request with the binding a form file
-func (r *MultipartSource) TrySet(value reflect.Value, field *reflect.StructField, key string, opt encoding.SetOptions) (isSet bool, err error) {
+func (r *MultipartSource) TrySet(value reflect.Value, field *reflect.StructField, key string, opt mtos.SetOptions) (isSet bool, err error) {
 	if files := r.MultipartForm.File[key]; len(files) != 0 {
 		return SetByMultipartFormFile(value, field, files)
 	}
 
-	return encoding.SetByKVs(value, field, encoding.KVsSource(r.MultipartForm.Value), key, opt)
+	return mtos.SetByKVs(value, field, mtos.KVsSource(r.MultipartForm.Value), key, opt)
 }
 
 func SetByMultipartFormFile(value reflect.Value, field *reflect.StructField, files []*multipart.FileHeader) (isSet bool, err error) {

@@ -1,7 +1,6 @@
 package binding
 
 import (
-	httpi "github.com/hopeio/utils/net/http"
 	"github.com/valyala/fasthttp"
 )
 
@@ -41,7 +40,7 @@ func MustBindWith(r *fasthttp.RequestCtx, obj interface{}, b Binding) error {
 // It decodes the json payload into the struct specified as a pointer.
 // Like c.GinBind() but this method does not set the response status code to 400 and abort if the json is not valid.
 func ShouldBind(r *fasthttp.RequestCtx, obj interface{}) error {
-	b := Default(r.Method(), r.Request.Header.Peek(httpi.HeaderContentType))
+	b := Default(r.Method(), r.Request.Header.Peek("Content-Type"))
 	return ShouldBindWith(r, obj, b)
 }
 

@@ -1,8 +1,8 @@
 package binding
 
 import (
-	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/net/http/binding"
+	"github.com/hopeio/utils/reflect/mtos"
 	"github.com/valyala/fasthttp"
 )
 
@@ -14,7 +14,7 @@ func (headerBinding) Name() string {
 
 func (headerBinding) Bind(req *fasthttp.RequestCtx, obj interface{}) error {
 
-	if err := encoding.MapFormByTag(obj, (*HeaderSource)(&req.Request.Header), binding.Tag); err != nil {
+	if err := mtos.MapFormByTag(obj, (*HeaderSource)(&req.Request.Header), binding.Tag); err != nil {
 		return err
 	}
 

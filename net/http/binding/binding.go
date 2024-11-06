@@ -102,17 +102,17 @@ func Bind(r *http.Request, obj interface{}) error {
 		tag = b.Name()
 	}
 
-	var args encoding.PeekVsSource
+	var args mtos.PeekVsSource
 	if !reflect.ValueOf(r).Elem().FieldByName("pat").IsNil() {
 		args = append(args, (*UriSource)(r))
 	}
 	if len(r.URL.RawQuery) > 0 {
-		args = append(args, encoding.KVsSource(r.URL.Query()))
+		args = append(args, mtos.KVsSource(r.URL.Query()))
 	}
 	if len(r.Header) > 0 {
 		args = append(args, HeaderSource(r.Header))
 	}
-	err := encoding.MapFormByTag(obj, args, tag)
+	err := mtos.MapFormByTag(obj, args, tag)
 	if err != nil {
 		return fmt.Errorf("args bind error: %w", err)
 	}

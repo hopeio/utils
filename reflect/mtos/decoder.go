@@ -250,7 +250,7 @@ func (d *Decoder) decode(v reflect.Value, path string, parts []pathPart, values 
 		// Try to get a converter for the element type.
 		conv := d.cache.converter(elemT)
 		if conv == nil {
-			conv = reflecti.StringConverterArrays[elemT.Kind()].Converter()
+			conv = reflecti.GetStringConverter(elemT.Kind())
 			if conv == nil {
 				// As we are not dealing with slice of structs here, we don't need to check if the type
 				// implements TextUnmarshaler interface
@@ -375,7 +375,7 @@ func (d *Decoder) decode(v reflect.Value, path string, parts []pathPart, values 
 			if d.zeroEmpty {
 				v.Set(reflect.Zero(t))
 			}
-		} else if conv := reflecti.StringConverterArrays[t.Kind()].Converter(); conv != nil {
+		} else if conv := reflecti.GetStringConverter(t.Kind()); conv != nil {
 			if value := reflect.ValueOf(conv(val)); value.IsValid() {
 				v.Set(value.Convert(t))
 			} else {

@@ -1,7 +1,7 @@
 package structtag
 
 import (
-	reflecti "github.com/hopeio/utils/reflect/converter"
+	reflecti "github.com/hopeio/utils/reflect/mtos"
 	"reflect"
 	"strings"
 )

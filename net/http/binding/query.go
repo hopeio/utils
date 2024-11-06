@@ -5,7 +5,7 @@
 package binding
 
 import (
-	"github.com/hopeio/utils/encoding"
+	"github.com/hopeio/utils/reflect/mtos"
 	"net/http"
 )
 
@@ -17,7 +17,7 @@ func (queryBinding) Name() string {
 
 func (queryBinding) Bind(req *http.Request, obj interface{}) error {
 	values := req.URL.Query()
-	if err := encoding.MapFormByTag(obj, encoding.KVsSource(values), Tag); err != nil {
+	if err := mtos.MapFormByTag(obj, mtos.KVsSource(values), Tag); err != nil {
 		return err
 	}
 	return Validate(obj)

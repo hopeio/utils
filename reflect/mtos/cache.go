@@ -183,7 +183,7 @@ func (c *cache) createField(field reflect.StructField, parentAlias string) *fiel
 		}
 	}
 	if isStruct = ft.Kind() == reflect.Struct; !isStruct {
-		if c.converter(ft) == nil && reflecti.StringConverterArrays[ft.Kind()] == nil {
+		if c.converter(ft) == nil && reflecti.GetStringConverter(ft.Kind()) == nil {
 			// Type is not supported.
 			return nil
 		}

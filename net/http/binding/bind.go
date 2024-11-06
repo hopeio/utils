@@ -1,7 +1,6 @@
 package binding
 
 import (
-	http2 "github.com/hopeio/utils/net/http"
 	"net/http"
 )
 
@@ -48,7 +47,7 @@ func MustBindWith(r *http.Request, obj interface{}, b Binding) error {
 // It decodes the json payload into the struct specified as a pointer.
 // Like c.GinBind() but this method does not set the response status code to 400 and abort if the json is not valid.
 func ShouldBind(r *http.Request, obj interface{}) error {
-	b := Default(r.Method, r.Header.Get(http2.HeaderContentType))
+	b := Default(r.Method, r.Header.Get("Content-Type"))
 	return ShouldBindWith(r, obj, b)
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/net/http/binding"
+	"github.com/hopeio/utils/reflect/mtos"
 
 	"io"
 	"net/http"
@@ -85,17 +86,17 @@ func Bind(c *gin.Context, obj interface{}) error {
 		tag = b.Name()
 	}
 
-	var args encoding.PeekVsSource
+	var args mtos.PeekVsSource
 	if len(c.Params) > 0 {
 		args = append(args, uriSource(c.Params))
 	}
 	if len(c.Request.URL.RawQuery) > 0 {
-		args = append(args, encoding.KVsSource(c.Request.URL.Query()))
+		args = append(args, mtos.KVsSource(c.Request.URL.Query()))
 	}
 	if len(c.Request.Header) > 0 {
 		args = append(args, binding.HeaderSource(c.Request.Header))
 	}
-	err := encoding.MapFormByTag(obj, args, tag)
+	err := mtos.MapFormByTag(obj, args, tag)
 	if err != nil {
 		return fmt.Errorf("args bind error: %w", err)
 	}

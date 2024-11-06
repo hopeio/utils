@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gofiber/fiber/v3"
-	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/net/http/binding"
+	"github.com/hopeio/utils/reflect/mtos"
 	stringsi "github.com/hopeio/utils/strings"
 	"net/http"
 	"strings"
@@ -61,7 +61,7 @@ func Bind(c fiber.Ctx, obj interface{}) error {
 		tag = b.Name()
 	}
 
-	var args encoding.PeekVsSource
+	var args mtos.PeekVsSource
 
 	args = append(args, (*uriSource)(c.(*fiber.DefaultCtx)))
 
@@ -71,7 +71,7 @@ func Bind(c fiber.Ctx, obj interface{}) error {
 	if headers := c.GetReqHeaders(); len(headers) > 0 {
 		args = append(args, binding.HeaderSource(headers))
 	}
-	err := encoding.MapFormByTag(obj, args, tag)
+	err := mtos.MapFormByTag(obj, args, tag)
 	if err != nil {
 		return fmt.Errorf("args bind error: %w", err)
 	}
