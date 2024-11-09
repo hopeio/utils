@@ -69,3 +69,10 @@ func TestAffineMatrix(t *testing.T) {
 	}
 	t.Log(q)
 }
+
+func TestRotate(t *testing.T) {
+	w, h := float64(277), float64(199)
+	t.Log(RectangleCorners(Point{}, w, h, 45))
+	t.Log(RotationTransformByAngle(Point{-w / 2, h / 2}, 45))
+	t.Log(RotationTransformByAngle(Point{-w / 2, -h / 2}, 45))
+}

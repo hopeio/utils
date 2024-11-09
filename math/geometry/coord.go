@@ -25,6 +25,26 @@ type Point3D struct {
 	Z float64
 }
 
+func RotationMat(angleDeg float64) [2][2]float64 {
+	angleRad := angleDeg * math.Pi / 180.0
+	return [2][2]float64{{math.Cos(angleRad), -math.Sin(angleRad)}, {math.Sin(angleRad), math.Cos(angleRad)}}
+}
+
+func RotationTransformByAngle(p Point, angleDeg float64) Point {
+
+	// Convert angle from degrees to radians
+	angleRad := angleDeg * math.Pi / 180.0
+	// Calculate cosine and sine of the angle
+	cosA := math.Cos(angleRad)
+	sinA := math.Sin(angleRad)
+
+	// Apply rotation and translation
+	xNew := p.X*cosA - p.Y*sinA
+	yNew := p.X*sinA + p.Y*cosA
+
+	return Point{xNew, yNew}
+}
+
 // 两个原点不重合的坐标系O1,O2。O2在O1内部,且经过顺时针旋转c度。其中的点分别用(x1,y1),(x2,y2)表示，已知某个点在两个坐标系中的坐标(x1,y1),(x2,y2),以及另一点在O2内的坐标(x2,
 //y2)，求该点在O1内的坐标(x1,y1).
 // 图像如何转换，图像可看做第四象限，输入-y,返回-y
@@ -66,16 +86,17 @@ func RectangleCorners(rCenter Point, w, h, angleDeg float64) [][]float64 {
 	// Calculate cosine and sine of the angle
 	cosA := math.Cos(angleRad)
 	sinA := math.Sin(angleRad)
+	halfW, halfH := w/2, h/2
 	// 计算矩形四个角的坐标 (A左下-B右下-C右上-D左上)
-	Dx := rCenter.X + (w/2)*cosA - (h/2)*sinA
-	Dy := rCenter.Y + (w/2)*sinA + (h/2)*cosA
-	Ax := rCenter.X - (w/2)*cosA - (h/2)*sinA
-	Ay := rCenter.Y - (w/2)*sinA + (h/2)*cosA
-	Bx := rCenter.X - (w/2)*cosA + (h/2)*sinA
-	By := rCenter.Y - (w/2)*sinA - (h/2)*cosA
-	Cx := rCenter.X + (w/2)*cosA + (h/2)*sinA
-	Cy := rCenter.Y + (w/2)*sinA - (h/2)*cosA
-	return [][]float64{{Ax, Ay}, {Bx, By}, {Cx, Cy}, {Dx, Dy}}
+	dx := rCenter.X + halfW*cosA - halfH*sinA
+	dy := rCenter.Y + halfW*sinA + halfH*cosA
+	ax := rCenter.X - halfW*cosA - halfH*sinA
+	ay := rCenter.Y - halfW*sinA + halfH*cosA
+	bx := rCenter.X - halfW*cosA + halfH*sinA
+	by := rCenter.Y - halfW*sinA - halfH*cosA
+	cx := rCenter.X + halfW*cosA + halfH*sinA
+	cy := rCenter.Y + halfW*sinA - halfH*cosA
+	return [][]float64{{ax, ay}, {bx, by}, {cx, cy}, {dx, dy}}
 }
 
 // 图片就是第四象限,角度90+θ
@@ -97,8 +118,8 @@ func IsPointInRectangle(p Point, rCenter Point, w, h, angleDeg float64) bool {
 			continue
 		}
 
-		x_intersect := x1 + (p.Y-y1)*(x2-x1)/(y2-y1)
-		if p.X < x_intersect {
+		xIntersect := x1 + (p.Y-y1)*(x2-x1)/(y2-y1)
+		if p.X < xIntersect {
 			intersections++
 		}
 	}
