@@ -14,19 +14,16 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	testproto "github.com/hopeio/utils/net/http/grpc/web/test"
-	"github.com/mwitkow/go-conntrack/connhelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -80,38 +77,6 @@ func TestNonRootResource(t *testing.T) {
 	wrappedServer.ServeHTTP(resp, req)
 
 	assert.Equal(t, http.StatusOK, resp.Code)
-}
-
-func (s *GrpcWebWrapperTestSuite) SetupTest() {
-	var err error
-	s.grpcServer = grpc.NewServer()
-	testproto.RegisterTestServiceServer(s.grpcServer, &testServiceImpl{})
-	grpclog.SetLogger(log.New(os.Stderr, "grpc: ", log.LstdFlags))
-	s.wrappedServer = WrapServer(s.grpcServer)
-
-	httpServer := http.Server{
-		Handler: http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
-			require.EqualValues(s.T(), s.httpMajorVersion, req.ProtoMajor, "Requests in this test are served over the wrong protocol")
-			s.T().Logf("Serving over: %d", req.ProtoMajor)
-			s.wrappedServer.ServeHTTP(resp, req)
-		}),
-	}
-
-	s.listener, err = net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(s.T(), err, "failed to set up server socket for test")
-	tlsConfig, err := connhelpers.TlsConfigForServerCerts("../../misc/localhost.crt", "../../misc/localhost.key")
-	require.NoError(s.T(), err, "failed loading keys")
-	if s.httpMajorVersion == 2 {
-		tlsConfig, err = connhelpers.TlsConfigWithHttp2Enabled(tlsConfig)
-		require.NoError(s.T(), err, "failed setting http2")
-	}
-	s.listener = tls.NewListener(s.listener, tlsConfig)
-	go func() {
-		httpServer.Serve(s.listener)
-	}()
-
-	// Wait for the grpcServer to start serving requests.
-	time.Sleep(10 * time.Millisecond)
 }
 
 func (s *GrpcWebWrapperTestSuite) ctxForTest() context.Context {

@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go v1.47.2
 	github.com/boombuler/barcode v1.0.1
 	github.com/dgraph-io/ristretto v0.1.2-0.20240116140435-c67e07994f91
-	github.com/fsnotify/fsnotify v1.7.0
+	github.com/fsnotify/fsnotify v1.8.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-oauth2/oauth2/v4 v4.5.2
 	github.com/go-openapi/loads v0.22.0 // indirect
@@ -18,7 +18,7 @@ require (
 	github.com/go-openapi/swag v0.23.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
-	github.com/go-playground/validator/v10 v10.20.0
+	github.com/go-playground/validator/v10 v10.21.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/sessions v1.2.2
@@ -28,7 +28,6 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.26
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/mozillazg/go-pinyin v0.20.0
-	github.com/olivere/elastic/v7 v7.0.32
 	github.com/prometheus/client_golang v1.19.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.9.0
@@ -42,7 +41,7 @@ require (
 	golang.org/x/net v0.25.0
 	golang.org/x/oauth2 v0.20.0
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
-	google.golang.org/grpc v1.64.0
+	google.golang.org/grpc v1.64.1
 	google.golang.org/protobuf v1.34.1
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/gorm v1.25.10
@@ -69,8 +68,6 @@ require (
 	github.com/klauspost/compress v1.17.9
 	github.com/lxn/win v0.0.0-20210218163916-a377121e959e
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
-	github.com/mwitkow/grpc-proxy v0.0.0-20230212185441-f345521cb9c9
 	github.com/pelletier/go-toml/v2 v2.2.2
 	github.com/prometheus/common v0.53.0
 	github.com/quic-go/quic-go v0.44.0
@@ -181,7 +178,7 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
-	github.com/vektah/gqlparser/v2 v2.5.12 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.14 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/xuri/efp v0.0.0-20240408161823-9ad904a10d6d // indirect
 	github.com/xuri/nfp v0.0.0-20240318013403-ab9948c2c4a7 // indirect
