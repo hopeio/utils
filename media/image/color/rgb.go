@@ -2,11 +2,11 @@ package color
 
 import "image/color"
 
-type RGB64 struct {
+type RGBu16 struct {
 	R, G, B uint16
 }
 
-func (c RGB64) RGBA() (r, g, b, a uint32) {
+func (c RGBu16) RGBA() (r, g, b, a uint32) {
 	r = uint32(c.R)
 	r |= r << 8
 	g = uint32(c.G)
@@ -17,8 +17,8 @@ func (c RGB64) RGBA() (r, g, b, a uint32) {
 	return
 }
 
-func NewRGB64(r, g, b uint16) RGB64 {
-	return RGB64{R: r, G: g, B: b}
+func NewRGB64(r, g, b uint16) RGBu16 {
+	return RGBu16{R: r, G: g, B: b}
 }
 
 type RGB struct {
@@ -45,9 +45,14 @@ func rgbModel(c color.Color) color.Color {
 		return c
 	}
 	r, g, b, _ := c.RGBA()
-	return RGB{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8)}
+	return RGB{uint8(r), uint8(g), uint8(b)}
 }
 
 var (
 	RGBModel = color.ModelFunc(rgbModel)
 )
+
+func ColorRGBAu8(c color.Color) (r, g, b, a uint8) {
+	r32, g32, b32, a32 := c.RGBA()
+	return uint8(r32), uint8(g32), uint8(b32), uint8(a32)
+}

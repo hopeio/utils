@@ -35,3 +35,8 @@ func ColorToGray2(c color.Color) color.Gray {
 	r, g, b, _ := c.RGBA()
 	return color.Gray{Y: uint8(0.299*float64(r>>8) + 0.587*float64(g>>8) + 0.114*float64(b>>8))}
 }
+
+func ColorToRGBu8(c color.Color) RGB {
+	r32, g32, b32, _ := c.RGBA()
+	return RGB{uint8(r32), uint8(g32), uint8(b32)}
+}

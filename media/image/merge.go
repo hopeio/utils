@@ -93,7 +93,7 @@ func MergeUniformBoundsImagesByOverlapReuseMemory(imgIdxs [][]int, getImage func
 	}
 }
 
-type MergeImg struct {
+type MergeImage struct {
 	Pixes                           [][]image.Image
 	stride                          int
 	effectiveWidth, effectiveHeight []int
@@ -101,15 +101,15 @@ type MergeImg struct {
 	Rect                            image.Rectangle
 }
 
-func (m *MergeImg) ColorModel() color.Model {
+func (m *MergeImage) ColorModel() color.Model {
 	return m.Pixes[0][0].ColorModel()
 }
 
-func (m *MergeImg) Bounds() image.Rectangle {
+func (m *MergeImage) Bounds() image.Rectangle {
 	return m.Rect
 }
 
-func (m *MergeImg) ImgOffset(x, y int) image.Image {
+func (m *MergeImage) ImgOffset(x, y int) image.Image {
 	if m.effectiveWidth[m.cacheXIdx] == x {
 		m.cacheXIdx += 1
 	} else {
@@ -140,7 +140,7 @@ func findImgIdx(idx []int, start, end, x int) int {
 	return len(idx) - 1
 }
 
-func (m *MergeImg) At(x, y int) color.Color {
+func (m *MergeImage) At(x, y int) color.Color {
 	if !(image.Point{X: x, Y: y}.In(m.Rect)) {
 		return colori.RGB{}
 	}
@@ -154,7 +154,7 @@ func (m *MergeImg) At(x, y int) color.Color {
 	return pix.At(x, y)
 }
 
-func NewMergeImg(imgs [][]image.Image, width, height int, horizontalOverlaps, verticalOverlaps []int) *MergeImg {
+func NewMergeImage(imgs [][]image.Image, width, height int, horizontalOverlaps, verticalOverlaps []int) *MergeImage {
 	effectiveWidth := make([]int, len(imgs[0]))
 	effectiveHeight := make([]int, len(imgs))
 	var resultWidth, resultHeight int
@@ -172,7 +172,7 @@ func NewMergeImg(imgs [][]image.Image, width, height int, horizontalOverlaps, ve
 		}
 		effectiveHeight[i] = resultHeight
 	}
-	return &MergeImg{
+	return &MergeImage{
 		Pixes:           imgs,
 		stride:          width * 3,
 		effectiveWidth:  effectiveWidth,

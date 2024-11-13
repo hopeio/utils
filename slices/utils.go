@@ -335,3 +335,22 @@ func (c Collector[T]) Append(builder *[]T, element T) {
 func (c Collector[T]) Finish(builder *[]T) []T {
 	return *builder
 }
+
+func TwoDimensionalSlice[S ~[][]T, T any](s S, rowStart, rowEnd, colStart, colEnd int) S {
+	ret := make([][]T, rowEnd-rowStart)
+	for i := range ret {
+		ret[i] = s[rowStart+i][colStart:colEnd]
+	}
+	return ret
+}
+
+func ThreeDimensionalSlice[S ~[][][]T, T any](s S, rowStart, rowEnd, colStart, colEnd, sliceStart, sliceEnd int) S {
+	ret := make([][][]T, rowEnd-rowStart)
+	for i := range ret {
+		ret[i] = make([][]T, colStart-colEnd)
+		for j := range ret[i] {
+			ret[i][j] = s[rowStart+i][colStart+j][sliceStart:sliceEnd]
+		}
+	}
+	return ret
+}

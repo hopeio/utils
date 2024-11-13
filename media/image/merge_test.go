@@ -81,7 +81,7 @@ func TestMerge(t *testing.T) {
 		}
 	}
 
-	mi := NewMergeImg(imgs, sWidth, sHeight, horizontalOverlaps, verticalOverlaps)
+	mi := NewMergeImage(imgs, sWidth, sHeight, horizontalOverlaps, verticalOverlaps)
 	debugi.PrintMemoryUsage(2)
 	outFile, err := os.Create(dir + "panel.jpg")
 	if err != nil {

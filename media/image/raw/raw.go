@@ -15,25 +15,34 @@ type BGR struct {
 	Rect image.Rectangle
 }
 
-func (r *BGR) ColorModel() color.Model {
+func (raw *BGR) ColorModel() color.Model {
 	return colori.RGBModel
 }
 
-func (r *BGR) Bounds() image.Rectangle {
-	return r.Rect
+func (raw *BGR) Bounds() image.Rectangle {
+	return raw.Rect
 }
 
-func (p *BGR) PixOffset(x, y int) int {
-	return (y-p.Rect.Min.Y)*p.Stride + (x-p.Rect.Min.X)*3
+func (raw *BGR) PixOffset(x, y int) int {
+	return (y-raw.Rect.Min.Y)*raw.Stride + (x-raw.Rect.Min.X)*3
 }
 
-func (r *BGR) At(x, y int) color.Color {
-	if !(image.Point{X: x, Y: y}.In(r.Rect)) {
+func (raw *BGR) At(x, y int) color.Color {
+	if !(image.Point{X: x, Y: y}.In(raw.Rect)) {
 		return colori.RGB{}
 	}
-	i := r.PixOffset(x, y)
-	b, g, cr := r.Pix[i], r.Pix[i+1], r.Pix[i+2]
-	return colori.RGB{R: cr, G: g, B: b}
+	i := raw.PixOffset(x, y)
+	b, g, r := raw.Pix[i], raw.Pix[i+1], raw.Pix[i+2]
+	return colori.RGB{R: r, G: g, B: b}
+}
+
+func (raw *BGR) Set(x, y int, c color.Color) {
+	if !(image.Point{X: x, Y: y}.In(raw.Rect)) {
+		return
+	}
+	i := raw.PixOffset(x, y)
+	r, g, b, _ := c.RGBA()
+	raw.Pix[i], raw.Pix[i+1], raw.Pix[i+2] = uint8(b), uint8(g), uint8(r)
 }
 
 func NewBGR(rawValues []byte, width, height int) (*BGR, error) {

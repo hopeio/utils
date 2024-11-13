@@ -1,6 +1,7 @@
 package image
 
 import (
+	colori "github.com/hopeio/utils/media/image/color"
 	"image"
 	"image/color"
 	"math"
@@ -51,10 +52,9 @@ func CalculateOverlap(img1, img2 image.Image, col bool, minOverlap, maxOverlap i
 			} else {
 				c = img1.At(x, y)
 			}
-			r, g, b, _ := c.RGBA()
 			// 使用加权平均公式计算灰度值
-			gray := uint8((19595*r + 38470*g + 7471*b + 1<<15) >> 24)
-			data1[i] = gray
+			gray := colori.ColorToGray(c)
+			data1[i] = gray.Y
 			i++
 		}
 	}
@@ -67,15 +67,14 @@ func CalculateOverlap(img1, img2 image.Image, col bool, minOverlap, maxOverlap i
 			} else {
 				c = img2.At(x, y)
 			}
-			r, g, b, _ := c.RGBA()
 			// 使用加权平均公式计算灰度值
-			gray := uint8((19595*r + 38470*g + 7471*b + 1<<15) >> 24)
-			data2[j] = gray
+			gray := colori.ColorToGray(c)
+			data2[j] = gray.Y
 			j++
 		}
 	}
 	n := len(data1)
-	minMean := math.MaxInt
+	minMean := math.MaxFloat64
 	y := bounds2.Dy()
 	var overlap int
 	for o := minOverlap; o <= maxOverlap; o++ {
@@ -87,7 +86,7 @@ func CalculateOverlap(img1, img2 image.Image, col bool, minOverlap, maxOverlap i
 			v := int(subimg1[i]) - int(subimg2[i])
 			sum += v * v
 		}
-		mse := sum / m
+		mse := float64(sum) / float64(m)
 		if mse < minMean {
 			minMean = mse
 			overlap = o
@@ -151,7 +150,7 @@ func CalculateOverlapReuseMemory(img1, img2 image.Image, col bool, minOverlap, m
 		}
 	}
 	n := len(gary1)
-	minMean := math.MaxInt
+	minMean := math.MaxFloat64
 	y := bounds2.Dy()
 	var overlap int
 	for o := minOverlap; o <= maxOverlap; o++ {
@@ -163,7 +162,7 @@ func CalculateOverlapReuseMemory(img1, img2 image.Image, col bool, minOverlap, m
 			v := int(subimg1[i]) - int(subimg2[i])
 			sum += v * v
 		}
-		mse := sum / m
+		mse := float64(sum) / float64(m)
 		if mse < minMean {
 			minMean = mse
 			overlap = o
@@ -185,10 +184,4 @@ func RectRotateByCenter(x, y, l, w int, angle float64) []image.Point {
 		{X: x + lCosXAxis + wSinXAxis, Y: y - lSinYAxis + wCosYAxis},
 		{X: x - lCosXAxis + wSinXAxis, Y: y + lSinYAxis + wCosYAxis},
 	}
-}
-
-type MergeImage struct {
-	imgs                                 [][]image.Image
-	horizontalOverlaps, verticalOverlaps []int
-	width, height                        int
 }
