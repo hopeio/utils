@@ -18,7 +18,7 @@ require (
 	github.com/go-openapi/swag v0.23.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
-	github.com/go-playground/validator/v10 v10.21.1
+	github.com/go-playground/validator/v10 v10.22.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/sessions v1.2.2
@@ -38,7 +38,7 @@ require (
 	go.uber.org/atomic v1.11.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/net v0.25.0
+	golang.org/x/net v0.26.0
 	golang.org/x/oauth2 v0.20.0
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	google.golang.org/grpc v1.64.1

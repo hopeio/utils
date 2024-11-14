@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"math"
 )
 
 // 有一定重合的固定大小的图片拼图
@@ -179,4 +180,29 @@ func NewMergeImage(imgs [][]image.Image, width, height int, horizontalOverlaps, 
 		effectiveHeight: effectiveHeight,
 		Rect:            image.Rect(0, 0, resultWidth, resultHeight),
 	}
+}
+
+// CalculateContrast 计算图片对比度
+func CalculateContrast(img image.Image) float64 {
+	var sum, sumSq float64
+	var count int
+
+	// 遍历图片的每个像素
+	bounds := img.Bounds()
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			gray := color.GrayModel.Convert(img.At(x, y)).(color.Gray)
+			brightness := float64(gray.Y) // 灰度值（亮度值）
+			sum += brightness
+			sumSq += brightness * brightness
+			count++
+		}
+	}
+
+	// 计算均值和方差
+	mean := sum / float64(count)
+	variance := (sumSq / float64(count)) - (mean * mean)
+
+	// 对比度为亮度的标准差
+	return math.Sqrt(variance)
 }

@@ -185,3 +185,27 @@ func RectRotateByCenter(x, y, l, w int, angle float64) []image.Point {
 		{X: x - lCosXAxis + wSinXAxis, Y: y + lSinYAxis + wCosYAxis},
 	}
 }
+
+func ToGary(img image.Image) *image.Gray {
+	bounds := img.Bounds()
+	gary := image.NewGray(bounds)
+	for x := bounds.Min.X; x < bounds.Max.X; x++ {
+		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+			c := img.At(x, y)
+			r, g, b, _ := c.RGBA()
+			gary.Set(x, y, color.Gray{Y: uint8((19595*r + 38470*g + 7471*b + 1<<15) >> 24)})
+		}
+	}
+	return gary
+}
+
+func ToGaryReuseMemory(img image.Image, gary *image.Gray) {
+	bounds := img.Bounds()
+	for x := bounds.Min.X; x < bounds.Max.X; x++ {
+		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+			c := img.At(x, y)
+			r, g, b, _ := c.RGBA()
+			gary.Set(x, y, color.Gray{Y: uint8((19595*r + 38470*g + 7471*b + 1<<15) >> 24)})
+		}
+	}
+}
