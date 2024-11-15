@@ -1,80 +1,58 @@
 package iter
 
 import (
-	"github.com/hopeio/utils/cmp"
 	"github.com/hopeio/utils/types"
-	constraintsi "github.com/hopeio/utils/types/constraints"
 	"github.com/hopeio/utils/types/funcs"
 	"github.com/hopeio/utils/types/interfaces"
-	"golang.org/x/exp/constraints"
 	"iter"
+	"slices"
 )
 
-func SliceAll[T any](input []T) Seq[types.Pair[int, T]] {
-	return func(yield func(types.Pair[int, T]) bool) {
-		for i, v := range input {
-			if !yield(types.PairOf(i, v)) {
-				return
-			}
-		}
-	}
-}
-
-func SliceBackwardValues[T any](input []T) Seq[T] {
+// Filter keep elements which satisfy the Predicate.
+// 保留满足断言的元素
+func Filter[T any](seq iter.Seq[T], test funcs.Predicate[T]) iter.Seq[T] {
 	return func(yield func(T) bool) {
-		n := len(input) - 1
-		for i := n; n > 0; n-- {
-			if !yield(input[i]) {
+		for v := range seq {
+			if test(v) && !yield(v) {
 				return
 			}
 		}
 	}
 }
 
-func SliceBackward[T any](input []T) Seq[types.Pair[int, T]] {
-	return func(yield func(types.Pair[int, T]) bool) {
-		n := len(input) - 1
-		for i := n; n > 0; n-- {
-			if !yield(types.PairOf(i, input[i])) {
+// Map transform the element use Fuction.
+// 使用输入函数对每个元素进行转换
+func Map[T, R any](seq iter.Seq[T], f funcs.UnaryFunction[T, R]) iter.Seq[R] {
+	return func(yield func(R) bool) {
+		for v := range seq {
+			if !yield(f(v)) {
 				return
 			}
 		}
 	}
 }
 
-func HashMapAll[K comparable, V any](m map[K]V) Seq[types.Pair[K, V]] {
-	return func(yield func(types.Pair[K, V]) bool) {
-		for k, v := range m {
-			if !yield(types.PairOf(k, v)) {
-				return
+// FlatMap transform each element in Seq[T] to a new Seq[R].
+// 将原本序列中的每个元素都转换为一个新的序列，
+// 并将所有转换后的序列依次连接起来生成一个新的序列
+func FlatMap[T, R any](seq iter.Seq[T], flatten funcs.UnaryFunction[T, iter.Seq[R]]) iter.Seq[R] {
+	return func(yield func(R) bool) {
+		for v := range seq {
+			for v2 := range flatten(v) {
+				if !yield(v2) {
+					return
+				}
 			}
 		}
 	}
 }
 
-func StringAll(input string) Seq[types.Pair[int, rune]] {
-	return func(yield func(types.Pair[int, rune]) bool) {
-		for i, v := range input {
-			if !yield(types.PairOf(i, v)) {
-				return
-			}
-		}
-	}
-}
-
-func StringAll2(input string) iter.Seq2[int, rune] {
-	return func(yield func(int, rune) bool) {
-		for i, v := range input {
-			if !yield(i, v) {
-				return
-			}
-		}
-	}
-}
-
-func StringRunes(input string) Seq[rune] {
-	return func(yield func(rune) bool) {
-		for _, v := range input {
+// Peek visit every element in the Seq and leave them on the Seq.
+// 访问序列中的每个元素而不消费它
+func Peek[T any](seq iter.Seq[T], accept funcs.Consumer[T]) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for v := range seq {
+			accept(v)
 			if !yield(v) {
 				return
 			}
@@ -82,9 +60,30 @@ func StringRunes(input string) Seq[rune] {
 	}
 }
 
-func ChannelAll[T any](c chan T) Seq[T] {
+// Distinct remove duplicate elements.
+// 对序列中的元素去重
+func Distinct[T any, C comparable](seq iter.Seq[T], f funcs.UnaryFunction[T, C]) iter.Seq[T] {
 	return func(yield func(T) bool) {
-		for v := range c {
+		var set = make(map[C]struct{})
+		for v := range seq {
+			k := f(v)
+			_, ok := set[k]
+			if !ok {
+				if !yield(v) {
+					return
+				}
+				set[k] = struct{}{}
+			}
+		}
+	}
+}
+
+// Sorted sort elements in the Seq by Comparator.
+// 对序列中的元素排序
+func Sorted[T any](it iter.Seq[T], cmp funcs.Comparator[T]) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		vals := slices.SortedFunc(it, cmp)
+		for _, v := range vals {
 			if !yield(v) {
 				return
 			}
@@ -92,21 +91,41 @@ func ChannelAll[T any](c chan T) Seq[T] {
 	}
 }
 
-func ChannelAll2[T any](c chan T) iter.Seq2[int, T] {
-	return func(yield func(int, T) bool) {
-		var count int
-		for v := range c {
-			if !yield(count, v) {
-				return
+// IsSorted
+// 对序列中的元素是否排序
+func IsSorted[T any](seq iter.Seq[T], cmp funcs.Comparator[T]) bool {
+	var last T
+	check := func(curr T) bool {
+		if cmp(last, curr) >= 0 {
+			return false
+		}
+		last = curr
+		return true
+	}
+
+	var has bool
+	for v := range seq {
+		if !has {
+			last = v
+			has = true
+		} else {
+			if !check(v) {
+				return false
 			}
-			count++
 		}
 	}
+	return true
 }
 
-func RangeAll[T constraintsi.Number](begin, end, step T) Seq[T] {
+// Limit limits the number of elements in Seq.
+// 限制元素个数
+func Limit[T any](seq iter.Seq[T], limit int) iter.Seq[T] {
 	return func(yield func(T) bool) {
-		for v := begin; v <= end; v += step {
+		for v := range seq {
+			limit--
+			if limit < 0 {
+				return
+			}
 			if !yield(v) {
 				return
 			}
@@ -114,44 +133,173 @@ func RangeAll[T constraintsi.Number](begin, end, step T) Seq[T] {
 	}
 }
 
-func RangeAll2[T constraintsi.Number](begin, end, step T) iter.Seq2[int, T] {
-	return func(yield func(int, T) bool) {
-		var count int
-		for v := begin; v <= end; v += step {
-			if !yield(count, v) {
-				return
+// Skip drop some elements of the Seq.
+// 跳过指定个数的元素
+func Skip[T any](seq iter.Seq[T], skip int) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for v := range seq {
+			skip--
+			if skip < 0 {
+				if !yield(v) {
+					return
+				}
 			}
-			count++
 		}
 	}
 }
 
-// Returns the sum of all the elements in the iterator.
-func Sum[T constraintsi.Number](it iter.Seq[T]) T {
-	return Fold(it, 0, func(a, b T) T {
-		return a + b
-	})
+func UntilComparable[T comparable](seq iter.Seq[T], e T) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for v := range seq {
+			if v == e {
+				return
+			}
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
 
-func OperatorBy[T any](it iter.Seq[T], f funcs.BinaryOperator[T]) T {
-	result, _ := Reduce(it, func(a, b T) T {
-		return f(a, b)
-	})
+func Until[T any](seq iter.Seq[T], match funcs.Predicate[T]) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for v := range seq {
+			if match(v) {
+				return
+			}
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// ForEach consume every elements in the Seq.
+// 消费序列中的每个元素
+func ForEach[T any](seq iter.Seq[T], accept funcs.Consumer[T]) {
+	for v := range seq {
+		accept(v)
+	}
+}
+
+// AllMatch test if every elements are all match the Predicate.
+// 是否每个元素都满足条件
+func AllMatch[T any](seq iter.Seq[T], test funcs.Predicate[T]) bool {
+	for v := range seq {
+		if !test(v) {
+			return false
+		}
+	}
+	return true
+}
+
+// NoneMatch test if none element matches the Predicate.
+// 是否没有元素满足条件
+func NoneMatch[T any](seq iter.Seq[T], test funcs.Predicate[T]) bool {
+	for v := range seq {
+		if test(v) {
+			return false
+		}
+	}
+	return true
+}
+
+// AnyMatch test if any element matches the Predicate.
+// 是否有任意元素满足条件
+func AnyMatch[T any](seq iter.Seq[T], test funcs.Predicate[T]) bool {
+	for v := range seq {
+		if test(v) {
+			return true
+		}
+	}
+	return false
+}
+
+// Reduce accumulate each element using the binary operation.
+// 使用给定的累加函数, 累加序列中的每个元素.
+// 序列中可能没有元素因此返回的是 Optional
+func Reduce[T any](seq iter.Seq[T], acc funcs.BinaryOperator[T]) (T, bool) {
+	var result T
+	var has bool
+	for v := range seq {
+		if !has {
+			result = v
+			has = true
+		} else {
+			result = acc(result, v)
+		}
+	}
+	if has {
+		return result, has
+	}
+	return result, has
+}
+
+// Fold accumulate each element using the BinaryFunction
+// starting from the initial value.
+// 从初始值开始, 通过 acc 函数累加每个元素
+func Fold[T, R any](seq iter.Seq[T], initVal R, acc funcs.BinaryFunction[R, T, R]) (result R) {
+	result = initVal
+	for v := range seq {
+		result = acc(result, v)
+	}
 	return result
 }
 
-// Returns the product of all the elements in the iterator.
-func Product[T constraintsi.Number](it iter.Seq[T]) T {
-	return Fold(it, 1, func(a, b T) T {
-		return a * b
-	})
+// First find the first element in the Seq.
+// 返回序列中的第一个元素(如有).
+func First[T any](seq iter.Seq[T]) (T, bool) {
+	for v := range seq {
+		return v, true
+	}
+	return *new(T), false
 }
 
-// Returns the average of all the elements in the iterator.
-func Average[T constraintsi.Number](it iter.Seq[T]) T {
-	return Fold(Enumerate(it), *new(T), func(result T, item types.Pair[int, T]) T {
-		return result + (T(item.Second)-result)/T(item.First+1)
-	})
+// Count return the count of elements in the Seq.
+// 返回序列中的元素个数
+func Count[T any](seq iter.Seq[T]) (count int) {
+	for _ = range seq {
+		count++
+	}
+	return
+}
+
+func Enumerate[T any](seq iter.Seq[T]) iter.Seq[types.Pair[int, T]] {
+	return func(yield func(types.Pair[int, T]) bool) {
+		var count int
+		for v := range seq {
+			if !yield(types.PairOf(count, v)) {
+				return
+			}
+			count++
+		}
+	}
+}
+
+func Chain[T any](seqs ...iter.Seq[T]) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for _, seq := range seqs {
+			for v := range seq {
+				if !yield(v) {
+					return
+				}
+			}
+		}
+	}
+}
+
+func Operator[T any](seq iter.Seq[T], add funcs.BinaryOperator[T]) T {
+	var result T
+	var idx int
+	for v := range seq {
+		if idx == 0 {
+			result = v
+			continue
+		}
+		result = add(result, v)
+		idx++
+	}
+	return result
 }
 
 // Ruturns true if the count of Iterator is 0.
@@ -180,37 +328,11 @@ func Contains[T comparable](it iter.Seq[T], target T) bool {
 	return false
 }
 
-// Return the maximum value of all elements of the iterator.
-func Max[T constraints.Ordered](it iter.Seq[T]) (T, bool) {
-	return Reduce(it, func(a T, b T) T {
-		if a > b {
-			return a
-		} else {
-			return b
-		}
+func OperatorBy[T any](it iter.Seq[T], f funcs.BinaryOperator[T]) T {
+	result, _ := Reduce(it, func(a, b T) T {
+		return f(a, b)
 	})
-}
-
-// Return the maximum value of all elements of the iterator.
-func MaxBy[T any](it iter.Seq[T], greater cmp.LessFunc[T]) (T, bool) {
-	return Reduce(it, func(a T, b T) T {
-		if greater(a, b) {
-			return a
-		} else {
-			return b
-		}
-	})
-}
-
-// Return the minimum value of all elements of the iterator.
-func Min[T constraints.Ordered](it iter.Seq[T]) (T, bool) {
-	return Reduce(it, func(a T, b T) T {
-		if a < b {
-			return a
-		} else {
-			return b
-		}
-	})
+	return result
 }
 
 // Return the right element.
@@ -255,6 +377,14 @@ func ToMap[K comparable, V any](it iter.Seq[types.Pair[K, V]]) map[K]V {
 	var r = make(map[K]V)
 	for p := range it {
 		r[p.First] = p.Second
+	}
+	return r
+}
+
+func ToSlice[V any](it iter.Seq[V]) []V {
+	var r []V
+	for p := range it {
+		r = append(r, p)
 	}
 	return r
 }

@@ -184,25 +184,25 @@ func NewMergeImage(imgs [][]image.Image, width, height int, horizontalOverlaps, 
 
 // CalculateContrast 计算图片对比度
 func CalculateContrast(img image.Image) float64 {
-	var sum, sumSq float64
-	var count int
-
+	var sum int
 	// 遍历图片的每个像素
 	bounds := img.Bounds()
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			gray := color.GrayModel.Convert(img.At(x, y)).(color.Gray)
-			brightness := float64(gray.Y) // 灰度值（亮度值）
-			sum += brightness
-			sumSq += brightness * brightness
-			count++
+			sum += int(gray.Y)
 		}
 	}
 
-	// 计算均值和方差
-	mean := sum / float64(count)
-	variance := (sumSq / float64(count)) - (mean * mean)
+	mean := float64(sum) / float64(bounds.Dx()*bounds.Dy())
+	var varianceSum float64
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			v := float64(color.GrayModel.Convert(img.At(x, y)).(color.Gray).Y)
+			varianceSum += (v - mean) * (v - mean)
+		}
+	}
 
 	// 对比度为亮度的标准差
-	return math.Sqrt(variance)
+	return math.Sqrt(varianceSum / float64(bounds.Dx()*bounds.Dy()))
 }
