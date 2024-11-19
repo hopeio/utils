@@ -1,7 +1,6 @@
 package param
 
 import (
-	"github.com/hopeio/utils/types/constraints"
 	"time"
 )
 
@@ -38,7 +37,7 @@ func (receiver *Sort) Type() SortType {
 
 type DateRange[T ~string | time.Time] Range[T]
 
-type Range[T constraints.Range] struct {
+type Range[T Rangeable] struct {
 	RangeField string `json:"rangeField,omitempty"`
 	RangeBegin T      `json:"rangeBegin,omitempty"`
 	RangeEnd   T      `json:"rangeEnd,omitempty"`

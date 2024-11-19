@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github.com/hopeio/utils/cmp"
 	reflecti "github.com/hopeio/utils/reflect"
-	"github.com/hopeio/utils/types/constraints"
+	"golang.org/x/exp/constraints"
+
 	"reflect"
 	"strings"
 	"unsafe"
@@ -63,7 +64,7 @@ func Reverse[S ~[]T, T any](s S) S {
 	return s
 }
 
-func Max[S ~[]T, T constraints.Number](s S) T {
+func Max[S ~[]T, T constraints.Ordered](s S) T {
 	if len(s) == 0 {
 		return *new(T)
 	}
@@ -80,7 +81,7 @@ func Max[S ~[]T, T constraints.Number](s S) T {
 	return max
 }
 
-func Min[S ~[]T, T constraints.Number](s S) T {
+func Min[S ~[]T, T constraints.Ordered](s S) T {
 	if len(s) == 0 {
 		return *new(T)
 	}

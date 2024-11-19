@@ -2,11 +2,11 @@ package parallel
 
 import (
 	"github.com/hopeio/utils/errors/multierr"
-	"github.com/hopeio/utils/types/funcs"
+	"github.com/hopeio/utils/types"
 	"golang.org/x/sync/errgroup"
 )
 
-func RunIgnoreError(tasks []funcs.FuncReturnErr) error {
+func RunIgnoreError(tasks []types.FuncReturnErr) error {
 	ch := make(chan error)
 	for _, task := range tasks {
 		go func() {
@@ -25,7 +25,7 @@ func RunIgnoreError(tasks []funcs.FuncReturnErr) error {
 	return nil
 }
 
-func Run(tasks []funcs.FuncReturnErr) error {
+func Run(tasks []types.FuncReturnErr) error {
 	var group errgroup.Group
 	for _, task := range tasks {
 		group.Go(task)
@@ -33,7 +33,7 @@ func Run(tasks []funcs.FuncReturnErr) error {
 	return group.Wait()
 }
 
-func RunReturnData[T any](tasks []funcs.FuncReturnDataOrErr[T]) ([]T, error) {
+func RunReturnData[T any](tasks []types.FuncReturnDataOrErr[T]) ([]T, error) {
 	var group errgroup.Group
 	ret := make([]T, len(tasks))
 	for i, task := range tasks {

@@ -1,15 +1,11 @@
 package param
 
-import (
-	"github.com/hopeio/utils/types/constraints"
-)
-
-type List[T constraints.Ordered] struct {
+type List[T Ordered] struct {
 	PageSort
 	*Range[T]
 }
 
-func NewList[T constraints.Ordered](pageNo, pageSize int) *List[T] {
+func NewList[T Ordered](pageNo, pageSize int) *List[T] {
 	return &List[T]{
 		PageSort: PageSort{
 			Page: Page{

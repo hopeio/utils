@@ -1,4 +1,4 @@
-package funcs
+package types
 
 // Supplier 产生一个元素
 type Supplier[T any] func() T

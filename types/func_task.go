@@ -1,4 +1,4 @@
-package funcs
+package types
 
 import (
 	"context"

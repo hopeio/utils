@@ -13,7 +13,7 @@ func TestTransformPoint(t *testing.T) {
 	point2A := Point{X: 7.826025403784439, Y: -8.09602540378444}
 	// {7.826025403784439 8.09602540378444}
 	assert.Equal(t, point2A, TranslateRotationTransformByPointAndAngle(point2B, point1B, point1A, angle))
-	angle = AngleBetweenVectors(point1A, point1B, point2A, point2B)
+	angle = VectorsAngle(NewVector(point1A, point2A), NewVector(point1B, point2B))
 	t.Log(angle)
 	t.Log(TranslateRotationTransformByPointAndAngle(point2B, point1B, point1A, -angle))
 }
@@ -75,4 +75,12 @@ func TestRotate(t *testing.T) {
 	t.Log(RectangleCorners(Point{}, w, h, 45))
 	t.Log(RotationTransformByAngle(Point{-w / 2, h / 2}, 45))
 	t.Log(RotationTransformByAngle(Point{-w / 2, -h / 2}, 45))
+}
+
+func TestAngle(t *testing.T) {
+	p1, p2 := Point{X: 1, Y: 1}, Point{X: 2, Y: 2}
+	v1, v2 := Vector{X: 1, Y: 1}, Vector{X: 2, Y: 2}
+	t.Log(VectorsAngle(v1, v2))
+	t.Log(NewVector(p1, p2).Angle())
+	t.Log(VectorsAngle(v1, v2))
 }

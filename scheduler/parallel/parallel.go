@@ -2,7 +2,7 @@ package parallel
 
 import (
 	"github.com/hopeio/utils/log"
-	"github.com/hopeio/utils/types/funcs"
+	"github.com/hopeio/utils/types"
 	"github.com/hopeio/utils/types/interfaces"
 	"sync"
 )
@@ -35,7 +35,7 @@ func New(workNum uint, opts ...Option) *Parallel {
 	return p
 }
 
-func (p *Parallel) AddFunc(task funcs.FuncRetry) {
+func (p *Parallel) AddFunc(task types.FuncRetry) {
 	p.wg.Add(1)
 	p.taskCh <- task
 }

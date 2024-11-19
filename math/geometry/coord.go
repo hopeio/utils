@@ -19,10 +19,32 @@ func (p *Point) Rotate(angleDeg float64) {
 	p.X, p.Y = p.X*cosA-p.Y*sinA, p.X*sinA+p.Y*cosA
 }
 
+func (p Point) Vector(point Point) Vector {
+	return Vector{point.X - p.X, point.Y - p.Y}
+}
+
 type Point3D struct {
 	X float64
 	Y float64
 	Z float64
+}
+
+type Vector struct {
+	X float64
+	Y float64
+}
+
+func NewVector(p1, p2 Point) Vector {
+	return Vector{p2.X - p1.X, p2.Y - p1.Y}
+}
+
+func (v Vector) Angle() float64 {
+	angleRadians := math.Atan2(v.Y, v.X)
+	return angleRadians * (180.0 / math.Pi)
+}
+
+func (v Vector) Length() float64 {
+	return math.Sqrt(v.X*v.X + v.Y*v.Y)
 }
 
 func RotationMat(angleDeg float64) [2][2]float64 {
@@ -65,20 +87,6 @@ func TranslateRotationTransformByPointAndAngle(pA, qA, qB Point, angleDeg float6
 	dy := pA.X*sinA + pA.Y*cosA - qA.X*sinA - qA.Y*cosA
 
 	return Point{dx + qB.X, dy + qB.Y}
-}
-
-// 已知两点在两平面坐标系中的坐标，求坐标系夹角,A旋转到B的度数，逆时针>0
-// AngleBetweenVectors
-func AngleBetweenVectors(pA, pB, qA, qB Point) float64 {
-	// 计算向量pA->pB和qA->qB
-	vectorP := Point{pB.X - pA.X, pB.Y - pA.Y}
-	vectorQ := Point{qB.X - qA.X, qB.Y - qA.Y}
-	// 计算两个向量之间的夹角
-	dx := vectorQ.X - vectorP.X
-	dy := vectorQ.Y - vectorP.Y
-	angleInRadians := math.Atan2(dy, dx)
-	// 将弧度转换为度
-	return angleInRadians * (180.0 / math.Pi)
 }
 
 func RectangleCorners(rCenter Point, w, h, angleDeg float64) [][]float64 {
@@ -152,11 +160,21 @@ func RotatePoint(p Point, center Point, angleDeg float64) Point {
 }
 
 func NormalizeAngleDegrees(theta float64) float64 {
-	normalized := math.Mod(theta, 360)
-	if normalized < 0 {
-		normalized += 360
+	if theta == 0 {
+		return 0
 	}
-	return normalized
+
+	if theta > 0 {
+		for theta > 360 {
+			theta -= 360
+		}
+	} else {
+		theta += 360
+		for theta < 0 {
+			theta += 360
+		}
+	}
+	return theta
 }
 
 // 定义一个2x3的仿射变换矩阵
@@ -168,14 +186,6 @@ func (m AffineMatrix) Apply(p Point) Point {
 		X: m[0][0]*p.X + m[0][1]*p.Y + m[0][2],
 		Y: m[1][0]*p.X + m[1][1]*p.Y + m[1][2],
 	}
-}
-
-// 计算同坐标两个向量之间的角度
-func AngleBetweenPoints(v1, v2 Point) float64 {
-	dotProduct := v1.X*v2.X + v1.Y*v2.Y
-	magnitudeV1 := math.Sqrt(v1.X*v1.X + v1.Y*v1.Y)
-	magnitudeV2 := math.Sqrt(v2.X*v2.X + v2.Y*v2.Y)
-	return math.Acos(dotProduct / (magnitudeV1 * magnitudeV2))
 }
 
 // 计算仿射变换矩阵
@@ -285,18 +295,18 @@ func gaussJordanElimination(A [][]float64, b []float64) ([]float64, error) {
 	return solution, nil
 }
 
-// VectorLength 计算两点之间的向量长度
-func VectorLength(p1, p2 Point) float64 {
+// PointsLength 计算两点之间的向量长度
+func PointsLength(p1, p2 Point) float64 {
 	dx := p2.X - p1.X
 	dy := p2.Y - p1.Y
 	return math.Sqrt(dx*dx + dy*dy)
 }
 
-// VectorAngle 计算向量与 x 轴之间的角度（以度为单位）
-func VectorAngle(p1, p2 Point) float64 {
-	dx := p2.X - p1.X
-	dy := p2.Y - p1.Y
-	angleRadians := math.Atan2(dy, dx)
-	angleDegrees := angleRadians * (180.0 / math.Pi)
-	return angleDegrees
+// 计算同坐标两个向量之间的角度
+func VectorsAngle(v1, v2 Vector) float64 {
+	dotProduct := v1.X*v2.X + v1.Y*v2.Y
+	magnitudeV1 := math.Sqrt(v1.X*v1.X + v1.Y*v1.Y)
+	magnitudeV2 := math.Sqrt(v2.X*v2.X + v2.Y*v2.Y)
+	angleInRadians := math.Acos(dotProduct / (magnitudeV1 * magnitudeV2))
+	return angleInRadians * (180.0 / math.Pi)
 }

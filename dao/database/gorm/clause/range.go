@@ -2,12 +2,11 @@ package clause
 
 import (
 	dbi "github.com/hopeio/utils/dao/database"
-	"github.com/hopeio/utils/types/constraints"
 	"github.com/hopeio/utils/types/param"
 	"gorm.io/gorm/clause"
 )
 
-type Range[T constraints.Ordered] param.Range[T]
+type Range[T param.Ordered] param.Range[T]
 
 func (req *Range[T]) Clause() clause.Expression {
 	if req == nil || req.RangeField == "" {

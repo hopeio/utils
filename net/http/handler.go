@@ -3,7 +3,7 @@ package http
 import (
 	"encoding/json"
 	"github.com/hopeio/utils/net/http/binding"
-	"github.com/hopeio/utils/types/funcs"
+	"github.com/hopeio/utils/types"
 	"net/http"
 )
 
@@ -57,7 +57,7 @@ func HandlerWrap[REQ, RES any](service Service[*REQ, *RES]) http.Handler {
 		json.NewEncoder(w).Encode(res)
 	})
 }
-func HandlerWrapCompatibleGRPC[REQ, RES any](method funcs.GrpcServiceMethod[*REQ, *RES]) http.Handler {
+func HandlerWrapCompatibleGRPC[REQ, RES any](method types.GrpcServiceMethod[*REQ, *RES]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		req := new(REQ)
 		err := binding.Bind(r, req)

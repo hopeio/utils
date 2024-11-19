@@ -3,7 +3,6 @@
 package clause
 
 import (
-	"github.com/hopeio/utils/types/constraints"
 	"github.com/hopeio/utils/types/param"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -22,7 +21,7 @@ func (req *PageSort) Clause() []clause.Expression {
 	return []clause.Expression{SortExpr(req.SortField, req.SortType), PageExpr(req.PageNo, req.PageSize)}
 }
 
-func FindByList[T any, O constraints.Ordered](db *gorm.DB, req *param.List[O]) ([]T, error) {
+func FindByList[T any, O param.Ordered](db *gorm.DB, req *param.List[O]) ([]T, error) {
 	var models []T
 	clauses := ListClause(req)
 	if len(clauses) > 0 {
@@ -35,11 +34,11 @@ func FindByList[T any, O constraints.Ordered](db *gorm.DB, req *param.List[O]) (
 	return models, nil
 }
 
-func ListClause[O constraints.Ordered](req *param.List[O]) []clause.Expression {
+func ListClause[O param.Ordered](req *param.List[O]) []clause.Expression {
 	return (*List[O])(req).Clause()
 }
 
-type List[T constraints.Ordered] param.List[T]
+type List[T param.Ordered] param.List[T]
 
 func (req *List[O]) Clause() []clause.Expression {
 	pqc := (*PageSort)(&req.PageSort).Clause()
