@@ -5,6 +5,7 @@ import (
 	"github.com/hopeio/utils/types"
 	"golang.org/x/exp/constraints"
 	"golang.org/x/exp/maps"
+	"slices"
 )
 
 // 没有泛型，范例，实际需根据不同类型各写一遍,用CmpKey，基本类型又用不了，go需要能给基本类型实现方法不能给外部类型实现方法
@@ -137,7 +138,7 @@ func Intersection[S ~[]T, T comparable](a S, b S) S {
 func smallArrayIntersection[S ~[]T, T comparable](a S, b S) S {
 	var ret S
 	for _, x := range a {
-		if In(x, b) {
+		if slices.Contains(b, x) {
 			ret = append(ret, x)
 		}
 	}
@@ -202,7 +203,7 @@ func IntersectionByKey[S ~[]E, E cmp.EqualKey[T], T comparable](a S, b S) S {
 func smallArrayIntersectionByKey[S ~[]E, E cmp.EqualKey[T], T comparable](a S, b S) S {
 	var ret S
 	for _, x := range a {
-		if InByKey(x.EqualKey(), b) {
+		if ContainsByKey(b, x.EqualKey()) {
 			ret = append(ret, x)
 		}
 	}
@@ -297,7 +298,7 @@ func DifferenceSet[S ~[]T, T comparable](a S, b S) S {
 func smallArrayDifferenceSet[S ~[]T, T comparable](a S, b S) S {
 	var diff S
 	for _, x := range a {
-		if !In(x, b) {
+		if !slices.Contains(b, x) {
 			diff = append(diff, x)
 		}
 	}
@@ -352,7 +353,7 @@ func DifferenceSetByKey[S ~[]E, E cmp.EqualKey[T], T comparable](a S, b S) S {
 func smallArrayDifferenceSetByKey[S ~[]E, E cmp.EqualKey[T], T comparable](a S, b S) S {
 	var diff S
 	for _, x := range a {
-		if !InByKey(x.EqualKey(), b) {
+		if !ContainsByKey(b, x.EqualKey()) {
 			diff = append(diff, x)
 		}
 	}

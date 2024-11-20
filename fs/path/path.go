@@ -1,10 +1,10 @@
 package path
 
 import (
-	"github.com/hopeio/utils/slices"
 	stringsi "github.com/hopeio/utils/strings"
 	sdpath "path"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -19,10 +19,10 @@ func FileRewrite(filename string) string {
 	}
 
 	for _, char := range filename {
-		if slices.In(char, empty) {
+		if slices.Contains(empty, char) {
 			continue
 		}
-		if idx := slices.Index(char, origin); idx >= 0 {
+		if idx := slices.Index(origin, char); idx >= 0 {
 			result = append(result, replace[idx])
 		}
 	}

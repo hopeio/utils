@@ -1,8 +1,8 @@
 package unicode
 
 import (
-	"github.com/hopeio/utils/slices"
 	stringsi "github.com/hopeio/utils/strings"
+	"slices"
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -15,7 +15,7 @@ var HanPunctuation = []rune{
 
 func HasHan(s string) bool {
 	for _, r := range s {
-		if unicode.Is(unicode.Han, r) || slices.In(r, HanPunctuation) {
+		if unicode.Is(unicode.Han, r) || slices.Contains(HanPunctuation, r) {
 			return true
 		}
 	}

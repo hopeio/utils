@@ -5,12 +5,62 @@ import (
 	"github.com/hopeio/utils/cmp"
 	reflecti "github.com/hopeio/utils/reflect"
 	"golang.org/x/exp/constraints"
+	"slices"
 
 	"reflect"
 	"strings"
 	"unsafe"
 )
 
+func Every[S ~[]T, T any](slice S, fn func(T) bool) bool {
+	for _, t := range slice {
+		if !fn(t) {
+			return false
+		}
+	}
+	return true
+}
+
+func Some[S ~[]T, T any](slice S, fn func(T) bool) bool {
+	for _, t := range slice {
+		if fn(t) {
+			return true
+		}
+	}
+	return false
+}
+
+func Zip[S ~[]T, T any](s1, s2 S) [][2]T {
+	var newSlice [][2]T
+	for i := range s1 {
+		newSlice = append(newSlice, [2]T{s1[i], s2[i]})
+	}
+	return newSlice
+}
+
+// 去重
+func Deduplicate[S ~[]T, T comparable](slice S) S {
+	if len(slice) < SmallArrayLen {
+		newslice := make(S, 0, 2)
+		for i := 0; i < len(slice); i++ {
+			if !slices.Contains(newslice, slice[i]) {
+				newslice = append(newslice, slice[i])
+			}
+		}
+		return newslice
+	}
+	set := make(map[T]struct{})
+	for i := 0; i < len(slice); i++ {
+		set[slice[i]] = struct{}{}
+	}
+	newslice := make(S, 0, len(slice))
+	for k := range set {
+		newslice = append(newslice, k)
+	}
+	return newslice
+}
+
+// Deprecated: use std slices.Contains
 func Contains[S ~[]T, T comparable](s S, v T) bool {
 	for i := 0; i < len(s); i++ {
 		if s[i] == v {
@@ -20,40 +70,13 @@ func Contains[S ~[]T, T comparable](s S, v T) bool {
 	return false
 }
 
-func ContainsByKey[S ~[]cmp.EqualKey[K], K comparable](s S, v K) bool {
-	for i := 0; i < len(s); i++ {
+func ContainsByKey[S ~[]E, E cmp.EqualKey[K], K comparable](s S, v K) bool {
+	for i := range s {
 		if s[i].EqualKey() == v {
 			return true
 		}
 	}
 	return false
-}
-
-func In[S ~[]T, T comparable](v T, s S) bool {
-	for _, x := range s {
-		if x == v {
-			return true
-		}
-	}
-	return false
-}
-
-func InByKey[S ~[]E, E cmp.EqualKey[K], K comparable](key K, s S) bool {
-	for _, x := range s {
-		if x.EqualKey() == key {
-			return true
-		}
-	}
-	return false
-}
-
-func Index[S ~[]T, T comparable](v T, s S) int {
-	for i, x := range s {
-		if x == v {
-			return i
-		}
-	}
-	return -1
 }
 
 func Reverse[S ~[]T, T any](s S) S {
@@ -219,15 +242,7 @@ func ReverseForEach[S ~[]T, T any](s S, handle func(idx int, v T)) {
 	}
 }
 
-func Map[T1, T2 any, T1S ~[]T1](s T1S, fn func(T1) T2) []T2 {
-	ret := make([]T2, 0, len(s))
-	for _, s := range s {
-		ret = append(ret, fn(s))
-	}
-	return ret
-}
-
-func Map2[T1, T2 any, T1S ~[]T1, T2S ~[]T2](s T1S, fn func(T1) T2) T2S {
+func Map[T1S ~[]T1, T1, T2 any](s T1S, fn func(T1) T2) []T2 {
 	ret := make([]T2, 0, len(s))
 	for _, s := range s {
 		ret = append(ret, fn(s))
@@ -236,7 +251,7 @@ func Map2[T1, T2 any, T1S ~[]T1, T2S ~[]T2](s T1S, fn func(T1) T2) T2S {
 }
 
 func Filter[S ~[]T, T any](fn func(T) bool, src S) S {
-	var dst []T
+	var dst S
 	for _, v := range src {
 		if fn(v) {
 			dst = append(dst, v)
@@ -253,7 +268,7 @@ func Reduce[S ~[]T, T any](slices S, fn func(T, T) T) T {
 	return ret
 }
 
-func Cast[T1, T2 any, T1S ~[]T1](s T1S) []T2 {
+func Cast[T1S ~[]T1, T2S ~[]T2, T1, T2 any](s T1S) T2S {
 	t1, t2 := new(T1), new(T2)
 	t1type, t2type := reflect.TypeOf(t1).Elem(), reflect.TypeOf(t2).Elem()
 	t1kind, t2kind := t1type.Kind(), t2type.Kind()
@@ -276,10 +291,6 @@ func Cast[T1, T2 any, T1S ~[]T1](s T1S) []T2 {
 	panic("unsupported type")
 }
 
-func Cast2[T1, T2 any, T1S ~[]T1, T2S ~[]T2](s T1S) T2S {
-	return (T2S)(Cast[T1, T2](s))
-}
-
 func GuardSlice(buf *[]byte, n int) {
 	c := cap(*buf)
 	l := len(*buf)
@@ -295,7 +306,7 @@ func GuardSlice(buf *[]byte, n int) {
 }
 
 //go:nosplit
-func Ptr2SlicePtr(s unsafe.Pointer, l int, c int) unsafe.Pointer {
+func PtrToSlicePtr(s unsafe.Pointer, l int, c int) unsafe.Pointer {
 	slice := &reflecti.Slice{
 		Ptr: s,
 		Len: l,
@@ -309,7 +320,7 @@ func FilterPlace[S ~[]T, T any](slices S, fn func(T) bool) S {
 	for i := 0; i <= n; {
 		if fn(slices[i]) {
 			if i < n {
-				Swap(slices, i, n)
+				slices[i], slices[n] = slices[n], slices[i]
 			}
 			n--
 			continue
@@ -323,20 +334,6 @@ func Remove[S ~[]T, T any](slices S, i int) S {
 	return append(slices[:i], slices[i+1:]...)
 }
 
-type Collector[T any] struct {
-}
-
-func (c Collector[T]) Builder() *[]T {
-	s := make([]T, 0)
-	return &s
-}
-func (c Collector[T]) Append(builder *[]T, element T) {
-	*builder = append(*builder, element)
-}
-func (c Collector[T]) Finish(builder *[]T) []T {
-	return *builder
-}
-
 func TwoDimensionalSlice[S ~[][]T, T any](s S, rowStart, rowEnd, colStart, colEnd int) S {
 	ret := make([][]T, rowEnd-rowStart)
 	for i := range ret {
@@ -346,12 +343,20 @@ func TwoDimensionalSlice[S ~[][]T, T any](s S, rowStart, rowEnd, colStart, colEn
 }
 
 func ThreeDimensionalSlice[S ~[][][]T, T any](s S, rowStart, rowEnd, colStart, colEnd, sliceStart, sliceEnd int) S {
-	ret := make([][][]T, rowEnd-rowStart)
+	ret := make(S, rowEnd-rowStart)
 	for i := range ret {
 		ret[i] = make([][]T, colStart-colEnd)
 		for j := range ret[i] {
 			ret[i][j] = s[rowStart+i][colStart+j][sliceStart:sliceEnd]
 		}
+	}
+	return ret
+}
+
+func ToPtrs[S ~[]T, T any](s S) []*T {
+	ret := make([]*T, len(s))
+	for i := range s {
+		ret[i] = &s[i]
 	}
 	return ret
 }

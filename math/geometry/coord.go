@@ -12,15 +12,27 @@ type Point struct {
 	Y float64
 }
 
-func (p *Point) Rotate(angleDeg float64) {
-	angleRad := math.Pi * angleDeg / 180.0
-	cosA := math.Cos(angleRad)
-	sinA := math.Sin(angleRad)
-	p.X, p.Y = p.X*cosA-p.Y*sinA, p.X*sinA+p.Y*cosA
-}
-
 func (p Point) Vector(point Point) Vector {
 	return Vector{point.X - p.X, point.Y - p.Y}
+}
+
+func (p Point) Rotate(center Point, angleDeg float64) Point {
+	angleRad := angleDeg * math.Pi / 180.0
+	// Calculate cosine and sine of the angle
+	cosA := math.Cos(angleRad)
+	sinA := math.Sin(angleRad)
+	// 计算旋转后的坐标
+	newX := center.X + (p.X-center.X)*cosA - (p.Y-center.Y)*sinA
+	newY := center.Y + (p.X-center.X)*sinA + (p.Y-center.Y)*cosA
+
+	return Point{newX, newY}
+}
+
+// PointsLength 计算两点之间的向量长度
+func (p Point) Length(p2 Point) float64 {
+	dx := p2.X - p.X
+	dy := p2.Y - p.Y
+	return math.Sqrt(dx*dx + dy*dy)
 }
 
 type Point3D struct {
@@ -47,11 +59,43 @@ func (v Vector) Length() float64 {
 	return math.Sqrt(v.X*v.X + v.Y*v.Y)
 }
 
-func RotationMat(angleDeg float64) [2][2]float64 {
-	angleRad := angleDeg * math.Pi / 180.0
-	return [2][2]float64{{math.Cos(angleRad), -math.Sin(angleRad)}, {math.Sin(angleRad), math.Cos(angleRad)}}
+type AngleDegrees float64
+type AngleRadian float64
+
+func (a AngleDegrees) Radian() AngleRadian {
+	return AngleRadian(a * math.Pi / 180.0)
 }
 
+func (a AngleDegrees) Normalize() AngleDegrees {
+	if a == 0 {
+		return 0
+	}
+
+	if a > 0 {
+		for a > 360 {
+			a -= 360
+		}
+	} else {
+		a += 360
+		for a < 0 {
+			a += 360
+		}
+	}
+	return a
+}
+
+func (a AngleRadian) Degrees() AngleDegrees {
+	return AngleDegrees(a / math.Pi * 180.0)
+}
+
+type RotationMat [2][2]float64
+
+func NewRotationMat(angleDeg float64) RotationMat {
+	angleRad := angleDeg * math.Pi / 180.0
+	return RotationMat{{math.Cos(angleRad), -math.Sin(angleRad)}, {math.Sin(angleRad), math.Cos(angleRad)}}
+}
+
+// 绕原点旋转
 func RotationTransformByAngle(p Point, angleDeg float64) Point {
 
 	// Convert angle from degrees to radians
@@ -89,74 +133,11 @@ func TranslateRotationTransformByPointAndAngle(pA, qA, qB Point, angleDeg float6
 	return Point{dx + qB.X, dy + qB.Y}
 }
 
-func RectangleCorners(rCenter Point, w, h, angleDeg float64) [][]float64 {
-	angleRad := angleDeg * math.Pi / 180.0
-	// Calculate cosine and sine of the angle
-	cosA := math.Cos(angleRad)
-	sinA := math.Sin(angleRad)
-	halfW, halfH := w/2, h/2
-	// 计算矩形四个角的坐标 (A左下-B右下-C右上-D左上)
-	dx := rCenter.X + halfW*cosA - halfH*sinA
-	dy := rCenter.Y + halfW*sinA + halfH*cosA
-	ax := rCenter.X - halfW*cosA - halfH*sinA
-	ay := rCenter.Y - halfW*sinA + halfH*cosA
-	bx := rCenter.X - halfW*cosA + halfH*sinA
-	by := rCenter.Y - halfW*sinA - halfH*cosA
-	cx := rCenter.X + halfW*cosA + halfH*sinA
-	cy := rCenter.Y + halfW*sinA - halfH*cosA
-	return [][]float64{{ax, ay}, {bx, by}, {cx, cy}, {dx, dy}}
-}
-
-// 图片就是第四象限,角度90+θ
-func IsPointInRectangle(p Point, rCenter Point, w, h, angleDeg float64) bool {
-
-	// 射线法判断点是否在矩形内
-	inside := false
-	intersections := 0
-	corners := RectangleCorners(rCenter, w, h, angleDeg)
-
-	for i := 0; i < len(corners); i++ {
-		x1, y1 := corners[i][0], corners[i][1]
-		x2, y2 := corners[(i+1)%len(corners)][0], corners[(i+1)%len(corners)][1]
-
-		if y1 == y2 { // 水平边
-			continue
-		}
-		if p.Y < min(y1, y2) || p.Y > max(y1, y2) { // 在边的外部
-			continue
-		}
-
-		xIntersect := x1 + (p.Y-y1)*(x2-x1)/(y2-y1)
-		if p.X < xIntersect {
-			intersections++
-		}
-	}
-
-	if intersections%2 == 1 {
-		inside = true
-	}
-
-	return inside
-}
-
 func RandomPoint(min, max Point) Point {
 	return Point{
 		X: math.Floor(min.X + math.Floor(rand.Float64()*(max.X-min.X))),
 		Y: math.Floor(min.Y + math.Floor(rand.Float64()*(max.Y-min.Y))),
 	}
-}
-
-// RotatePoint 计算点 (x, y) 绕点 (centerX, centerY) 旋转 angle 度后的新坐标
-func RotatePoint(p Point, center Point, angleDeg float64) Point {
-	angleRad := angleDeg * math.Pi / 180.0
-	// Calculate cosine and sine of the angle
-	cosA := math.Cos(angleRad)
-	sinA := math.Sin(angleRad)
-	// 计算旋转后的坐标
-	newX := center.X + (p.X-center.X)*cosA - (p.Y-center.Y)*sinA
-	newY := center.Y + (p.X-center.X)*sinA + (p.Y-center.Y)*cosA
-
-	return Point{newX, newY}
 }
 
 func NormalizeAngleDegrees(theta float64) float64 {
@@ -181,7 +162,7 @@ func NormalizeAngleDegrees(theta float64) float64 {
 type AffineMatrix [2][3]float64
 
 // 应用仿射变换到点上
-func (m AffineMatrix) Apply(p Point) Point {
+func (m AffineMatrix) Transform(p Point) Point {
 	return Point{
 		X: m[0][0]*p.X + m[0][1]*p.Y + m[0][2],
 		Y: m[1][0]*p.X + m[1][1]*p.Y + m[1][2],
@@ -189,7 +170,7 @@ func (m AffineMatrix) Apply(p Point) Point {
 }
 
 // 计算仿射变换矩阵
-func calculateAffineTransform(p1, p2, p3, q1, q2, q3 Point) ([][]float64, error) {
+func NewAffineMatrix(p1, p2, p3, q1, q2, q3 Point) (AffineMatrix, error) {
 	// 构造线性方程组的系数矩阵A和常数向量b
 	A := [][]float64{
 		{p1.X, p1.Y, 1, 0, 0, 0},
@@ -204,37 +185,16 @@ func calculateAffineTransform(p1, p2, p3, q1, q2, q3 Point) ([][]float64, error)
 	// 使用高斯-约旦消元法求解线性方程组 Ax = b
 	solution, err := gaussJordanElimination(A, b)
 	if err != nil {
-		return nil, err
+		return AffineMatrix{}, err
 	}
 
 	// 构造仿射变换矩阵
-	transformMatrix := [][]float64{
+	transformMatrix := AffineMatrix{
 		{solution[0], solution[1], solution[2]},
 		{solution[3], solution[4], solution[5]},
-		{0, 0, 1},
 	}
 
 	return transformMatrix, nil
-}
-
-// 应用仿射变换
-func applyAffineTransform(m [][]float64, p Point) (Point, error) {
-	// 将点转换为齐次坐标
-	homogeneousP := []float64{p.X, p.Y, 1}
-
-	// 应用变换矩阵
-	result := make([]float64, 3)
-	for i := 0; i < 3; i++ {
-		for j := 0; j < 3; j++ {
-			result[i] += m[i][j] * homogeneousP[j]
-		}
-	}
-
-	// 转换回非齐次坐标
-	if result[2] == 0 {
-		return Point{}, fmt.Errorf("division by zero in transformation")
-	}
-	return Point{X: result[0] / result[2], Y: result[1] / result[2]}, nil
 }
 
 // 高斯-约旦消元法求解线性方程组 Ax = b
@@ -293,13 +253,6 @@ func gaussJordanElimination(A [][]float64, b []float64) ([]float64, error) {
 	}
 
 	return solution, nil
-}
-
-// PointsLength 计算两点之间的向量长度
-func PointsLength(p1, p2 Point) float64 {
-	dx := p2.X - p1.X
-	dy := p2.Y - p1.Y
-	return math.Sqrt(dx*dx + dy*dy)
 }
 
 // 计算同坐标两个向量之间的角度

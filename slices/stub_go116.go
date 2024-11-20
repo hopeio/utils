@@ -24,4 +24,4 @@ import (
 
 //go:linkname GrowSlice runtime.growslice
 //goland:noinspection GoUnusedParameter
-func GrowSlice(et *reflect.GoType, old reflect.GoSlice, cap int) reflect.GoSlice
+func GrowSlice(et *reflect.Type, old reflect.Slice, cap int) reflect.Slice

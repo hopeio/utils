@@ -29,7 +29,7 @@ func TestIsPointInRectangle(t *testing.T) {
 
 func FuzzIsPointInRectangle(f *testing.F) {
 	f.Fuzz(func(t *testing.T, x, y, cx, cy, w, h, angle float64) {
-		angle = NormalizeAngleDegrees(angle)
+		angle = AngleDegrees(angle).Normalize()
 		if x < 0 {
 			x = -x
 		}
@@ -56,7 +56,7 @@ func FuzzIsPointInRectangle(f *testing.F) {
 
 func TestAffineMatrix(t *testing.T) {
 	p1, p2, p3, q1, q2, q3 := Point{2000, 7000}, Point{48000, 80000}, Point{2000, 85000}, Point{3558, 17895}, Point{11016, 5997}, Point{3538, 5182}
-	transformMatrix, err := calculateAffineTransform(p1, p2, p3, q1, q2, q3)
+	transformMatrix, err := NewAffineMatrix(p1, p2, p3, q1, q2, q3)
 	if err != nil {
 		t.Error(err)
 	}

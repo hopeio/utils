@@ -2,10 +2,10 @@ package strings
 
 import (
 	"bytes"
-	"github.com/hopeio/utils/slices"
 	"github.com/hopeio/utils/strings/ascii"
 	"math/rand"
 	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -160,7 +160,7 @@ func RemoveRunes(s string, old ...rune) string {
 	needCopy := false
 	last := false
 	for i, r := range s {
-		if slices.In(r, old) {
+		if slices.Contains(old, r) {
 			if needCopy {
 				w += copy(t[w:], s[start:i])
 				needCopy = false

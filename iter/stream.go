@@ -23,7 +23,6 @@ type Stream[T any] interface {
 	Collect() []T
 	IsSorted(types.Comparator[T]) bool
 	All(types.Predicate[T]) bool // every
-	None(types.Predicate[T]) bool
 	Any(types.Predicate[T]) bool // some
 	Reduce(acc types.BinaryOperator[T]) (T, bool)
 	Fold(initVal T, acc types.BinaryOperator[T]) T
@@ -122,10 +121,6 @@ func (it Seq[T]) Collect() []T {
 
 func (it Seq[T]) All(test types.Predicate[T]) bool {
 	return AllMatch(iter.Seq[T](it), test)
-}
-
-func (it Seq[T]) None(test types.Predicate[T]) bool {
-	return NoneMatch(iter.Seq[T](it), test)
 }
 
 func (it Seq[T]) Any(test types.Predicate[T]) bool {

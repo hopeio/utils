@@ -181,8 +181,26 @@ func ForEach[T any](seq iter.Seq[T], accept types.Consumer[T]) {
 	}
 }
 
-// AllMatch test if every elements are all match the Predicate.
-// 是否每个元素都满足条件
+func Every[T any](seq iter.Seq[T], test types.Predicate[T]) bool {
+	for v := range seq {
+		if !test(v) {
+			return false
+		}
+	}
+	return true
+}
+
+func Some[T any](seq iter.Seq[T], test types.Predicate[T]) bool {
+	for v := range seq {
+		if test(v) {
+			return true
+		}
+	}
+	return false
+}
+
+// AllMatch test if every element are all match the Predicate.
+// 是否每个元素都满足条件 == Every
 func AllMatch[T any](seq iter.Seq[T], test types.Predicate[T]) bool {
 	for v := range seq {
 		if !test(v) {
@@ -192,19 +210,8 @@ func AllMatch[T any](seq iter.Seq[T], test types.Predicate[T]) bool {
 	return true
 }
 
-// NoneMatch test if none element matches the Predicate.
-// 是否没有元素满足条件
-func NoneMatch[T any](seq iter.Seq[T], test types.Predicate[T]) bool {
-	for v := range seq {
-		if test(v) {
-			return false
-		}
-	}
-	return true
-}
-
 // AnyMatch test if any element matches the Predicate.
-// 是否有任意元素满足条件
+// 是否有任意元素满足条件 == Some
 func AnyMatch[T any](seq iter.Seq[T], test types.Predicate[T]) bool {
 	for v := range seq {
 		if test(v) {
