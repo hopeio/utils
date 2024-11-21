@@ -3,13 +3,20 @@ package geometry
 import (
 	"fmt"
 	"math"
-	"math/rand"
+	"math/rand/v2"
 )
 
 // Point 结构体用于表示一个点
 type Point struct {
 	X float64
 	Y float64
+}
+
+func RandomPoint(min, max Point) Point {
+	return Point{
+		X: math.Floor(min.X + math.Floor(rand.Float64()*(max.X-min.X))),
+		Y: math.Floor(min.Y + math.Floor(rand.Float64()*(max.Y-min.Y))),
+	}
 }
 
 func (p Point) Vector(point Point) Vector {
@@ -59,6 +66,15 @@ func (v Vector) Length() float64 {
 	return math.Sqrt(v.X*v.X + v.Y*v.Y)
 }
 
+// 计算同坐标两个向量之间的角度
+func (v Vector) AngleWith(v2 Vector) float64 {
+	dotProduct := v.X*v2.X + v.Y*v2.Y
+	magnitudeV1 := math.Sqrt(v.X*v.X + v.Y*v.Y)
+	magnitudeV2 := math.Sqrt(v2.X*v2.X + v2.Y*v2.Y)
+	angleInRadians := math.Acos(dotProduct / (magnitudeV1 * magnitudeV2))
+	return angleInRadians * (180.0 / math.Pi)
+}
+
 type AngleDegrees float64
 type AngleRadian float64
 
@@ -86,58 +102,6 @@ func (a AngleDegrees) Normalize() AngleDegrees {
 
 func (a AngleRadian) Degrees() AngleDegrees {
 	return AngleDegrees(a / math.Pi * 180.0)
-}
-
-type RotationMat [2][2]float64
-
-func NewRotationMat(angleDeg float64) RotationMat {
-	angleRad := angleDeg * math.Pi / 180.0
-	return RotationMat{{math.Cos(angleRad), -math.Sin(angleRad)}, {math.Sin(angleRad), math.Cos(angleRad)}}
-}
-
-// 绕原点旋转
-func RotationTransformByAngle(p Point, angleDeg float64) Point {
-
-	// Convert angle from degrees to radians
-	angleRad := angleDeg * math.Pi / 180.0
-	// Calculate cosine and sine of the angle
-	cosA := math.Cos(angleRad)
-	sinA := math.Sin(angleRad)
-
-	// Apply rotation and translation
-	xNew := p.X*cosA - p.Y*sinA
-	yNew := p.X*sinA + p.Y*cosA
-
-	return Point{xNew, yNew}
-}
-
-// 两个原点不重合的坐标系O1,O2。O2在O1内部,且经过顺时针旋转c度。其中的点分别用(x1,y1),(x2,y2)表示，已知某个点在两个坐标系中的坐标(x1,y1),(x2,y2),以及另一点在O2内的坐标(x2,
-//y2)，求该点在O1内的坐标(x1,y1).
-// 图像如何转换，图像可看做第四象限，输入-y,返回-y
-
-// TranslateRotationTransformByPointAndAngle transforms a point from coordinate system a2 to a1
-// 在数学和计算机图形学中，旋转角度的正负通常遵循右手定则。默认情况下，顺时针方向被认为是负的，而逆时针方向被认为是正的。
-// O2相对于O1旋转度数
-func TranslateRotationTransformByPointAndAngle(pA, qA, qB Point, angleDeg float64) (pB Point) {
-
-	// Convert angle from degrees to radians
-	angleRad := angleDeg * math.Pi / 180.0
-	// Calculate cosine and sine of the angle
-	cosA := math.Cos(angleRad)
-	sinA := math.Sin(angleRad)
-
-	// Apply rotation and translation
-	dx := pA.X*cosA - pA.Y*sinA - qA.X*cosA + qA.Y*sinA
-	dy := pA.X*sinA + pA.Y*cosA - qA.X*sinA - qA.Y*cosA
-
-	return Point{dx + qB.X, dy + qB.Y}
-}
-
-func RandomPoint(min, max Point) Point {
-	return Point{
-		X: math.Floor(min.X + math.Floor(rand.Float64()*(max.X-min.X))),
-		Y: math.Floor(min.Y + math.Floor(rand.Float64()*(max.Y-min.Y))),
-	}
 }
 
 func NormalizeAngleDegrees(theta float64) float64 {
@@ -169,6 +133,32 @@ func (m AffineMatrix) Transform(p Point) Point {
 	}
 }
 
+func NewRotationMat(center Point, angleDeg float64) AffineMatrix {
+	angleRad := angleDeg * math.Pi / 180.0
+	cosA := math.Cos(angleRad)
+	sinA := math.Sin(angleRad)
+	return AffineMatrix{{cosA, -sinA, center.X - cosA*center.X + sinA*center.Y}, {sinA, cosA, center.Y - sinA*center.X - cosA*center.Y}}
+}
+
+// 两个原点不重合的坐标系O1,O2。O2在O1内部,且经过顺时针旋转c度。其中的点分别用(x1,y1),(x2,y2)表示，已知某个点在两个坐标系中的坐标(x1,y1),(x2,y2),以及另一点在O2内的坐标(x2,
+//y2)，求该点在O1内的坐标(x1,y1).
+// 图像如何转换，图像可看做第四象限，输入-y,返回-y
+
+// NewTranslateRotationMat transforms a point from coordinate system a2 to a1
+// 在数学和计算机图形学中，旋转角度的正负通常遵循右手定则。默认情况下，顺时针方向被认为是负的，而逆时针方向被认为是正的。
+// O2相对于O1旋转度数
+func NewTranslateRotationMat(pA, pB Point, angleDeg float64) AffineMatrix {
+	// Convert angle from degrees to radians
+	angleRad := angleDeg * math.Pi / 180.0
+	// Calculate cosine and sine of the angle
+	cosA := math.Cos(angleRad)
+	sinA := math.Sin(angleRad)
+	return AffineMatrix{
+		{cosA, -sinA, pB.X - cosA*pA.X + sinA*pA.Y},
+		{sinA, cosA, pB.Y - sinA*pA.X - cosA*pA.Y},
+	}
+}
+
 // 计算仿射变换矩阵
 func NewAffineMatrix(p1, p2, p3, q1, q2, q3 Point) (AffineMatrix, error) {
 	// 构造线性方程组的系数矩阵A和常数向量b
@@ -183,7 +173,7 @@ func NewAffineMatrix(p1, p2, p3, q1, q2, q3 Point) (AffineMatrix, error) {
 	b := []float64{q1.X, q1.Y, q2.X, q2.Y, q3.X, q3.Y}
 
 	// 使用高斯-约旦消元法求解线性方程组 Ax = b
-	solution, err := gaussJordanElimination(A, b)
+	solution, err := GaussJordanElimination(A, b)
 	if err != nil {
 		return AffineMatrix{}, err
 	}
@@ -197,8 +187,8 @@ func NewAffineMatrix(p1, p2, p3, q1, q2, q3 Point) (AffineMatrix, error) {
 	return transformMatrix, nil
 }
 
-// 高斯-约旦消元法求解线性方程组 Ax = b
-func gaussJordanElimination(A [][]float64, b []float64) ([]float64, error) {
+// GaussJordanElimination 高斯-约旦消元法求解线性方程组 Ax = b
+func GaussJordanElimination(A [][]float64, b []float64) ([]float64, error) {
 	n := len(b)
 	m := len(A)
 	if m != n || len(A[0]) != n {
@@ -253,13 +243,4 @@ func gaussJordanElimination(A [][]float64, b []float64) ([]float64, error) {
 	}
 
 	return solution, nil
-}
-
-// 计算同坐标两个向量之间的角度
-func VectorsAngle(v1, v2 Vector) float64 {
-	dotProduct := v1.X*v2.X + v1.Y*v2.Y
-	magnitudeV1 := math.Sqrt(v1.X*v1.X + v1.Y*v1.Y)
-	magnitudeV2 := math.Sqrt(v2.X*v2.X + v2.Y*v2.Y)
-	angleInRadians := math.Acos(dotProduct / (magnitudeV1 * magnitudeV2))
-	return angleInRadians * (180.0 / math.Pi)
 }
