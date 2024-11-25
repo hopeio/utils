@@ -1,3 +1,9 @@
+/*
+ * Copyright 2024 hopeio. All rights reserved.
+ * Licensed under the MIT License that can be found in the LICENSE file.
+ * @Created by jyb
+ */
+
 package style
 
 // 转义序列以控制字ESC开头，该字符的ASCII码十进制表示为27，十六进制为0x1B，八进制表示为033.多数的转义序列超过两个字符，所以通常以ESC和左括号[开头。

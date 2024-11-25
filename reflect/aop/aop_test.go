@@ -1,3 +1,9 @@
+/*
+ * Copyright 2024 hopeio. All rights reserved.
+ * Licensed under the MIT License that can be found in the LICENSE file.
+ * @Created by jyb
+ */
+
 package aop
 
 import (
@@ -22,5 +28,5 @@ func TestAop(t *testing.T) {
 	log.Println("----------------------------------------")
 	aop(before, foo2, after)
 	foo2()
-	
+
 }

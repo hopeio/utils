@@ -1,3 +1,9 @@
+/*
+ * Copyright 2024 hopeio. All rights reserved.
+ * Licensed under the MIT License that can be found in the LICENSE file.
+ * @Created by jyb
+ */
+
 // Copyright 2019 Changkun Ou. All rights reserved.
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.

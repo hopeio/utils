@@ -25,13 +25,13 @@ var (
 	reflectRtypeItab = findReflectRtypeItab()
 )
 
-// GoType.KindFlags const
+// Type.KindFlags const
 const (
 	F_direct    = 1 << 5
 	F_kind_mask = (1 << 5) - 1
 )
 
-// GoType.Flags const
+// Type.Flags const
 const (
 	tflagUncommon      uint8 = 1 << 0
 	tflagExtraStar     uint8 = 1 << 1
@@ -147,7 +147,7 @@ func AssertI2I(t *Type, i Iface) (r Iface) {
 		return
 	}
 	if tab.Inter != inter {
-		tab = Getitab(inter, tab.Type, true)
+		tab = GetItab(inter, tab.Type, true)
 		if tab == nil {
 			return
 		}
@@ -158,8 +158,8 @@ func AssertI2I(t *Type, i Iface) (r Iface) {
 }
 
 //go:noescape
-//go:linkname Getitab runtime.getitab
-func Getitab(inter *InterfaceType, typ *Type, canfail bool) *Itab
+//go:linkname GetItab runtime.getitab
+func GetItab(inter *InterfaceType, typ *Type, canfail bool) *Itab
 
 func GetFuncPC(fn interface{}) uintptr {
 	ft := UnpackEface(fn)

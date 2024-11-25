@@ -1,3 +1,9 @@
+/*
+ * Copyright 2024 hopeio. All rights reserved.
+ * Licensed under the MIT License that can be found in the LICENSE file.
+ * @Created by jyb
+ */
+
 package geometry
 
 import (
@@ -12,24 +18,28 @@ func TestTransformPoint(t *testing.T) {
 	point2B := Point{5.0, -3.0}
 	point2A := Point{X: 7.826025403784439, Y: -8.09602540378444}
 	// {7.826025403784439 8.09602540378444}
-	assert.Equal(t, point2A, TranslateRotationTransformByPointAndAngle(point2B, point1B, point1A, angle))
-	angle = VectorsAngle(NewVector(point1A, point2A), NewVector(point1B, point2B))
+	mat := NewTranslateRotationMat(point1B, point1A, angle)
+	assert.Equal(t, point2A, mat.Transform(point2B))
+	angle = NewVector(point1A, point2A).AngleWith(NewVector(point1B, point2B))
 	t.Log(angle)
-	t.Log(TranslateRotationTransformByPointAndAngle(point2B, point1B, point1A, -angle))
+	mat = NewTranslateRotationMat(point1B, point1A, -angle)
+	t.Log(mat.Transform(point2B))
 }
 
 func TestIsPointInRectangle(t *testing.T) {
-	assert.Equal(t, false, IsPointInRectangle(Point{X: 0.44, Y: 0.62}, Point{X: 0.5, Y: 0.5}, 0.4, 0.2, 30))
-	assert.Equal(t, false, IsPointInRectangle(Point{X: 0.44, Y: -0.62}, Point{X: 0.5, Y: -0.5}, 0.4, 0.2, -30))
-	assert.Equal(t, true, IsPointInRectangle(Point{X: 0.58, Y: 0.54}, Point{X: 0.5, Y: 0.5}, 0.4, 0.2, 30))
-	assert.Equal(t, true, IsPointInRectangle(Point{X: 0.58, Y: -0.54}, Point{X: 0.5, Y: -0.5}, 0.4, 0.2, -30))
-	assert.Equal(t, true, IsPointInRectangle(Point{X: 82, Y: 12.5}, Point{X: 596, Y: 1491}, 1129.5, 2957, 0))
-	assert.Equal(t, true, IsPointInRectangle(Point{X: 82, Y: -12.5}, Point{X: 596, Y: -1491}, 1129.5, 2957, 0))
+	rect1 := NewRect(Point{X: 0.5, Y: 0.5}, 0.4, 0.2, 30)
+	rect2 := NewRect(Point{X: 0.5, Y: -0.5}, 0.4, 0.2, -30)
+	assert.Equal(t, false, rect1.ContainsPoint(Point{X: 0.44, Y: 0.62}))
+	assert.Equal(t, false, rect2.ContainsPoint(Point{X: 0.44, Y: -0.62}))
+	assert.Equal(t, true, rect1.ContainsPoint(Point{X: 0.58, Y: 0.54}))
+	assert.Equal(t, true, rect2.ContainsPoint(Point{X: 0.58, Y: -0.54}))
+	assert.Equal(t, true, NewRect(Point{X: 596, Y: 1491}, 1129.5, 2957, 0).ContainsPoint(Point{X: 82, Y: 12.5}))
+	assert.Equal(t, true, NewRect(Point{X: 596, Y: -1491}, 1129.5, 2957, 0).ContainsPoint(Point{X: 82, Y: -12.5}))
 }
 
 func FuzzIsPointInRectangle(f *testing.F) {
 	f.Fuzz(func(t *testing.T, x, y, cx, cy, w, h, angle float64) {
-		angle = AngleDegrees(angle).Normalize()
+		angle = NormalizeAngleDegrees(angle)
 		if x < 0 {
 			x = -x
 		}
@@ -49,8 +59,8 @@ func FuzzIsPointInRectangle(f *testing.F) {
 			cy = -cy
 		}
 		t.Log(x, y, cx, cy, w, h, angle)
-		assert.Equal(t, IsPointInRectangle(Point{x, y}, Point{cx, cy}, w, h, angle), IsPointInRectangle(Point{x, -y},
-			Point{cx, -cy}, w, h, -angle))
+		assert.Equal(t, NewRect(Point{cx, cy}, w, h, angle).ContainsPoint(Point{x, y}), NewRect(
+			Point{cx, -cy}, w, h, -angle).ContainsPoint(Point{x, -y}))
 	})
 }
 
@@ -63,24 +73,21 @@ func TestAffineMatrix(t *testing.T) {
 
 	// 对某个点应用变换
 	p := Point{X: 48000, Y: 13000}
-	q, err := applyAffineTransform(transformMatrix, p)
-	if err != nil {
-		t.Error(err)
-	}
+	q := transformMatrix.Transform(p)
 	t.Log(q)
 }
 
 func TestRotate(t *testing.T) {
 	w, h := float64(277), float64(199)
-	t.Log(RectangleCorners(Point{}, w, h, 45))
-	t.Log(RotationTransformByAngle(Point{-w / 2, h / 2}, 45))
-	t.Log(RotationTransformByAngle(Point{-w / 2, -h / 2}, 45))
+	t.Log(NewRect(Point{}, w, h, 45).Corners())
+	t.Log(Point{-w / 2, h / 2}.Rotate(Point{}, 45))
+	t.Log(Point{-w / 2, -h / 2}.Rotate(Point{}, 45))
 }
 
 func TestAngle(t *testing.T) {
 	p1, p2 := Point{X: 1, Y: 1}, Point{X: 2, Y: 2}
 	v1, v2 := Vector{X: 1, Y: 1}, Vector{X: 2, Y: 2}
-	t.Log(VectorsAngle(v1, v2))
+	t.Log(v1.AngleWith(v2))
 	t.Log(NewVector(p1, p2).Angle())
-	t.Log(VectorsAngle(v1, v2))
+	t.Log(v1.AngleWith(v2))
 }

@@ -1,13 +1,13 @@
+/*
+ * Copyright 2024 hopeio. All rights reserved.
+ * Licensed under the MIT License that can be found in the LICENSE file.
+ * @Created by jyb
+ */
+
 package unsafe
 
 import "unsafe"
 
-// NoEscape hides a pointer from escape analysis. NoEscape is
-// the identity function but escape analysis doesn't think the
-// output depends on the input. NoEscape is inlined and currently
-// compiles down to zero instructions.
-// USE CAREFULLY!
-//
 //go:nosplit
 //goland:noinspection GoVetUnsafePointer
 func NoEscape(p unsafe.Pointer) unsafe.Pointer {

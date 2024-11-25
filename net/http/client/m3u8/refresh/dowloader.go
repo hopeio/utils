@@ -1,3 +1,9 @@
+/*
+ * Copyright 2024 hopeio. All rights reserved.
+ * Licensed under the MIT License that can be found in the LICENSE file.
+ * @Created by jyb
+ */
+
 package m3u8
 
 import (
@@ -5,6 +11,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/hopeio/utils/fs"
+	"github.com/hopeio/utils/terminal"
 	"os"
 	"path/filepath"
 	"strconv"

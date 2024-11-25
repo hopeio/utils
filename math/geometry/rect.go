@@ -1,6 +1,14 @@
+/*
+ * Copyright 2024 hopeio. All rights reserved.
+ * Licensed under the MIT License that can be found in the LICENSE file.
+ * @Created by jyb
+ */
+
 package geometry
 
-import "math"
+import (
+	"math"
+)
 
 type Triangle struct {
 	A, B, C Point
@@ -13,7 +21,16 @@ type Rectangle struct {
 	Angle  float64
 }
 
-func (rect Rectangle) Corners() [][]float64 {
+func NewRect(center Point, width, height float64, angleDeg float64) *Rectangle {
+	return &Rectangle{
+		Center: center,
+		Width:  width,
+		Height: height,
+		Angle:  angleDeg,
+	}
+}
+
+func (rect *Rectangle) Corners() [][]float64 {
 	angleRad := rect.Angle * math.Pi / 180.0
 	// Calculate cosine and sine of the angle
 	cosA := math.Cos(angleRad)
@@ -32,7 +49,7 @@ func (rect Rectangle) Corners() [][]float64 {
 }
 
 // 图片就是第四象限,角度90+θ
-func (rect Rectangle) ContainsPoint(p Point) bool {
+func (rect *Rectangle) ContainsPoint(p Point) bool {
 
 	// 射线法判断点是否在矩形内
 	inside := false

@@ -1,3 +1,9 @@
+/*
+ * Copyright 2024 hopeio. All rights reserved.
+ * Licensed under the MIT License that can be found in the LICENSE file.
+ * @Created by jyb
+ */
+
 package mail
 
 import (
@@ -26,12 +32,12 @@ Content-Type: {{if .ContentType}}{{.ContentType}}{{- else}}text/html; charset=UT
 `
 
 func init() {
-	templatei.Parse(msg)
+	template.Parse(msg)
 }
 
 func (m *Mail) GenMsg() ([]byte, error) {
 	var buf = new(bytes.Buffer)
-	err := templatei.Execute(buf, "mail", m)
+	err := template.Execute(buf, "mail", m)
 	if err != nil {
 		return nil, fmt.Errorf("executing template: %w", err)
 	}

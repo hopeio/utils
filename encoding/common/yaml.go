@@ -1,3 +1,9 @@
+/*
+ * Copyright 2024 hopeio. All rights reserved.
+ * Licensed under the MIT License that can be found in the LICENSE file.
+ * @Created by jyb
+ */
+
 package common
 
 import (
@@ -9,38 +15,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 )
-
-// Marshals the object into JSON then converts JSON to YAML and returns the
-// YAML.
-func Marshal(o interface{}) ([]byte, error) {
-	j, err := json.Marshal(o)
-	if err != nil {
-		return nil, fmt.Errorf("error marshaling into JSON: %v", err)
-	}
-
-	y, err := JSONToYAML(j)
-	if err != nil {
-		return nil, fmt.Errorf("error converting JSON to YAML: %v", err)
-	}
-
-	return y, nil
-}
-
-// Converts YAML to JSON then uses JSON to unmarshal into an object.
-func Unmarshal(y []byte, o interface{}) error {
-	vo := reflect.ValueOf(o)
-	j, err := yamlToJSON(y, &vo)
-	if err != nil {
-		return fmt.Errorf("error converting YAML to JSON: %v", err)
-	}
-
-	err = json.Unmarshal(j, o)
-	if err != nil {
-		return fmt.Errorf("error unmarshaling JSON: %v", err)
-	}
-
-	return nil
-}
 
 // Convert JSON to YAML.
 func JSONToYAML(j []byte) ([]byte, error) {
