@@ -33,3 +33,10 @@ func CreateTimeByEntry(entry os.DirEntry) time.Time {
 	tNanSeconds := wFileSys.CreationTime.Nanoseconds() /// 返回的是纳秒
 	return time.Unix(0, tNanSeconds)
 }
+
+func LastWriteTimeByEntry(entry os.DirEntry) time.Time {
+	fileInfo, _ := entry.Info()
+	wFileSys := fileInfo.Sys().(*syscall.Win32FileAttributeData)
+	tNanSeconds := wFileSys.LastWriteTime.Nanoseconds() /// 返回的是纳秒
+	return time.Unix(0, tNanSeconds)
+}

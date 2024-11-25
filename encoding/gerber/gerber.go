@@ -436,10 +436,18 @@ type LineCap string
 const (
 	// Linear interpolation.
 	InterpolationLinear Interpolation = iota
+	InterpolationCircular
 	// Clockwise arc interpolation
-	InterpolationClockwise
+	InterpolationClockwise Interpolation = 1
 	// Counter clockwise arc interpolation.
-	InterpolationCCW
+	InterpolationCCW            Interpolation = 3
+	InterpolationSingleQuadrant Interpolation = 1
+	InterpolationMultiQuadrant  Interpolation = 7
+
+	InterpolationSingleQuadrantClockwise = 11
+	InterpolationSingleQuadrantCCCW      = 12
+	InterpolationMultiQuadrantClockwise  = 13
+	InterpolationMultiQuadrantCCW        = 14
 
 	// LineCapButt strokes do not extend beyond a line's two endpoints.
 	LineCapButt LineCap = "butt"

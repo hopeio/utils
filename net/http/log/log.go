@@ -38,7 +38,7 @@ var consoleColorMode = autoColor
 // LoggerConfig defines the config for Logger middleware.
 type LoggerConfig struct {
 	// Optional. defaultLogger value is gin.defaultLogFormatter
-	Formatter LogFormatter
+	Formatter Formatter
 
 	Logger *log.Logger
 
@@ -48,11 +48,11 @@ type LoggerConfig struct {
 	SkipPaths []string
 }
 
-// LogFormatter gives the signature of the formatter function passed to LoggerWithFormatter
-type LogFormatter func(params LogFormatterParams) string
+// Formatter gives the signature of the formatter function passed to LoggerWithFormatter
+type Formatter func(params FormatterParams) string
 
-// LogFormatterParams is the structure any formatter will be handed when time to log comes
-type LogFormatterParams struct {
+// FormatterParams is the structure any formatter will be handed when time to log comes
+type FormatterParams struct {
 	Request *http.Request
 
 	// TimeStamp shows the time after the server returns a response.
@@ -78,7 +78,7 @@ type LogFormatterParams struct {
 }
 
 // StatusCodeColor is the ANSI color for appropriately logging http status code to a terminal.
-func (p *LogFormatterParams) StatusCodeColor() string {
+func (p *FormatterParams) StatusCodeColor() string {
 	code := p.StatusCode
 
 	switch {
@@ -94,7 +94,7 @@ func (p *LogFormatterParams) StatusCodeColor() string {
 }
 
 // MethodColor is the ANSI color for appropriately logging http method to a terminal.
-func (p *LogFormatterParams) MethodColor() string {
+func (p *FormatterParams) MethodColor() string {
 	method := p.Method
 
 	switch method {
@@ -118,17 +118,17 @@ func (p *LogFormatterParams) MethodColor() string {
 }
 
 // ResetColor resets all escape attributes.
-func (p *LogFormatterParams) ResetColor() string {
+func (p *FormatterParams) ResetColor() string {
 	return reset
 }
 
 // IsOutputColor indicates whether can colors be outputted to the log.
-func (p *LogFormatterParams) IsOutputColor() bool {
+func (p *FormatterParams) IsOutputColor() bool {
 	return consoleColorMode == forceColor || (consoleColorMode == autoColor && p.isTerm)
 }
 
 // defaultLogFormatter is the default log format function Logger middleware uses.
-var DefaultLogFormatter = func(param LogFormatterParams) string {
+var DefaultLogFormatter = func(param FormatterParams) string {
 	var statusColor, methodColor, resetColor string
 	if param.IsOutputColor() {
 		statusColor = param.StatusCodeColor()

@@ -43,7 +43,7 @@ func Logger() gin.HandlerFunc {
 }
 
 // LoggerWithFormatter instance a Logger middleware with the specified log format function.
-func LoggerWithFormatter(f log2.LogFormatter, logger *log.Logger, hasErr bool) gin.HandlerFunc {
+func LoggerWithFormatter(f log2.Formatter, logger *log.Logger, hasErr bool) gin.HandlerFunc {
 	return LoggerWithConfig(log2.LoggerConfig{
 		Formatter: f,
 		Logger:    logger,
@@ -82,7 +82,7 @@ func LoggerWithConfig(conf log2.LoggerConfig) gin.HandlerFunc {
 				return
 			}
 		}
-		param := log2.LogFormatterParams{
+		param := log2.FormatterParams{
 			Request: c.Request,
 			Keys:    c.Keys,
 		}

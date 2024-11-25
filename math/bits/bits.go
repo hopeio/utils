@@ -90,3 +90,16 @@ func Int64ToUint64(f int64) uint64 {
 func Uint64ToInt64(f uint64) int64 {
 	return *(*int64)(unsafe.Pointer(&f))
 }
+
+type Uint8 uint8
+
+func (b Num64) Num8(leftIdx int) bool {
+	return b&(1<<(7-leftIdx)) != 0
+}
+
+func (b Uint8) SetAt(leftIdx int, v bool) Num64 {
+	if v {
+		return b | (1 << (7 - leftIdx))
+	}
+	return b &^ (1 << (7 - leftIdx))
+}
