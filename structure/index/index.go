@@ -4,7 +4,7 @@
  * @Created by jyb
  */
 
-package structure
+package index
 
 import "sync"
 

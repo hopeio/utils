@@ -5,20 +5,20 @@ import (
 )
 
 // EvictCallback is used to get a callback when a cache entry is evicted
-type EvictCallback func(key interface{}, value interface{})
+type EvictCallback func(key any, value any)
 
 // LRU implements a non-thread safe fixed size LRU cache
 type LRU struct {
 	size      int
 	evictList *list.List
-	items     map[interface{}]*list.Element
+	items     map[any]*list.Element
 	onEvict   EvictCallback
 }
 
 // entry is used to hold a value in the evictList
 type entry struct {
-	key   interface{}
-	value interface{}
+	key   any
+	value any
 }
 
 // NewLRU constructs an LRU of the given size
@@ -26,7 +26,7 @@ func New(size int, onEvict EvictCallback) *LRU {
 	c := &LRU{
 		size:      size,
 		evictList: list.New(),
-		items:     make(map[interface{}]*list.Element),
+		items:     make(map[any]*list.Element),
 		onEvict:   onEvict,
 	}
 	return c
@@ -44,7 +44,7 @@ func (c *LRU) Purge() {
 }
 
 // Add adds a value to the cache.  Returns true if an eviction occurred.
-func (c *LRU) Add(key, value interface{}) (evicted bool) {
+func (c *LRU) Add(key, value any) (evicted bool) {
 	// Check for existing item
 	if ent, ok := c.items[key]; ok {
 		c.evictList.MoveToFront(ent)
@@ -66,7 +66,7 @@ func (c *LRU) Add(key, value interface{}) (evicted bool) {
 }
 
 // Get looks up a key's value from the cache.
-func (c *LRU) Get(key interface{}) (value interface{}, ok bool) {
+func (c *LRU) Get(key any) (value any, ok bool) {
 	if ent, ok := c.items[key]; ok {
 		c.evictList.MoveToFront(ent)
 		if ent.Value.(*entry) == nil {
@@ -79,14 +79,14 @@ func (c *LRU) Get(key interface{}) (value interface{}, ok bool) {
 
 // Contains checks if a key is in the cache, without updating the recent-ness
 // or deleting it for being stale.
-func (c *LRU) Contains(key interface{}) (ok bool) {
+func (c *LRU) Contains(key any) (ok bool) {
 	_, ok = c.items[key]
 	return ok
 }
 
 // Peek returns the key value (or undefined if not found) without updating
 // the "recently used"-ness of the key.
-func (c *LRU) Peek(key interface{}) (value interface{}, ok bool) {
+func (c *LRU) Peek(key any) (value any, ok bool) {
 	var ent *list.Element
 	if ent, ok = c.items[key]; ok {
 		return ent.Value.(*entry).value, true
@@ -96,7 +96,7 @@ func (c *LRU) Peek(key interface{}) (value interface{}, ok bool) {
 
 // Remove removes the provided key from the cache, returning if the
 // key was contained.
-func (c *LRU) Remove(key interface{}) (present bool) {
+func (c *LRU) Remove(key any) (present bool) {
 	if ent, ok := c.items[key]; ok {
 		c.removeElement(ent)
 		return true
@@ -105,7 +105,7 @@ func (c *LRU) Remove(key interface{}) (present bool) {
 }
 
 // RemoveOldest removes the oldest item from the cache.
-func (c *LRU) RemoveOldest() (key, value interface{}, ok bool) {
+func (c *LRU) RemoveOldest() (key, value any, ok bool) {
 	ent := c.evictList.Back()
 	if ent != nil {
 		c.removeElement(ent)
@@ -116,7 +116,7 @@ func (c *LRU) RemoveOldest() (key, value interface{}, ok bool) {
 }
 
 // GetOldest returns the oldest entry
-func (c *LRU) GetOldest() (key, value interface{}, ok bool) {
+func (c *LRU) GetOldest() (key, value any, ok bool) {
 	ent := c.evictList.Back()
 	if ent != nil {
 		kv := ent.Value.(*entry)
@@ -126,8 +126,8 @@ func (c *LRU) GetOldest() (key, value interface{}, ok bool) {
 }
 
 // Keys returns a slice of the keys in the cache, from oldest to newest.
-func (c *LRU) Keys() []interface{} {
-	keys := make([]interface{}, len(c.items))
+func (c *LRU) Keys() []any {
+	keys := make([]any, len(c.items))
 	i := 0
 	for ent := c.evictList.Back(); ent != nil; ent = ent.Prev() {
 		keys[i] = ent.Value.(*entry).key

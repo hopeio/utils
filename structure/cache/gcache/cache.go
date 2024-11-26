@@ -17,17 +17,17 @@ const (
 var KeyNotFoundError = errors.New("Key not found.")
 
 type Cache interface {
-	Set(key, value interface{}) error
-	SetWithExpire(key, value interface{}, expiration time.Duration) error
-	Get(key interface{}) (interface{}, error)
-	GetIFPresent(key interface{}) (interface{}, error)
-	GetALL(checkExpired bool) map[interface{}]interface{}
-	get(key interface{}, onLoad bool) (interface{}, error)
-	Remove(key interface{}) bool
+	Set(key, value any) error
+	SetWithExpire(key, value any, expiration time.Duration) error
+	Get(key any) (any, error)
+	GetIFPresent(key any) (any, error)
+	GetALL(checkExpired bool) map[any]any
+	get(key any, onLoad bool) (any, error)
+	Remove(key any) bool
 	Purge()
-	Keys(checkExpired bool) []interface{}
+	Keys(checkExpired bool) []any
 	Len(checkExpired bool) int
-	Has(key interface{}) bool
+	Has(key any) bool
 
 	statsAccessor
 }
@@ -48,13 +48,13 @@ type baseCache struct {
 }
 
 type (
-	LoaderFunc       func(interface{}) (interface{}, error)
-	LoaderExpireFunc func(interface{}) (interface{}, *time.Duration, error)
-	EvictedFunc      func(interface{}, interface{})
-	PurgeVisitorFunc func(interface{}, interface{})
-	AddedFunc        func(interface{}, interface{})
-	DeserializeFunc  func(interface{}, interface{}) (interface{}, error)
-	SerializeFunc    func(interface{}, interface{}) (interface{}, error)
+	LoaderFunc       func(any) (any, error)
+	LoaderExpireFunc func(any) (any, *time.Duration, error)
+	EvictedFunc      func(any, any)
+	PurgeVisitorFunc func(any, any)
+	AddedFunc        func(any, any)
+	DeserializeFunc  func(any, any) (any, error)
+	SerializeFunc    func(any, any) (any, error)
 )
 
 type CacheBuilder struct {
@@ -86,7 +86,7 @@ func (cb *CacheBuilder) Clock(clock Clock) *CacheBuilder {
 // Set a loader function.
 // loaderFunc: create a new value with this function if cached value is expired.
 func (cb *CacheBuilder) LoaderFunc(loaderFunc LoaderFunc) *CacheBuilder {
-	cb.loaderExpireFunc = func(k interface{}) (interface{}, *time.Duration, error) {
+	cb.loaderExpireFunc = func(k any) (any, *time.Duration, error) {
 		v, err := loaderFunc(k)
 		return v, nil, err
 	}
@@ -189,8 +189,8 @@ func buildCache(c *baseCache, cb *CacheBuilder) {
 }
 
 // load a new value using by specified key.
-func (c *baseCache) load(key interface{}, cb func(interface{}, *time.Duration, error) (interface{}, error), isWait bool) (interface{}, bool, error) {
-	v, called, err := c.loadGroup.Do(key, func() (v interface{}, e error) {
+func (c *baseCache) load(key any, cb func(any, *time.Duration, error) (any, error), isWait bool) (any, bool, error) {
+	v, called, err := c.loadGroup.Do(key, func() (v any, e error) {
 		defer func() {
 			if r := recover(); r != nil {
 				e = fmt.Errorf("Loader panics: %v", r)

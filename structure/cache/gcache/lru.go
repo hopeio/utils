@@ -6,14 +6,14 @@ import (
 )
 
 // Discards the least recently used items first.
-type LRUCache struct {
+type LRU struct {
 	baseCache
 	items     map[interface{}]*list.Element
 	evictList *list.List
 }
 
-func newLRUCache(cb *CacheBuilder) *LRUCache {
-	c := &LRUCache{}
+func newLRUCache(cb *CacheBuilder) *LRU {
+	c := &LRU{}
 	buildCache(&c.baseCache, cb)
 
 	c.init()
@@ -21,12 +21,12 @@ func newLRUCache(cb *CacheBuilder) *LRUCache {
 	return c
 }
 
-func (c *LRUCache) init() {
+func (c *LRU) init() {
 	c.evictList = list.New()
 	c.items = make(map[interface{}]*list.Element, c.size+1)
 }
 
-func (c *LRUCache) set(key, value interface{}) (interface{}, error) {
+func (c *LRU) set(key, value interface{}) (interface{}, error) {
 	var err error
 	if c.serializeFunc != nil {
 		value, err = c.serializeFunc(key, value)
@@ -67,7 +67,7 @@ func (c *LRUCache) set(key, value interface{}) (interface{}, error) {
 }
 
 // set a new key-value pair
-func (c *LRUCache) Set(key, value interface{}) error {
+func (c *LRU) Set(key, value interface{}) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	_, err := c.set(key, value)
@@ -75,7 +75,7 @@ func (c *LRUCache) Set(key, value interface{}) error {
 }
 
 // Set a new key-value pair with an expiration time
-func (c *LRUCache) SetWithExpire(key, value interface{}, expiration time.Duration) error {
+func (c *LRU) SetWithExpire(key, value interface{}, expiration time.Duration) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	item, err := c.set(key, value)
@@ -91,7 +91,7 @@ func (c *LRUCache) SetWithExpire(key, value interface{}, expiration time.Duratio
 // Get a value from cache pool using key if it exists.
 // If it dose not exists key and has LoaderFunc,
 // generate a value using `LoaderFunc` method returns value.
-func (c *LRUCache) Get(key interface{}) (interface{}, error) {
+func (c *LRU) Get(key interface{}) (interface{}, error) {
 	v, err := c.get(key, false)
 	if err == KeyNotFoundError {
 		return c.getWithLoader(key, true)
@@ -102,7 +102,7 @@ func (c *LRUCache) Get(key interface{}) (interface{}, error) {
 // GetIFPresent gets a value from cache pool using key if it exists.
 // If it dose not exists key, returns KeyNotFoundError.
 // And send a request which refresh value for specified key if cache object has LoaderFunc.
-func (c *LRUCache) GetIFPresent(key interface{}) (interface{}, error) {
+func (c *LRU) GetIFPresent(key interface{}) (interface{}, error) {
 	v, err := c.get(key, false)
 	if err == KeyNotFoundError {
 		return c.getWithLoader(key, false)
@@ -110,7 +110,7 @@ func (c *LRUCache) GetIFPresent(key interface{}) (interface{}, error) {
 	return v, err
 }
 
-func (c *LRUCache) get(key interface{}, onLoad bool) (interface{}, error) {
+func (c *LRU) get(key interface{}, onLoad bool) (interface{}, error) {
 	v, err := c.getValue(key, onLoad)
 	if err != nil {
 		return nil, err
@@ -121,7 +121,7 @@ func (c *LRUCache) get(key interface{}, onLoad bool) (interface{}, error) {
 	return v, nil
 }
 
-func (c *LRUCache) getValue(key interface{}, onLoad bool) (interface{}, error) {
+func (c *LRU) getValue(key interface{}, onLoad bool) (interface{}, error) {
 	c.mu.Lock()
 	item, ok := c.items[key]
 	if ok {
@@ -144,7 +144,7 @@ func (c *LRUCache) getValue(key interface{}, onLoad bool) (interface{}, error) {
 	return nil, KeyNotFoundError
 }
 
-func (c *LRUCache) getWithLoader(key interface{}, isWait bool) (interface{}, error) {
+func (c *LRU) getWithLoader(key interface{}, isWait bool) (interface{}, error) {
 	if c.loaderExpireFunc == nil {
 		return nil, KeyNotFoundError
 	}
@@ -171,7 +171,7 @@ func (c *LRUCache) getWithLoader(key interface{}, isWait bool) (interface{}, err
 }
 
 // evict removes the oldest item from the cache.
-func (c *LRUCache) evict(count int) {
+func (c *LRU) evict(count int) {
 	for i := 0; i < count; i++ {
 		ent := c.evictList.Back()
 		if ent == nil {
@@ -183,14 +183,14 @@ func (c *LRUCache) evict(count int) {
 }
 
 // Has checks if key exists in cache
-func (c *LRUCache) Has(key interface{}) bool {
+func (c *LRU) Has(key interface{}) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	now := time.Now()
 	return c.has(key, &now)
 }
 
-func (c *LRUCache) has(key interface{}, now *time.Time) bool {
+func (c *LRU) has(key interface{}, now *time.Time) bool {
 	item, ok := c.items[key]
 	if !ok {
 		return false
@@ -199,14 +199,14 @@ func (c *LRUCache) has(key interface{}, now *time.Time) bool {
 }
 
 // Remove removes the provided key from the cache.
-func (c *LRUCache) Remove(key interface{}) bool {
+func (c *LRU) Remove(key interface{}) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	return c.remove(key)
 }
 
-func (c *LRUCache) remove(key interface{}) bool {
+func (c *LRU) remove(key interface{}) bool {
 	if ent, ok := c.items[key]; ok {
 		c.removeElement(ent)
 		return true
@@ -214,7 +214,7 @@ func (c *LRUCache) remove(key interface{}) bool {
 	return false
 }
 
-func (c *LRUCache) removeElement(e *list.Element) {
+func (c *LRU) removeElement(e *list.Element) {
 	c.evictList.Remove(e)
 	entry := e.Value.(*lruItem)
 	delete(c.items, entry.key)
@@ -224,7 +224,7 @@ func (c *LRUCache) removeElement(e *list.Element) {
 	}
 }
 
-func (c *LRUCache) keys() []interface{} {
+func (c *LRU) keys() []interface{} {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	keys := make([]interface{}, len(c.items))
@@ -237,7 +237,7 @@ func (c *LRUCache) keys() []interface{} {
 }
 
 // GetALL returns all key-value pairs in the cache.
-func (c *LRUCache) GetALL(checkExpired bool) map[interface{}]interface{} {
+func (c *LRU) GetALL(checkExpired bool) map[interface{}]interface{} {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	items := make(map[interface{}]interface{}, len(c.items))
@@ -251,7 +251,7 @@ func (c *LRUCache) GetALL(checkExpired bool) map[interface{}]interface{} {
 }
 
 // Keys returns a slice of the keys in the cache.
-func (c *LRUCache) Keys(checkExpired bool) []interface{} {
+func (c *LRU) Keys(checkExpired bool) []interface{} {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	keys := make([]interface{}, 0, len(c.items))
@@ -265,7 +265,7 @@ func (c *LRUCache) Keys(checkExpired bool) []interface{} {
 }
 
 // Len returns the number of items in the cache.
-func (c *LRUCache) Len(checkExpired bool) int {
+func (c *LRU) Len(checkExpired bool) int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	if !checkExpired {
@@ -282,7 +282,7 @@ func (c *LRUCache) Len(checkExpired bool) int {
 }
 
 // Completely clear the cache
-func (c *LRUCache) Purge() {
+func (c *LRU) Purge() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

@@ -368,6 +368,12 @@ func (p *regionParser) process(lineIdx int, word string) error {
 		return p.processD02(lineIdx, word[:len(word)-len(commandD02)])
 	case word == commandG37:
 		return p.cp.pc.Contour(p.contour)
+	case word == commandG75:
+		return nil
+	case word == commandG74:
+		return nil
+	case word == "":
+		return nil
 	case strings.HasPrefix(word, "X"):
 		return p.processModalD01(lineIdx, word)
 	default:
@@ -436,18 +442,21 @@ type LineCap string
 const (
 	// Linear interpolation.
 	InterpolationLinear Interpolation = iota
-	InterpolationCircular
 	// Clockwise arc interpolation
-	InterpolationClockwise Interpolation = 1
+	InterpolationClockwise
 	// Counter clockwise arc interpolation.
-	InterpolationCCW            Interpolation = 3
-	InterpolationSingleQuadrant Interpolation = 1
-	InterpolationMultiQuadrant  Interpolation = 7
+	InterpolationCCW
+	InterpolationSingleQuadrant
+	InterpolationMultiQuadrant
 
 	InterpolationSingleQuadrantClockwise = 11
 	InterpolationSingleQuadrantCCCW      = 12
 	InterpolationMultiQuadrantClockwise  = 13
 	InterpolationMultiQuadrantCCW        = 14
+
+	InterpolationCircularFlag  = 1
+	InterpolationDirectionFlag = 2
+	InterpolationQuadrantFlag  = 3
 
 	// LineCapButt strokes do not extend beyond a line's two endpoints.
 	LineCapButt LineCap = "butt"

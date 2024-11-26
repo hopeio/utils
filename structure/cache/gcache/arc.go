@@ -116,7 +116,7 @@ func (c *ARC) set(key, value interface{}) (interface{}, error) {
 	}
 
 	if elt := c.b1.Lookup(key); elt != nil {
-		c.setPart(minInt(c.size, c.part+maxInt(c.b2.Len()/c.b1.Len(), 1)))
+		c.setPart(min(c.size, c.part+max(c.b2.Len()/c.b1.Len(), 1)))
 		c.replace(key)
 		c.b1.Remove(key, elt)
 		c.t2.PushFront(key)
@@ -124,7 +124,7 @@ func (c *ARC) set(key, value interface{}) (interface{}, error) {
 	}
 
 	if elt := c.b2.Lookup(key); elt != nil {
-		c.setPart(maxInt(0, c.part-maxInt(c.b1.Len()/c.b2.Len(), 1)))
+		c.setPart(max(0, c.part-max(c.b1.Len()/c.b2.Len(), 1)))
 		c.replace(key)
 		c.b2.Remove(key, elt)
 		c.t2.PushFront(key)
