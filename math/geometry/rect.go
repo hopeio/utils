@@ -7,6 +7,8 @@
 package geometry
 
 import (
+	mathi "github.com/hopeio/utils/math"
+	"image"
 	"math"
 )
 
@@ -28,6 +30,34 @@ func NewRect(center Point, width, height float64, angleDeg float64) *Rectangle {
 		Height: height,
 		Angle:  angleDeg,
 	}
+}
+
+func RectNoRotate(x0, y0, x1, y1 float64) *Rectangle {
+	if x0 > x1 {
+		x0, x1 = x1, x0
+	}
+	if y0 > y1 {
+		y0, y1 = y1, y0
+	}
+	return &Rectangle{
+		Center: Point{(x0 + x1) / 2, (y0 + y1) / 2},
+		Width:  x1 - x0,
+		Height: y1 - y0,
+	}
+}
+
+func RectFromImageRect(r image.Rectangle) *Rectangle {
+	return RectNoRotate(float64(r.Min.X), float64(r.Min.Y), float64(r.Max.X), float64(r.Max.Y))
+}
+
+func (rect *Rectangle) Bounds() *Rectangle {
+	if rect.Angle == 0 {
+		return &*rect
+	}
+	corners := rect.Corners()
+	minx, maxx := mathi.MinAndMax(corners[0][0], corners[1][0], corners[2][0], corners[3][0])
+	miny, maxy := mathi.MinAndMax(corners[0][1], corners[1][1], corners[2][1], corners[3][1])
+	return RectNoRotate(minx, miny, maxx, maxy)
 }
 
 func (rect *Rectangle) Corners() [][]float64 {

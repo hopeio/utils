@@ -45,7 +45,7 @@ func (p Point) Rotate(center Point, angleDeg float64) Point {
 func (p Point) Length(p2 Point) float64 {
 	dx := p2.X - p.X
 	dy := p2.Y - p.Y
-	return math.Sqrt(dx*dx + dy*dy)
+	return math.Hypot(dx, dy)
 }
 
 type Point3D struct {

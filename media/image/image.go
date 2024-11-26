@@ -13,7 +13,7 @@ import (
 	"math"
 )
 
-func Union(rect image.Rectangle, p image.Point) image.Rectangle {
+func RectUnionPoint(rect image.Rectangle, p image.Point) image.Rectangle {
 	if p.X < rect.Min.X {
 		rect.Min.X = p.X
 	}

@@ -51,3 +51,39 @@ func Variance[S ~[]T, T constraintsi.Number](data S, isSample bool) float64 {
 	}
 	return varianceSum / n
 }
+
+func Max[T constraintsi.Ordered](data ...T) T {
+	max := data[0]
+	n := len(data)
+	for i := 1; i < n; i++ {
+		if data[i] > max {
+			max = data[i]
+		}
+	}
+	return max
+}
+
+func Min[T constraintsi.Ordered](data ...T) T {
+	min := data[0]
+	n := len(data)
+	for i := 1; i < n; i++ {
+		if data[i] < min {
+			min = data[i]
+		}
+	}
+	return min
+}
+
+func MinAndMax[T constraintsi.Ordered](data ...T) (T, T) {
+	min, max := data[0], data[0]
+	n := len(data)
+	for i := 1; i < n; i++ {
+		if data[i] > max {
+			max = data[i]
+		}
+		if data[i] < min {
+			min = data[i]
+		}
+	}
+	return min, max
+}
