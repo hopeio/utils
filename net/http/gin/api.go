@@ -8,8 +8,8 @@ package gin
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/hopeio/utils/fs"
 	"github.com/hopeio/utils/net/http/apidoc"
+	"github.com/hopeio/utils/os/fs"
 	_ "github.com/ugorji/go"
 )
 

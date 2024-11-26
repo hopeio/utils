@@ -7,7 +7,7 @@
 package fsnotify
 
 import (
-	"github.com/hopeio/utils/fs/watch"
+	"github.com/hopeio/utils/os/fs/watch"
 	"path/filepath"
 	"time"
 

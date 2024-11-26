@@ -9,8 +9,8 @@ package apidoc
 import (
 	"bytes"
 	"github.com/go-openapi/runtime/middleware"
-	"github.com/hopeio/utils/fs"
 	httpi "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/utils/os/fs"
 	"net/http"
 	"os"
 	"path"

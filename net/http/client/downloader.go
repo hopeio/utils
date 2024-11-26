@@ -7,7 +7,7 @@
 package client
 
 import (
-	"github.com/hopeio/utils/fs"
+	"github.com/hopeio/utils/os/fs"
 	"net/http"
 	"time"
 )

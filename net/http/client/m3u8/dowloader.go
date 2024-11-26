@@ -10,7 +10,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/hopeio/utils/fs"
+	fs2 "github.com/hopeio/utils/os/fs"
 	"github.com/hopeio/utils/terminal"
 	"os"
 	"path/filepath"
@@ -45,7 +45,7 @@ func NewTask(filePath, tsDir string, url string) (*Downloader, error) {
 		if err != nil {
 			return nil, err
 		}
-		filePath = pwd + fs.PathSeparator + filePath
+		filePath = pwd + fs2.PathSeparator + filePath
 	} else {
 		if err := os.MkdirAll(filepath.Clean(filepath.Dir(filePath)), os.ModePerm); err != nil {
 			return nil, fmt.Errorf("create storage folder failed: %s", err.Error())
@@ -122,13 +122,13 @@ func (d *Downloader) Downloadts(segIndex int) error {
 
 	fPath := filepath.Join(d.tsDir, tsFilename)
 
-	if fs.NotExist(fPath) {
+	if fs2.NotExist(fPath) {
 		data, err := d.result.Download(segIndex)
 		if err != nil {
 			return err
 		}
 
-		err = fs.Download(fPath, bytes.NewReader(data))
+		err = fs2.Download(fPath, bytes.NewReader(data))
 		if err != nil {
 			return err
 		}
@@ -198,7 +198,7 @@ func (d *Downloader) FfmpegConcatFile() (string, error) {
 		data.WriteString(`file '` + d.tsDir + "/" + strconv.Itoa(i) + `.ts'
 `)
 	}
-	ffmpegFilePath := d.tsDir + fs.PathSeparator + "file.txt"
+	ffmpegFilePath := d.tsDir + fs2.PathSeparator + "file.txt"
 
 	file, err := os.Create(ffmpegFilePath)
 	if err != nil {

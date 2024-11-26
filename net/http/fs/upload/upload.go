@@ -8,8 +8,8 @@ package upload
 
 import (
 	"fmt"
-	"github.com/hopeio/utils/fs"
 	httpi "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/utils/os/fs"
 	"io"
 	"net/http"
 	"os"

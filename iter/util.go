@@ -409,3 +409,15 @@ func Collect[T any, S any, R any](it iter.Seq[T], collector interfaces.Collector
 	}
 	return collector.Finish(s)
 }
+
+func Merge[T any](iters ...iter.Seq[T]) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for _, it := range iters {
+			for v := range it {
+				if !yield(v) {
+					return
+				}
+			}
+		}
+	}
+}
