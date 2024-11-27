@@ -594,14 +594,12 @@ func IsNumber(str string) bool {
 	return true
 }
 
-// djb2 with better shuffling. 5x faster than FNV with the hash.Hash overhead.
 func DJB33(seed uint32, k string) uint32 {
 	var (
 		l = uint32(len(k))
 		d = 5381 + seed + l
 		i = uint32(0)
 	)
-	// Why is all this 5x faster than a for loop?
 	if l >= 4 {
 		for i < l-4 {
 			d = (d * 33) ^ uint32(k[i])
