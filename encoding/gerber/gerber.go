@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/hopeio/utils/math/geometry"
-	"image"
 	"io"
 	"math"
 	"strconv"
@@ -35,7 +34,7 @@ type Processor interface {
 
 	// SetViewbox sets the viewbox of the Gerber image.
 	// It is called by the Parser when parsing has completed.
-	SetViewBox(minX, maxX, minY, maxY int)
+	SetViewBox(minX, maxX, minY, maxY float64)
 }
 
 func parseApertureID(word string) (string, error) {
@@ -396,7 +395,7 @@ func (p *regionParser) processD01(lineIdx int, word string) error {
 	}
 	x, y := p.cp.findXY(coords)
 
-	s := Segment{Interpolation: p.cp.interpolation, X: x, Y: y}
+	s := Segment{Interpolation: p.cp.interpolation, X: float64(x), Y: float64(y)}
 	switch s.Interpolation {
 	case InterpolationClockwise:
 		fallthrough
@@ -517,15 +516,15 @@ type commandProcessor struct {
 	decimal       float64
 	unit          Unit
 	interpolation Interpolation
-	x             int
-	y             int
+	x             float64
+	y             float64
 	ap            aperture
 	polarity      bool
 
-	minX int
-	maxX int
-	minY int
-	maxY int
+	minX float64
+	maxX float64
+	minY float64
+	maxY float64
 
 	modalD01 bool
 }
@@ -623,23 +622,23 @@ func (p *commandProcessor) processWord(lineIdx int, word string) error {
 	}
 }
 
-func (p *commandProcessor) setXY(x, y int) {
+func (p *commandProcessor) setXY(x, y float64) {
 	p.x = x
 	p.y = y
 }
 
-func (p *commandProcessor) bounds(rect *geometry.Rectangle) {
-	if p.minX > rect.Min.X {
-		p.minX = rect.Min.X
+func (p *commandProcessor) bounds(bounds *geometry.Bounds) {
+	if p.minX > bounds.Min.X {
+		p.minX = bounds.Min.X
 	}
-	if p.maxX < rect.Max.X {
-		p.maxX = rect.Max.X
+	if p.maxX < bounds.Max.X {
+		p.maxX = bounds.Max.X
 	}
-	if p.minY > rect.Min.Y {
-		p.minY = rect.Min.Y
+	if p.minY > bounds.Min.Y {
+		p.minY = bounds.Min.Y
 	}
-	if p.maxY < rect.Max.Y {
-		p.maxY = rect.Max.Y
+	if p.maxY < bounds.Max.Y {
+		p.maxY = bounds.Max.Y
 	}
 }
 
@@ -657,7 +656,7 @@ func (p *commandProcessor) processD01(lineIdx int, word string) error {
 	}
 	x, y := p.findXY(coords)
 
-	var diameter int
+	var diameter float64
 	switch p.ap.Template.Name {
 	case templateNameCircle:
 		diameter = p.u(p.ap.Params[0])
@@ -727,12 +726,11 @@ func (p *commandProcessor) flash(lineIdx int) error {
 		p.pc.Circle(c)
 		p.bounds(c.Bounds())
 	case templateNameRectangle:
-		r := Rectangle{Line: lineIdx, X: p.x, Y: p.y, Width: p.u(params[0]), Height: p.u(params[1]),
-			Polarity: p.polarity}
+		r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geometry.Rectangle{CenterX: p.x, CenterY: p.y, Width: p.u(params[0]), Height: p.u(params[1])}}
 		p.pc.Rectangle(r)
 		p.bounds(r.Bounds())
 	case templateNameObround:
-		o := Obround{lineIdx, p.x, p.y, p.u(params[0]), p.u(params[1]), p.polarity, 0}
+		o := Obround{lineIdx, p.polarity, geometry.Rectangle{p.x, p.y, p.u(params[0]), p.u(params[1]), 0}}
 		p.pc.Obround(o)
 		p.bounds(o.Bounds())
 	default:
@@ -752,7 +750,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if !pm.Exposure {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			c := Circle{lineIdx, p.x + p.u(pm.CenterX), p.y + p.u(pm.CenterY), p.u(pm.Diameter), p.polarity}
+			c := Circle{lineIdx, p.polarity, geometry.Circle{p.x + p.u(pm.CenterX), p.y + p.u(pm.CenterY), p.u(pm.Diameter)}}
 			p.pc.Circle(c)
 			p.bounds(c.Bounds())
 		case vectorLinePrimitive:
@@ -762,8 +760,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if pm.Rotation != 0 {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			l := Line{lineIdx, p.x + p.u(pm.StartX), p.y + p.u(pm.StartY), p.x + p.u(pm.EndX), p.y + p.u(pm.EndY),
-				p.u(pm.Width), LineCapButt}
+			l := Line{lineIdx, geometry.Line{p.x + p.u(pm.StartX), p.y + p.u(pm.StartY), p.x + p.u(pm.EndX), p.y + p.u(pm.EndY)}, p.u(pm.Width), LineCapButt}
 			p.pc.Line(l)
 			p.bounds(l.Bounds())
 		case outlinePrimitive:
@@ -788,17 +785,17 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if pm.Rotation != 0 {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			r := Rectangle{Line: lineIdx, X: p.x + p.u(pm.X+pm.Width/2), Y: p.y + p.u(pm.Y+pm.Height/2),
+			r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geometry.Rectangle{CenterX: p.x + p.u(pm.X+pm.Width/2), CenterY: p.y + p.u(pm.Y+pm.Height/2),
 				Width:  p.u(pm.Width),
-				Height: p.u(pm.Height), Polarity: p.polarity, Rotation: pm.Rotation}
+				Height: p.u(pm.Height), Angle: pm.Rotation}}
 			p.pc.Rectangle(r)
 			p.bounds(r.Bounds())
 		case rectPrimitive:
 			if !pm.Exposure {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			r := Rectangle{Line: lineIdx, X: p.x + p.u(pm.CenterX), Y: p.y + p.u(pm.CenterY), Width: p.u(pm.Width),
-				Height: p.u(pm.Height), Polarity: p.polarity, Rotation: pm.Rotation}
+			r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geometry.Rectangle{CenterX: p.x + p.u(pm.CenterX), CenterY: p.y + p.u(pm.CenterY), Width: p.u(pm.Width),
+				Height: p.u(pm.Height), Angle: pm.Rotation}}
 			p.pc.Rectangle(r)
 			p.bounds(r.Bounds())
 		default:
@@ -825,7 +822,7 @@ func (p *commandProcessor) contourFromOutline(lineIdx int, outline outlinePrimit
 
 type coord struct {
 	S byte
-	I int
+	I float64
 }
 
 func parseCoord(word string) ([]coord, error) {
@@ -842,10 +839,11 @@ func parseCoord(word string) ([]coord, error) {
 		case c == '+' || c == '-' || (c >= '0' && c <= '9'):
 			digits = append(digits, c)
 		default:
-			cur.I, err = strconv.Atoi(string(digits))
+			i, err = strconv.Atoi(string(digits))
 			if err != nil {
 				return nil, fmt.Errorf("%d \"%s\" %w", i, digits, err)
 			}
+			cur.I = float64(i)
 			coords = append(coords, cur)
 			cur = coord{}
 			cur.S = c
@@ -853,16 +851,17 @@ func parseCoord(word string) ([]coord, error) {
 		}
 	}
 
-	cur.I, err = strconv.Atoi(string(digits))
+	i, err := strconv.Atoi(string(digits))
 	if err != nil {
 		return nil, fmt.Errorf("invalid digits \"%s\" %w", digits, err)
 	}
+	cur.I = float64(i)
 	coords = append(coords, cur)
 
 	return coords, nil
 }
 
-func (p *commandProcessor) findXY(coords []coord) (int, int) {
+func (p *commandProcessor) findXY(coords []coord) (float64, float64) {
 	x := p.x
 	for _, c := range coords {
 		if c.S == 'X' {
@@ -882,8 +881,8 @@ func (p *commandProcessor) findXY(coords []coord) (int, int) {
 	return x, y
 }
 
-func (p *commandProcessor) findIJ(coords []coord) (int, int, error) {
-	var i int
+func (p *commandProcessor) findIJ(coords []coord) (float64, float64, error) {
+	var i float64
 	var got bool
 	for _, c := range coords {
 		if c.S == 'I' {
@@ -893,11 +892,11 @@ func (p *commandProcessor) findIJ(coords []coord) (int, int, error) {
 		}
 	}
 	if !got {
-		return -math.MaxInt, -math.MaxInt, fmt.Errorf("no i")
+		return -math.MaxFloat64, -math.MaxFloat64, fmt.Errorf("no i")
 	}
 
 	got = false
-	var j int
+	var j float64
 	for _, c := range coords {
 		if c.S == 'J' {
 			j = c.I
@@ -906,7 +905,7 @@ func (p *commandProcessor) findIJ(coords []coord) (int, int, error) {
 		}
 	}
 	if !got {
-		return -math.MaxInt, -math.MaxInt, fmt.Errorf("no j")
+		return -math.MaxFloat64, -math.MaxFloat64, fmt.Errorf("no j")
 	}
 
 	return i, j, nil

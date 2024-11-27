@@ -37,7 +37,7 @@ func (l LogProcessor) Arc(arc Arc) error {
 	return nil
 }
 
-func (l LogProcessor) SetViewBox(minX, maxX, minY, maxY int) {
+func (l LogProcessor) SetViewBox(minX, maxX, minY, maxY float64) {
 	log.Println("SetViewBox", minX, maxX, minY, maxY)
 }
 

@@ -54,14 +54,14 @@ func RectFromImageRect(r image.Rectangle) *Rectangle {
 	return RectNoRotate(float64(r.Min.X), float64(r.Min.Y), float64(r.Max.X), float64(r.Max.Y))
 }
 
-func (rect *Rectangle) Bounds() *Rectangle {
+func (rect *Rectangle) Bounds() *Bounds {
 	if rect.Angle == 0 {
-		return &*rect
+		return NewBounds(rect.CenterX-rect.Width/2, rect.CenterY-rect.Height/2, rect.CenterX+rect.Width/2, rect.CenterY+rect.Height/2)
 	}
 	corners := rect.Corners()
 	minx, maxx := mathi.MinAndMax(corners[0].X, corners[1].X, corners[2].X, corners[3].X)
 	miny, maxy := mathi.MinAndMax(corners[0].Y, corners[1].Y, corners[2].Y, corners[3].Y)
-	return RectNoRotate(minx, miny, maxx, maxy)
+	return NewBounds(minx, miny, maxx, maxy)
 }
 
 func (rect *Rectangle) Corners() [4]Point {
@@ -157,4 +157,30 @@ func RectIntFromFloat64[T constraints.Integer](e *Rectangle, factor float64) *Re
 		Height: T(math.Round(e.Angle * factor)),
 		Angle:  e.Angle,
 	}
+}
+
+type Bounds struct {
+	Min Point
+	Max Point
+}
+
+func (b *Bounds) ToRect() *Rectangle {
+	return RectNoRotate((b.Min.X+b.Max.X)/2, (b.Min.Y+b.Max.Y)/2, b.Max.X-b.Min.X, b.Max.Y-b.Min.Y)
+}
+
+func NewBounds(x0, y0, x1, y1 float64) *Bounds {
+	if x0 > x1 {
+		x0, x1 = x1, x0
+	}
+	if y0 > y1 {
+		y0, y1 = y1, y0
+	}
+	return &Bounds{
+		Min: Point{X: x0, Y: y0},
+		Max: Point{x1, y1},
+	}
+}
+
+func BoundsFromImageRect(r image.Rectangle) *Bounds {
+	return NewBounds(float64(r.Min.X), float64(r.Min.Y), float64(r.Max.X), float64(r.Max.Y))
 }

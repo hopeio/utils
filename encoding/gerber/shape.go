@@ -4,40 +4,39 @@ import (
 	"github.com/hopeio/utils/math/geometry"
 	imagei "github.com/hopeio/utils/media/image"
 	"image"
-	"math"
 )
 
 // A Segment is a stroked line.
 type Segment struct {
 	Interpolation Interpolation
-	X             int
-	Y             int
-	CenterX       int
-	CenterY       int
+	X             float64
+	Y             float64
+	CenterX       float64
+	CenterY       float64
 }
 
 // A Contour is a closed sequence of connected linear or circular segments.
 type Contour struct {
 	Line     int
-	X        int
-	Y        int
+	X        float64
+	Y        float64
 	Segments []Segment
 	Polarity bool
 }
 
-func (e *Contour) Bounds() image.Rectangle {
-	bounds := image.Rectangle{Min: image.Point{X: math.MaxInt, Y: math.MaxInt}, Max: image.Point{-math.MaxInt, -math.MaxInt}}
-	lastPoint := image.Point{X: e.X, Y: e.Y}
+func (e *Contour) Bounds() *geometry.Bounds {
+	bounds := image.Rectangle{Min: image.Point{X: int(e.X), Y: int(e.Y)}, Max: image.Point{int(e.X), int(e.Y)}}
+	lastPoint := image.Point{X: int(e.X), Y: int(e.Y)}
 	for _, s := range e.Segments {
 		if s.Interpolation == InterpolationLinear {
-			bounds = imagei.RectUnionPoint(bounds, image.Point{X: s.X, Y: s.Y})
+			bounds = imagei.RectUnionPoint(bounds, image.Point{X: int(s.X), Y: int(s.Y)})
 		} else {
 			// 粗暴解决
-			bounds = bounds.Union(image.Rect(lastPoint.X, lastPoint.Y, s.X, s.Y).Add(image.Pt(s.X, s.Y)))
+			bounds = bounds.Union(image.Rect(lastPoint.X, lastPoint.Y, int(s.X), int(s.Y)).Add(image.Pt(int(s.X), int(s.Y))))
 		}
 
 	}
-	return bounds
+	return geometry.BoundsFromImageRect(bounds)
 }
 
 type Rectangle struct {
@@ -46,8 +45,8 @@ type Rectangle struct {
 	geometry.Rectangle
 }
 
-func (e *Rectangle) Bounds() *geometry.Rectangle {
-	return &e.Rectangle
+func (e *Rectangle) Bounds() *geometry.Bounds {
+	return e.Rectangle.Bounds()
 }
 
 type Obround struct {
@@ -56,8 +55,8 @@ type Obround struct {
 	geometry.Rectangle
 }
 
-func (e *Obround) Bounds() *geometry.Rectangle {
-	return &e.Rectangle
+func (e *Obround) Bounds() *geometry.Bounds {
+	return e.Rectangle.Bounds()
 }
 
 type Circle struct {
@@ -66,7 +65,7 @@ type Circle struct {
 	geometry.Circle
 }
 
-func (e *Circle) Bounds() *geometry.Rectangle {
+func (e *Circle) Bounds() *geometry.Bounds {
 	return e.Circle.Bounds()
 }
 
@@ -77,9 +76,9 @@ type Arc struct {
 	Interpolation
 }
 
-func (e *Arc) Bounds() *geometry.Rectangle {
-	// 粗暴解决
-	return image.Rect(e.StartX, e.StartY, e.EndX, e.EndY).Add(image.Pt(e.CenterX, e.CenterY))
+func (e *Arc) Bounds() *geometry.Bounds {
+	//TODO
+	return nil
 }
 
 type Line struct {
@@ -89,6 +88,11 @@ type Line struct {
 	Cap         LineCap
 }
 
-func (e *Line) Bounds() *geometry.Rectangle {
-	return image.Rect(e.StartX-e.StrokeWidth/2, e.StartY-e.StrokeWidth/2, e.EndX+e.StrokeWidth/2, e.EndY+e.StrokeWidth/2)
+func (e *Line) Bounds() *geometry.Bounds {
+	if e.Cap == LineCapButt {
+		vector := geometry.NewVector(geometry.Point{e.StartX, e.StartY}, geometry.Point{e.EndX, e.EndY})
+		return geometry.NewRect((e.StartX+e.EndX)/2, (e.StartY+e.EndY)/2, vector.Length(), e.StrokeWidth, vector.Angle()).Bounds()
+	}
+	//TODO
+	return nil
 }

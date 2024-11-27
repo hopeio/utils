@@ -27,7 +27,7 @@ func NewArc(centerX, centerY, startX, startY, endX, endY float64) *Arc {
 	}
 }
 
-func (a *Arc) Bounds() *Rectangle {
+func (a *Arc) Bounds() *Bounds {
 	r := math.Hypot(a.StartX-a.CenterX, a.StartY-a.CenterY)
 	thetaStart := math.Atan2(a.StartY-a.CenterY, a.StartX-a.CenterX)
 	thetaEnd := math.Atan2(a.EndY-a.CenterY, a.EndX-a.CenterX)
@@ -69,7 +69,7 @@ func (a *Arc) Bounds() *Rectangle {
 			maxY = y
 		}
 	}
-	return RectNoRotate(minX, minY, maxX, maxY)
+	return NewBounds(minX, minY, maxX, maxY)
 }
 
 func (a *Arc) Sample(samples int) []Point {

@@ -8,8 +8,8 @@ type Circle struct {
 	Diameter float64
 }
 
-func (c *Circle) Bounds() *Rectangle {
-	return RectNoRotate(c.X, c.Y, c.Diameter, c.Diameter)
+func (c *Circle) Bounds() *Bounds {
+	return NewBounds(c.X, c.Y, c.Diameter, c.Diameter)
 }
 
 type CircleInt[T constraints.Integer] struct {

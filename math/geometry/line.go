@@ -12,8 +12,8 @@ type Line struct {
 	EndY   float64
 }
 
-func (l *Line) Length() float64 {
-	return math.Hypot(l.EndX-l.StartX, l.EndY-l.StartY)
+func (l *Line) Vector() Vector {
+	return Vector{l.EndX - l.StartX, l.EndY - l.StartY}
 }
 
 type LineInt[T constraints.Integer] struct {
