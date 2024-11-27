@@ -285,9 +285,9 @@ func (p *Processor) Contour(contour gerber.Contour) error {
 		s := contour.Segments[0]
 		if s.Interpolation == gerber.InterpolationClockwise || s.Interpolation == gerber.InterpolationCCW {
 			if s.X == contour.X && s.Y == contour.Y {
-				vx, vy := float64(s.X-s.XCenter), float64(s.Y-s.YCenter)
+				vx, vy := float64(s.X-s.CenterX), float64(s.Y-s.CenterY)
 				r := int(math.Round(math.Sqrt(vx*vx + vy*vy)))
-				c := Circle{Circle: gerber.Circle{Line: contour.Line, X: s.XCenter, Y: s.YCenter, Diameter: r * 2},
+				c := Circle{Circle: gerber.Circle{Line: contour.Line, X: s.CenterX, Y: s.CenterY, Diameter: r * 2},
 					Fill: p.fill(contour.Polarity)}
 				p.Data = append(p.Data, c)
 				return nil
@@ -354,15 +354,15 @@ func calcArc(contour gerber.Contour, idx int) (PathArc, error) {
 		return PathArc{}, fmt.Errorf("%d", s.Interpolation)
 	}
 
-	vs := [2]int{xs - s.XCenter, ys - s.YCenter}
-	ve := [2]int{s.X - s.XCenter, s.Y - s.YCenter}
+	vs := [2]int{xs - s.CenterX, ys - s.CenterY}
+	ve := [2]int{s.X - s.CenterX, s.Y - s.CenterY}
 	if ve == vs {
 		return PathArc{}, fmt.Errorf("degenerate arc")
 	}
 
 	radius, largeArc, err := calcArcParams(vs, ve, arc.Sweep)
 	if err != nil {
-		return PathArc{}, fmt.Errorf("%#d %#d %#v %w", xs, ys, s, err)
+		return PathArc{}, fmt.Errorf("%d %d %v %w", xs, ys, s, err)
 	}
 	arc.RadiusX, arc.RadiusY = int(math.Round(radius)), int(math.Round(radius))
 	arc.LargeArc = largeArc
@@ -456,10 +456,10 @@ func (p *Processor) Write(w io.Writer) error {
 				return err
 			}
 		case Line:
-			b = []byte(fmt.Sprintf(`<line x1="%s" y1="%s" x2="%s" y2="%s" stroke-width="%s" stroke-linecap="%s" stroke="%s"%s/>`, p.x(d.StartX), p.y(d.StartY), p.x(d.EndX), p.y(d.EndY), p.m(d.Width), d.Cap, d.Stroke, psvg.FormatAttr(d.Attr)))
+			b = []byte(fmt.Sprintf(`<line x1="%s" y1="%s" x2="%s" y2="%s" stroke-width="%s" stroke-linecap="%s" stroke="%s"%s/>`, p.x(d.StartX), p.y(d.StartY), p.x(d.EndX), p.y(d.EndY), p.m(d.StrokeWidth), d.Cap, d.Stroke, psvg.FormatAttr(d.Attr)))
 		case Arc:
 			b = []byte(fmt.Sprintf(`<path d="M %s %s A %s %s 0 %d %d %s %s" stroke-width="%s" stroke="%s" stroke
--linecap="round"%s/>`, p.x(d.StartX), p.y(d.StartY), p.m(d.RadiusX), p.m(d.RadiusY), d.LargeArc, d.Sweep, p.x(d.EndX), p.y(d.EndY), p.m(d.Width), d.Stroke, psvg.FormatAttr(d.Attr)))
+-linecap="round"%s/>`, p.x(d.StartX), p.y(d.StartY), p.m(d.RadiusX), p.m(d.RadiusY), d.LargeArc, d.Sweep, p.x(d.EndX), p.y(d.EndY), p.m(d.StrokeWidth), d.Stroke, psvg.FormatAttr(d.Attr)))
 		default:
 			return fmt.Errorf("%+v", d)
 		}

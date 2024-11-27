@@ -5,7 +5,7 @@ import (
 	"math"
 )
 
-// clockwise if counter clockwise ,startX,startY <->  endX, endY
+// counter clockwise if clockwise ,startX,startY <->  endX, endY
 type Arc struct {
 	CenterX int
 	CenterY int
@@ -26,7 +26,7 @@ func NewArc(centerX, centerY, startX, startY, endX, endY int) *Arc {
 	}
 }
 
-// 与平面坐标系的区别就是-y (平移到第四象限或者直接镜像过去)
+// 与平面坐标系的区别就是-y (H-y或者直接镜像过去)
 func (e *Arc) Bounds() image.Rectangle {
 	r := math.Hypot(float64(e.StartX-e.CenterX), float64(e.StartY-e.CenterY))
 	thetaStart := math.Atan2(float64(e.CenterY-e.StartY), float64(e.StartX-e.CenterX))
@@ -40,12 +40,12 @@ func (e *Arc) Bounds() image.Rectangle {
 
 	angles := []float64{thetaStart, thetaEnd}
 	for _, a := range []float64{math.Pi / 2, math.Pi, 3 * math.Pi / 2, math.Pi * 2} {
-		if thetaStart > thetaEnd {
-			if a >= thetaStart || a <= thetaEnd {
+		if thetaStart < thetaEnd {
+			if thetaStart <= a && a <= thetaEnd {
 				angles = append(angles, a)
 			}
 		} else {
-			if thetaStart <= a && a <= thetaEnd {
+			if a >= thetaStart || a <= thetaEnd {
 				angles = append(angles, a)
 			}
 		}

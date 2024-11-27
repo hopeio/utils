@@ -3,6 +3,7 @@ package gerber
 import (
 	"bufio"
 	"fmt"
+	"github.com/hopeio/utils/math/geometry"
 	"image"
 	"io"
 	"math"
@@ -404,7 +405,7 @@ func (p *regionParser) processD01(lineIdx int, word string) error {
 		if err != nil {
 			return fmt.Errorf("%+v %w", coords, err)
 		}
-		s.XCenter, s.YCenter = p.cp.x+i, p.cp.y+j
+		s.CenterX, s.CenterY = p.cp.x+i, p.cp.y+j
 	}
 	p.contour.Segments = append(p.contour.Segments, s)
 
@@ -442,10 +443,10 @@ type LineCap string
 const (
 	// Linear interpolation.
 	InterpolationLinear Interpolation = iota
-	// Clockwise arc interpolation
-	InterpolationClockwise
 	// Counter clockwise arc interpolation.
 	InterpolationCCW
+	// Clockwise arc interpolation
+	InterpolationClockwise
 	InterpolationSingleQuadrant
 	InterpolationMultiQuadrant
 
@@ -627,7 +628,7 @@ func (p *commandProcessor) setXY(x, y int) {
 	p.y = y
 }
 
-func (p *commandProcessor) bounds(rect image.Rectangle) {
+func (p *commandProcessor) bounds(rect *geometry.Rectangle) {
 	if p.minX > rect.Min.X {
 		p.minX = rect.Min.X
 	}
@@ -671,7 +672,7 @@ func (p *commandProcessor) processD01(lineIdx int, word string) error {
 
 	switch p.interpolation {
 	case InterpolationLinear:
-		p.pc.Line(Line{lineIdx, p.x, p.y, x, y, diameter, LineCapRound, 0})
+		p.pc.Line(Line{lineIdx, geometry.Line{float64(p.x), float64(p.y), float64(x), float64(y)}, float64(diameter), LineCapRound})
 	case InterpolationClockwise:
 		fallthrough
 	case InterpolationCCW:
@@ -680,7 +681,7 @@ func (p *commandProcessor) processD01(lineIdx int, word string) error {
 			return fmt.Errorf("%+v", coords)
 		}
 		xc, yc := p.x+i, p.y+j
-		if err := p.pc.Arc(Arc{lineIdx, p.x, p.y, x, y, xc, yc, diameter, p.interpolation}); err != nil {
+		if err := p.pc.Arc(Arc{lineIdx, geometry.Arc{float64(p.x), float64(p.y), float64(x), float64(y), float64(xc), float64(yc)}, float64(diameter), p.interpolation}); err != nil {
 			return err
 		}
 	default:
@@ -722,7 +723,7 @@ func (p *commandProcessor) flash(lineIdx int) error {
 	params := p.ap.Params
 	switch p.ap.Template.Name {
 	case templateNameCircle:
-		c := Circle{lineIdx, p.x, p.y, p.u(params[0]), p.polarity}
+		c := Circle{lineIdx, p.polarity, geometry.Circle{float64(p.x), float64(p.y), p.u(params[0])}}
 		p.pc.Circle(c)
 		p.bounds(c.Bounds())
 	case templateNameRectangle:
@@ -762,7 +763,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
 			l := Line{lineIdx, p.x + p.u(pm.StartX), p.y + p.u(pm.StartY), p.x + p.u(pm.EndX), p.y + p.u(pm.EndY),
-				p.u(pm.Width), LineCapButt, 0}
+				p.u(pm.Width), LineCapButt}
 			p.pc.Line(l)
 			p.bounds(l.Bounds())
 		case outlinePrimitive:
@@ -993,8 +994,8 @@ func (p *commandProcessor) processFS(lineIdx int, word string) error {
 	return nil
 }
 
-func (p *commandProcessor) u(f float64) int {
-	return int(math.Round(f * p.decimal))
+func (p *commandProcessor) u(f float64) float64 {
+	return f * p.decimal
 }
 
 func (p *commandProcessor) processMO(lineIdx int, word string) error {

@@ -1,6 +1,7 @@
 package gerber
 
 import (
+	"github.com/hopeio/utils/math/geometry"
 	imagei "github.com/hopeio/utils/media/image"
 	"image"
 	"math"
@@ -11,8 +12,8 @@ type Segment struct {
 	Interpolation Interpolation
 	X             int
 	Y             int
-	XCenter       int
-	YCenter       int
+	CenterX       int
+	CenterY       int
 }
 
 // A Contour is a closed sequence of connected linear or circular segments.
@@ -26,84 +27,68 @@ type Contour struct {
 
 func (e *Contour) Bounds() image.Rectangle {
 	bounds := image.Rectangle{Min: image.Point{X: math.MaxInt, Y: math.MaxInt}, Max: image.Point{-math.MaxInt, -math.MaxInt}}
+	lastPoint := image.Point{X: e.X, Y: e.Y}
 	for _, s := range e.Segments {
-		bounds = imagei.Union(bounds, image.Point{X: s.X, Y: s.Y})
+		if s.Interpolation == InterpolationLinear {
+			bounds = imagei.RectUnionPoint(bounds, image.Point{X: s.X, Y: s.Y})
+		} else {
+			// 粗暴解决
+			bounds = bounds.Union(image.Rect(lastPoint.X, lastPoint.Y, s.X, s.Y).Add(image.Pt(s.X, s.Y)))
+		}
+
 	}
-	return imagei.Union(bounds, image.Point{X: e.X, Y: e.Y})
+	return bounds
 }
 
 type Rectangle struct {
 	Line     int
-	X        int
-	Y        int
-	Width    int
-	Height   int
-	CenterX  int
-	CenterY  int
 	Polarity bool
-	Rotation float64
+	geometry.Rectangle
 }
 
-func (e *Rectangle) Bounds() image.Rectangle {
-	return image.Rectangle{Min: image.Point{X: e.X - e.Width/2, Y: e.Y - e.Height/2}, Max: image.Point{X: e.X + e.Width/2,
-		Y: e.Y + e.Height/2}}
+func (e *Rectangle) Bounds() *geometry.Rectangle {
+	return &e.Rectangle
 }
 
 type Obround struct {
 	Line     int
-	X        int
-	Y        int
-	Width    int
-	Height   int
 	Polarity bool
-	Rotation float64
+	geometry.Rectangle
 }
 
-func (e *Obround) Bounds() image.Rectangle {
-	return image.Rectangle{Min: image.Point{X: e.X - e.Width/2, Y: e.Y - e.Height/2}, Max: image.Point{X: e.X + e.Width/2,
-		Y: e.Y + e.Height/2}}
+func (e *Obround) Bounds() *geometry.Rectangle {
+	return &e.Rectangle
 }
 
 type Circle struct {
 	Line     int
-	X        int
-	Y        int
-	Diameter int
 	Polarity bool
+	geometry.Circle
 }
 
-func (e *Circle) Bounds() image.Rectangle {
-	return image.Rectangle{Min: image.Point{X: e.X - e.Diameter/2, Y: e.Y - e.Diameter/2}, Max: image.Point{X: e.X + e.Diameter/2,
-		Y: e.Y + e.Diameter/2}}
+func (e *Circle) Bounds() *geometry.Rectangle {
+	return e.Circle.Bounds()
 }
 
 type Arc struct {
-	Line    int
-	EndX    int
-	EndY    int
-	StartX  int
-	StartY  int
-	CenterX int
-	CenterY int
-	Width   int
+	Line int
+	geometry.Arc
+	StrokeWidth float64
 	Interpolation
 }
 
-func (e *Arc) Bounds() image.Rectangle {
-	return image.Rect(e.StartX, e.StartY, e.EndX, e.EndY)
+func (e *Arc) Bounds() *geometry.Rectangle {
+	// 粗暴解决
+	return image.Rect(e.StartX, e.StartY, e.EndX, e.EndY).Add(image.Pt(e.CenterX, e.CenterY))
 }
 
 type Line struct {
-	Line     int
-	StartX   int
-	StartY   int
-	EndX     int
-	EndY     int
-	Width    int
-	Cap      LineCap
-	Rotation float64
+	LineNo int
+	geometry.Line
+	StrokeWidth float64
+	Cap         LineCap
 }
 
-func (e *Line) Bounds() image.Rectangle {
-	return image.Rect(e.StartX, e.StartY, e.EndX, e.EndY)
+func (e *Line) Bounds() *geometry.Rectangle {
+	return image.Rect(e.StartX-e.StrokeWidth/2, e.StartY-e.StrokeWidth/2, e.EndX+e.StrokeWidth/2, e.EndY+e.StrokeWidth/2)
 }

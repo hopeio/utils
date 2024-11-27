@@ -8,7 +8,7 @@ package style
 
 import (
 	"fmt"
-	"github.com/hopeio/utils/slices"
+	stringsi "github.com/hopeio/utils/strings"
 	"strconv"
 )
 
@@ -29,7 +29,7 @@ func Styles(s string, styles ...Style) string {
 	if len(styles) == 0 {
 		return s
 	}
-	return fmt.Sprintf(styleWithResetFormat, slices.Join(styles, ";"), s)
+	return fmt.Sprintf(styleWithResetFormat, stringsi.Join(styles, ";"), s)
 }
 
 type Style int

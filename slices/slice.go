@@ -7,14 +7,12 @@
 package slices
 
 import (
-	"fmt"
 	"github.com/hopeio/utils/cmp"
 	reflecti "github.com/hopeio/utils/reflect"
 	"golang.org/x/exp/constraints"
 	"slices"
 
 	"reflect"
-	"strings"
 	"unsafe"
 )
 
@@ -173,72 +171,6 @@ func ForEachIndex[S ~[]T, T any](s S, handle func(i int)) {
 	for i := range s {
 		handle(i)
 	}
-}
-
-func JoinByIndex[S ~[]T, T any](s S, toString func(i int) string, sep string) string {
-	switch len(s) {
-	case 0:
-		return ""
-	case 1:
-		return toString(0)
-	}
-	n := len(sep) * (len(s) - 1)
-	for i := 0; i < len(s); i++ {
-		n += len(toString(i))
-	}
-
-	var b strings.Builder
-	b.Grow(n)
-	b.WriteString(toString(0))
-	for i := range s[1:] {
-		b.WriteString(sep)
-		b.WriteString(toString(i))
-	}
-	return b.String()
-}
-
-func JoinByValue[S ~[]T, T any](s S, toString func(v T) string, sep string) string {
-	switch len(s) {
-	case 0:
-		return ""
-	case 1:
-		return toString(s[0])
-	}
-	n := len(sep) * (len(s) - 1)
-	for i := 0; i < len(s); i++ {
-		n += len(toString(s[i]))
-	}
-
-	var b strings.Builder
-	b.Grow(n)
-	b.WriteString(toString(s[0]))
-	for _, s := range s[1:] {
-		b.WriteString(sep)
-		b.WriteString(toString(s))
-	}
-	return b.String()
-}
-
-func Join[S ~[]T, T fmt.Stringer](s S, sep string) string {
-	switch len(s) {
-	case 0:
-		return ""
-	case 1:
-		return s[0].String()
-	}
-	n := len(sep) * (len(s) - 1)
-	for i := 0; i < len(s); i++ {
-		n += len(s[i].String())
-	}
-
-	var b strings.Builder
-	b.Grow(n)
-	b.WriteString(s[0].String())
-	for _, s := range s[1:] {
-		b.WriteString(sep)
-		b.WriteString(s.String())
-	}
-	return b.String()
 }
 
 func ReverseForEach[S ~[]T, T any](s S, handle func(idx int, v T)) {

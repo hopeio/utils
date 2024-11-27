@@ -47,7 +47,7 @@ func (p *Processor) UnmarshalJSON(b []byte) error {
 			p.PolarityClear, residue, err = decodeString(residue)
 		case "Scale":
 			p.Scale, residue, err = decodeFloat(residue)
-		case "Width":
+		case "StrokeWidth":
 			p.Width, residue, err = decodeString(residue)
 		case "Height":
 			p.Height, residue, err = decodeString(residue)
@@ -361,13 +361,13 @@ func decodeRectangle(b []byte, elm *Rectangle) error {
 			elm.X, residue, err = decodeInt(residue)
 		case "Y":
 			elm.Y, residue, err = decodeInt(residue)
-		case "Width":
+		case "StrokeWidth":
 			elm.Width, residue, err = decodeInt(residue)
 		case "Height":
 			elm.Height, residue, err = decodeInt(residue)
-		case "RadiusX":
+		case "CenterX":
 			elm.RadiusX, residue, err = decodeInt(residue)
-		case "RadiusY":
+		case "CenterY":
 			elm.RadiusY, residue, err = decodeInt(residue)
 		case "Fill":
 			elm.Fill, residue, err = decodeString(residue)
@@ -463,8 +463,8 @@ func decodeLine(b []byte, elm *Line) error {
 			elm.EndX, residue, err = decodeInt(residue)
 		case "EndY":
 			elm.EndY, residue, err = decodeInt(residue)
-		case "Width":
-			elm.Width, residue, err = decodeInt(residue)
+		case "StrokeWidth":
+			elm.StrokeWidth, residue, err = decodeInt(residue)
 		case "Cap":
 			var lineCap string
 			lineCap, residue, err = decodeString(residue)
@@ -525,8 +525,8 @@ func decodeArc(b []byte, elm *Arc) error {
 			elm.EndX, residue, err = decodeInt(residue)
 		case "EndY":
 			elm.EndY, residue, err = decodeInt(residue)
-		case "Width":
-			elm.Width, residue, err = decodeInt(residue)
+		case "StrokeWidth":
+			elm.StrokeWidth, residue, err = decodeInt(residue)
 		case "CenterX":
 			elm.CenterX, residue, err = decodeInt(residue)
 		case "CenterY":
@@ -606,10 +606,6 @@ func decodePathArc(b []byte, elm *PathArc) error {
 			var elmType string
 			elmType, residue, err = decodeString(residue)
 			elm.Type = ElementType(elmType)
-		case "RadiusX":
-			elm.RadiusX, residue, err = decodeInt(residue)
-		case "RadiusY":
-			elm.RadiusY, residue, err = decodeInt(residue)
 		case "LargeArc":
 			elm.LargeArc, residue, err = decodeInt(residue)
 		case "Sweep":

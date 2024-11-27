@@ -1,21 +1,21 @@
 package image
 
-import constraintsi "github.com/hopeio/utils/types/constraints"
+import (
+	"image"
+)
 
-type Point[T constraintsi.Number] struct {
-	X, Y T
-}
-
-type Rectangle[T constraintsi.Number] struct {
-	Min, Max Point[T]
-}
-
-func Rect[T constraintsi.Number](x0, y0, x1, y1 T) Rectangle[T] {
-	if x0 > x1 {
-		x0, x1 = x1, x0
+func RectUnionPoint(rect image.Rectangle, p image.Point) image.Rectangle {
+	if p.X < rect.Min.X {
+		rect.Min.X = p.X
 	}
-	if y0 > y1 {
-		y0, y1 = y1, y0
+	if p.X > rect.Max.X {
+		rect.Max.X = p.X
 	}
-	return Rectangle[T]{Point[T]{x0, y0}, Point[T]{x1, y1}}
+	if p.Y < rect.Min.Y {
+		rect.Min.Y = p.Y
+	}
+	if p.Y > rect.Max.Y {
+		rect.Max.Y = p.Y
+	}
+	return rect
 }
