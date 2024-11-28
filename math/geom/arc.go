@@ -8,23 +8,29 @@ import (
 
 // counter clockwise if clockwise ,Start.X,Start.Y <->  endX, endY
 type Arc struct {
-	Center Point
-	Start  Point
-	End    Point
+	CenterX float64
+	CenterY float64
+	StartX  float64
+	StartY  float64
+	EndX    float64
+	EndY    float64
 }
 
-func NewArc(center, start, end Point) *Arc {
+func NewArc(centerX, centerY, startX, startY, endX, endY float64) *Arc {
 	return &Arc{
-		Center: center,
-		Start:  start,
-		End:    end,
+		EndX:    endX,
+		EndY:    endY,
+		StartX:  startX,
+		StartY:  startY,
+		CenterX: centerX,
+		CenterY: centerY,
 	}
 }
 
 func (a *Arc) Bounds() *Bounds {
-	r := math.Hypot(a.Start.X-a.Center.X, a.Start.Y-a.Center.Y)
-	thetaStart := math.Atan2(a.Start.Y-a.Center.Y, a.Start.X-a.Center.X)
-	thetaEnd := math.Atan2(a.End.Y-a.Center.Y, a.End.X-a.Center.X)
+	r := math.Hypot(a.StartX-a.CenterX, a.StartY-a.CenterY)
+	thetaStart := math.Atan2(a.StartY-a.CenterY, a.StartX-a.CenterX)
+	thetaEnd := math.Atan2(a.EndY-a.CenterY, a.EndX-a.CenterX)
 	if thetaStart < 0 {
 		thetaStart += 2 * math.Pi
 	}
@@ -45,11 +51,11 @@ func (a *Arc) Bounds() *Bounds {
 		}
 	}
 
-	minX, maxX := a.Start.X, a.Start.X
-	minY, maxY := a.Start.Y, a.Start.Y
+	minX, maxX := a.StartX, a.StartX
+	minY, maxY := a.StartY, a.StartY
 	for _, theta := range angles {
-		x := a.Center.X + r*math.Cos(theta)
-		y := a.Center.Y + r*math.Sin(theta)
+		x := a.CenterX + r*math.Cos(theta)
+		y := a.CenterY + r*math.Sin(theta)
 		if x < minX {
 			minX = x
 		}
@@ -68,9 +74,9 @@ func (a *Arc) Bounds() *Bounds {
 
 func (a *Arc) Sample(samples int) []Point {
 
-	r := math.Hypot(a.Start.X-a.Center.X, a.Start.Y-a.Center.Y)
-	thetaStart := math.Atan2(a.Start.Y-a.Center.Y, a.Start.X-a.Center.X)
-	thetaEnd := math.Atan2(a.End.Y-a.Center.Y, a.End.X-a.Center.X)
+	r := math.Hypot(a.StartX-a.CenterX, a.StartY-a.CenterY)
+	thetaStart := math.Atan2(a.StartY-a.CenterY, a.StartX-a.CenterX)
+	thetaEnd := math.Atan2(a.EndY-a.CenterY, a.EndX-a.CenterX)
 	if thetaStart > thetaEnd {
 		thetaEnd += 2 * math.Pi
 	}
@@ -79,8 +85,8 @@ func (a *Arc) Sample(samples int) []Point {
 	// Sample points along the arc
 	for i := range samples {
 		theta := thetaStart + thetaDiff*float64(i)/float64(samples)
-		x := a.Center.X + r*math.Cos(theta)
-		y := a.Center.Y + r*math.Sin(theta) // Flip y for image coordinate system
+		x := a.CenterX + r*math.Cos(theta)
+		y := a.CenterY + r*math.Sin(theta) // Flip y for image coordinate system
 		points = append(points, Point{x, y})
 	}
 
@@ -180,9 +186,12 @@ func (a *Arc) minimumBoundingRectangle() *Rectangle {
 }
 
 type ArcInt[T constraints.Integer] struct {
-	Center PointInt[T]
-	Start  PointInt[T]
-	End    PointInt[T]
+	CenterX T
+	CenterY T
+	StartX  T
+	StartY  T
+	EndX    T
+	EndY    T
 }
 
 func (e *ArcInt[T]) ToFloat64(factor float64) *Arc {
@@ -190,9 +199,12 @@ func (e *ArcInt[T]) ToFloat64(factor float64) *Arc {
 		factor = 1
 	}
 	return &Arc{
-		Center: Point{float64(e.Center.X) / factor, float64(e.Center.Y) / factor},
-		Start:  Point{float64(e.Start.X) / factor, float64(e.Start.Y) / factor},
-		End:    Point{float64(e.End.X) / factor, float64(e.End.Y) / factor},
+		CenterX: float64(e.CenterX) / factor,
+		CenterY: float64(e.CenterY) / factor,
+		StartX:  float64(e.StartX) / factor,
+		StartY:  float64(e.StartY) / factor,
+		EndX:    float64(e.EndX) / factor,
+		EndY:    float64(e.EndY) / factor,
 	}
 }
 
@@ -201,11 +213,11 @@ func ArcIntFromFloat64[T constraints.Integer](e *Arc, factor float64) *ArcInt[T]
 		factor = 1
 	}
 	return &ArcInt[T]{
-		Center.X: T(math.Round(e.Center.X * factor)),
-		Center.Y: T(math.Round(e.Center.Y * factor)),
-		Start.X:  T(math.Round(e.Start.X * factor)),
-		Start.Y:  T(math.Round(e.Start.Y * factor)),
-		EndX:     T(math.Round(e.EndX * factor)),
-		EndY:     T(math.Round(e.EndY * factor)),
+		CenterX: T(math.Round(e.CenterX * factor)),
+		CenterY: T(math.Round(e.CenterY * factor)),
+		StartX:  T(math.Round(e.StartX * factor)),
+		StartY:  T(math.Round(e.StartY * factor)),
+		EndX:    T(math.Round(e.EndX * factor)),
+		EndY:    T(math.Round(e.EndY * factor)),
 	}
 }
