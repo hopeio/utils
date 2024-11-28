@@ -49,7 +49,7 @@ func TestStream(t *testing.T) {
 
 	handlers.AddHandler(reflect.Struct,
 		func(value reflect.Value, handler ValueHandler) {
-			for i := 0; i < value.NumField(); i++ {
+			for i := range value.NumField() {
 				field := value.Field(i)
 				handler(field)
 			}

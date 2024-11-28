@@ -1,4 +1,4 @@
-package geometry
+package geom
 
 import "golang.org/x/exp/constraints"
 

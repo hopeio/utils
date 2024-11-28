@@ -202,7 +202,7 @@ func tsFilename(ts int) string {
 
 func (d *Downloader) FfmpegConcatFile() (string, error) {
 	var data bytes.Buffer
-	for i := 0; i < d.segLen; i++ {
+	for i := range d.segLen {
 		data.WriteString(`file '` + d.tsDir + "/" + strconv.Itoa(i) + `.ts'
 `)
 	}

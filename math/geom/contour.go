@@ -1,4 +1,4 @@
-package geometry
+package geom
 
 type Interpolation int
 

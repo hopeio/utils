@@ -88,7 +88,7 @@ func (q *mutexQueue) Dequeue() interface{} {
 func BenchmarkQueue(b *testing.B) {
 	length := 1 << 12
 	inputs := make([]int, length)
-	for i := 0; i < length; i++ {
+	for range length {
 		inputs = append(inputs, rand.Int())
 	}
 	q, mq := NewLockFreeQueue(), newMutexQueue()

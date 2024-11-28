@@ -14,7 +14,7 @@ import (
 func TapKey(keys ...uint16) {
 	var onInput []w32.INPUT
 
-	for i := 0; i < len(keys); i++ {
+	for i := range keys {
 		input := w32.KeyboardInput(w32.KEYBDINPUT{
 			Vk: keys[i],
 		})

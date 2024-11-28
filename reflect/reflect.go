@@ -28,7 +28,7 @@ func SetSubField(src any, sub any) bool {
 // SetSubFieldValue 设置字段值
 // subValue为srcValue field的类型
 func SetSubFieldValue(srcValue reflect.Value, subValue reflect.Value) bool {
-	for i := 0; i < srcValue.NumField(); i++ {
+	for i := range srcValue.NumField() {
 		if srcValue.Field(i).Type() == subValue.Type() {
 			srcValue.Field(i).Set(subValue)
 			return true
@@ -42,7 +42,7 @@ func SetSubFieldValue(srcValue reflect.Value, subValue reflect.Value) bool {
 func CopyFieldValueByType(src any, sub any) bool {
 	srcValue := reflect.ValueOf(src).Elem()
 	dstValue := reflect.ValueOf(sub).Elem()
-	for i := 0; i < srcValue.NumField(); i++ {
+	for i := range srcValue.NumField() {
 		if srcValue.Field(i).Type() == dstValue.Type() {
 			dstValue.Set(srcValue.Field(i))
 			return true
@@ -96,7 +96,7 @@ func CopyStruct(src any, dest any) error {
 	typeOfT = typeOfT.Elem()
 	valueOfT := reflect.ValueOf(dest).Elem()
 
-	for i := 0; i < typeOfT.NumField(); i++ {
+	for i := range typeOfT.NumField() {
 		// 获取每个成员的结构体字段值
 		fieldType := typeOfT.Field(i)
 		// 赋值
@@ -141,7 +141,7 @@ func CanCast(t1, t2 reflect.Type, strict bool) bool {
 		if t1.NumField() != t2.NumField() {
 			return false
 		}
-		for i := 0; i < t1.NumField(); i++ {
+		for i := range t1.NumField() {
 			if !CanCast(t1.Field(i).Type, t2.Field(i).Type, true) {
 				return false
 			}
@@ -156,12 +156,12 @@ func InitStruct(v reflect.Value) {
 	v = InitPtr(v)
 	switch v.Kind() {
 	case reflect.Struct:
-		for i := 0; i < v.NumField(); i++ {
+		for i := range v.NumField() {
 			field := v.Field(i)
 			InitStruct(field)
 		}
 	case reflect.Slice, reflect.Array:
-		for i := 0; i < v.Len(); i++ {
+		for i := range v.Len() {
 			InitStruct(v.Index(i))
 		}
 	case reflect.Map:
@@ -178,7 +178,7 @@ func InitStruct(v reflect.Value) {
 
 func GetSubField[T any](v any) *T {
 	value := reflect.ValueOf(v).Elem()
-	for i := 0; i < value.NumField(); i++ {
+	for i := range value.NumField() {
 		if dao, ok := value.Field(i).Interface().(T); ok {
 			return &dao
 		}

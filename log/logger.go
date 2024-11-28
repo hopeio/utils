@@ -270,16 +270,17 @@ const (
 )
 
 func (l *Logger) sweetenFields(args []any) []zap.Field {
-	if len(args) == 0 {
+	al := len(args)
+	if al == 0 {
 		return nil
 	}
 
 	// Allocate enough space for the worst case; if users pass only structured
 	// fields, we shouldn't penalize them with extra allocations.
-	fields := make([]zap.Field, 0, len(args))
+	fields := make([]zap.Field, 0, al)
 	var invalid invalidPairs
 
-	for i := 0; i < len(args); {
+	for i := 0; i < al; {
 		// This is a strongly-typed field. Consume it and move on.
 		if f, ok := args[i].(zap.Field); ok {
 			fields = append(fields, f)
@@ -288,7 +289,7 @@ func (l *Logger) sweetenFields(args []any) []zap.Field {
 		}
 
 		// Make sure this element isn't a dangling key.
-		if i == len(args)-1 {
+		if i == al-1 {
 			l.DPanic(_oddNumberErrMsg, zap.Any(FieldIgnored, args[i]))
 			break
 		}
@@ -299,7 +300,7 @@ func (l *Logger) sweetenFields(args []any) []zap.Field {
 		if keyStr, ok := key.(string); !ok {
 			// Subsequent errors are likely, so allocate once up front.
 			if cap(invalid) == 0 {
-				invalid = make(invalidPairs, 0, len(args)/2)
+				invalid = make(invalidPairs, 0, al/2)
 			}
 			invalid = append(invalid, invalidPair{i, key, val})
 		} else {

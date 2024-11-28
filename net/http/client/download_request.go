@@ -179,7 +179,7 @@ func (c *DownloadReq) Download(filepath string) error {
 	}
 	var reader io.ReadCloser
 	var err error
-	for i := 0; i < c.downloader.retryTimes; i++ {
+	for range c.downloader.retryTimes {
 		reader, err = c.GetReader()
 		if err != nil {
 			return err
@@ -207,7 +207,7 @@ func (c *DownloadReq) ContinuationDownload(filepath string) error {
 
 	offset := fileinfo.Size()
 	var reader io.ReadCloser
-	for i := 0; i < c.downloader.retryTimes; i++ {
+	for range c.downloader.retryTimes {
 		c.header = append(c.header, httpi.HeaderRange, "bytes="+strconv.FormatInt(offset, 10)+"-")
 
 		reader, err = c.GetReader()

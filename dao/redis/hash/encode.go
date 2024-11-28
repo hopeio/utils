@@ -15,7 +15,7 @@ func Marshal(v interface{}) []interface{} {
 	uValue := reflect.ValueOf(v).Elem()
 	uType := uValue.Type()
 	var redisArgs = make([]interface{}, 0, uValue.NumField())
-	for i := 0; i < uValue.NumField(); i++ {
+	for i := range uValue.NumField() {
 		redisArgs = append(redisArgs, uType.Field(i).Name, uValue.Field(i).Interface())
 	}
 	return redisArgs
@@ -61,7 +61,7 @@ func (e *encodeState) structEncoder(key string, v reflect.Value) {
 		key += "."
 	}
 
-	for i := 0; i < v.NumField(); i++ {
+	for i := range v.NumField() {
 		field := t.Field(i).Name
 		if 'A' <= field[0] && field[0] <= 'Z' {
 			e.encode(key+field, v.Field(i))

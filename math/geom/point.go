@@ -1,4 +1,4 @@
-package geometry
+package geom
 
 import (
 	"golang.org/x/exp/constraints"
@@ -10,6 +10,10 @@ import (
 type Point struct {
 	X float64
 	Y float64
+}
+
+func Pt(x, y float64) Point {
+	return Point{X: x, Y: y}
 }
 
 func RandomPoint(min, max Point) Point {

@@ -44,7 +44,7 @@ func SetDefaultLogger(lf *Config, cores ...zapcore.Core) {
 	noCallerLogger = defaultLogger.WithOptions(zap.WithCaller(false))
 	clf := *lf
 	clf.SkipLineEnding = true
-	for i := 0; i < len(skipLoggers); i++ {
+	for i := range len(skipLoggers) {
 		if skipLoggers[i].Logger != nil {
 			skipLoggers[i].needUpdate = true
 		}

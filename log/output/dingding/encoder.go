@@ -406,7 +406,7 @@ func (enc *dingEncoder) truncate() {
 }
 
 func (enc *dingEncoder) closeOpenNamespaces() {
-	for i := 0; i < enc.openNamespaces; i++ {
+	for range enc.openNamespaces {
 		enc.buf.AppendByte('}')
 	}
 	enc.openNamespaces = 0
@@ -438,7 +438,8 @@ func (enc *dingEncoder) appendFloat(val float64, bitSize int) {
 // Unlike the standard library's encoder, it doesn't attempt to protect the
 // user from browser vulnerabilities or JSONP-related problems.
 func (enc *dingEncoder) safeAddString(s string) {
-	for i := 0; i < len(s); {
+	l := len(s)
+	for i := 0; i < l; {
 		if enc.tryAddRuneSelf(s[i]) {
 			i++
 			continue
@@ -455,7 +456,8 @@ func (enc *dingEncoder) safeAddString(s string) {
 
 // safeAddByteString is no-alloc equivalent of safeAddString(string(s)) for s []byte.
 func (enc *dingEncoder) safeAddByteString(s []byte) {
-	for i := 0; i < len(s); {
+	l := len(s)
+	for i := 0; i < l; {
 		if enc.tryAddRuneSelf(s[i]) {
 			i++
 			continue

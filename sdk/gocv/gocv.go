@@ -36,7 +36,7 @@ func SearchCircle(path string, rect image.Rectangle) (circles []Circle, err erro
 	gocv.HoughCirclesWithParams(edges, &circleMap, gocv.HoughGradient, 1, float64(max(rect.Dx(), rect.Dy())), 300,
 		10, 50, 300)
 	if !circleMap.Empty() {
-		for i := 0; i < circleMap.Cols(); i++ {
+		for i := range circleMap.Cols() {
 			v := circleMap.GetVecfAt(0, i)
 			x := int(v[0])
 			y := int(v[1])

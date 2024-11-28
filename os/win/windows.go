@@ -70,7 +70,7 @@ func findProcess(name string) uint32 {
 		return 0
 	}
 
-	for i := 0; i < len(processIDs); i++ {
+	for i := range processIDs {
 		if processIDs[i] != 0 {
 			if name == GetProcName(processIDs[i]) {
 				return processIDs[i]

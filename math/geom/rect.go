@@ -4,7 +4,7 @@
  * @Created by jyb
  */
 
-package geometry
+package geom
 
 import (
 	mathi "github.com/hopeio/utils/math"
@@ -96,7 +96,7 @@ func (rect *Rectangle) ContainsPoint(p Point) bool {
 	intersections := 0
 	corners := rect.Corners()
 
-	for i := 0; i < len(corners); i++ {
+	for i := range corners {
 		x1, y1 := corners[i].X, corners[i].Y
 		x2, y2 := corners[(i+1)%len(corners)].X, corners[(i+1)%len(corners)].Y
 

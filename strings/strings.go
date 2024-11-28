@@ -486,7 +486,7 @@ func SplitCamelCase(src string) (entries []string) {
 	}
 	// handle upper case -> lower case sequences, e.g.
 	// "PDFL", "oader" -> "PDF", "Loader"
-	for i := 0; i < len(runes)-1; i++ {
+	for i := range len(runes) - 1 {
 		if unicode.IsUpper(runes[i][0]) && unicode.IsLower(runes[i+1][0]) {
 			runes[i+1] = append([]rune{runes[i][len(runes[i])-1]}, runes[i+1]...)
 			runes[i] = runes[i][:len(runes[i])-1]
@@ -511,7 +511,7 @@ func CamelCase(s string) string {
 	// That is, we process a word at a time, where words are marked by _ or
 	// upper case letter. Digits are treated as words.
 	var b []byte
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		c := s[i]
 		switch {
 		case c == '.' && i+1 < len(s) && ascii.IsLower(s[i+1]):
@@ -704,7 +704,7 @@ func JoinByIndex[S ~[]T, T any](s S, toString func(i int) string, sep string) st
 		return toString(0)
 	}
 	n := len(sep) * (len(s) - 1)
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		n += len(toString(i))
 	}
 
@@ -726,7 +726,7 @@ func JoinByFunc[S ~[]T, T any](s S, toString func(v T) string, sep string) strin
 		return toString(s[0])
 	}
 	n := len(sep) * (len(s) - 1)
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		n += len(toString(s[i]))
 	}
 
@@ -748,7 +748,7 @@ func Join[S ~[]T, T fmt.Stringer](s S, sep string) string {
 		return s[0].String()
 	}
 	n := len(sep) * (len(s) - 1)
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		n += len(s[i].String())
 	}
 

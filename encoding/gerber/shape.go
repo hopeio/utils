@@ -1,7 +1,7 @@
 package gerber
 
 import (
-	"github.com/hopeio/utils/math/geometry"
+	"github.com/hopeio/utils/math/geom"
 	imagei "github.com/hopeio/utils/media/image"
 	"image"
 )
@@ -24,7 +24,7 @@ type Contour struct {
 	Polarity bool
 }
 
-func (e *Contour) Bounds() *geometry.Bounds {
+func (e *Contour) Bounds() *geom.Bounds {
 	bounds := image.Rectangle{Min: image.Point{X: int(e.X), Y: int(e.Y)}, Max: image.Point{int(e.X), int(e.Y)}}
 	lastPoint := image.Point{X: int(e.X), Y: int(e.Y)}
 	for _, s := range e.Segments {
@@ -36,62 +36,62 @@ func (e *Contour) Bounds() *geometry.Bounds {
 		}
 
 	}
-	return geometry.BoundsFromImageRect(bounds)
+	return geom.BoundsFromImageRect(bounds)
 }
 
 type Rectangle struct {
 	Line     int
 	Polarity bool
-	geometry.Rectangle
+	geom.Rectangle
 }
 
-func (e *Rectangle) Bounds() *geometry.Bounds {
+func (e *Rectangle) Bounds() *geom.Bounds {
 	return e.Rectangle.Bounds()
 }
 
 type Obround struct {
 	Line     int
 	Polarity bool
-	geometry.Rectangle
+	geom.Rectangle
 }
 
-func (e *Obround) Bounds() *geometry.Bounds {
+func (e *Obround) Bounds() *geom.Bounds {
 	return e.Rectangle.Bounds()
 }
 
 type Circle struct {
 	Line     int
 	Polarity bool
-	geometry.Circle
+	geom.Circle
 }
 
-func (e *Circle) Bounds() *geometry.Bounds {
+func (e *Circle) Bounds() *geom.Bounds {
 	return e.Circle.Bounds()
 }
 
 type Arc struct {
 	Line int
-	geometry.Arc
+	geom.Arc
 	StrokeWidth float64
 	Interpolation
 }
 
-func (e *Arc) Bounds() *geometry.Bounds {
+func (e *Arc) Bounds() *geom.Bounds {
 	//TODO
 	return nil
 }
 
 type Line struct {
 	LineNo int
-	geometry.Line
+	geom.Line
 	StrokeWidth float64
 	Cap         LineCap
 }
 
-func (e *Line) Bounds() *geometry.Bounds {
+func (e *Line) Bounds() *geom.Bounds {
 	if e.Cap == LineCapButt {
-		vector := geometry.NewVector(geometry.Point{e.StartX, e.StartY}, geometry.Point{e.EndX, e.EndY})
-		return geometry.NewRect((e.StartX+e.EndX)/2, (e.StartY+e.EndY)/2, vector.Length(), e.StrokeWidth, vector.Angle()).Bounds()
+		vector := geom.NewVector(geom.Point{e.StartX, e.StartY}, geom.Point{e.EndX, e.EndY})
+		return geom.NewRect((e.StartX+e.EndX)/2, (e.StartY+e.EndY)/2, vector.Length(), e.StrokeWidth, vector.Angle()).Bounds()
 	}
 	//TODO
 	return nil

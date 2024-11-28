@@ -63,7 +63,7 @@ func parseParamByTag(param any, query stdurl.Values, tag string) {
 	}
 	if v.Kind() == reflect.Struct {
 		t := v.Type()
-		for i := 0; i < v.NumField(); i++ {
+		for i := range v.NumField() {
 			filed := v.Field(i)
 			fieldKind := filed.Kind()
 			if fieldKind == reflect.Interface || fieldKind == reflect.Ptr || fieldKind == reflect.Struct {
@@ -79,7 +79,7 @@ func parseParamByTag(param any, query stdurl.Values, tag string) {
 				continue
 			}
 			if fieldKind == reflect.Slice || fieldKind == reflect.Array {
-				for i := 0; i < filed.Len(); i++ {
+				for i := range filed.Len() {
 					query.Add(t.Field(i).Tag.Get(tag), getFieldValue(filed.Index(i)))
 				}
 				continue

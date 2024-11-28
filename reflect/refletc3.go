@@ -21,7 +21,7 @@ func TypeInfo(v interface{}) {
 	typTyp := typField.Type().(reflect2.PtrType).Elem().(reflect2.StructType)
 	typV := typField.Get(&value)
 	typV = reflect.ValueOf(typV).Elem().Interface()
-	for i := 0; i < typTyp.NumField(); i++ {
+	for i := range typTyp.NumField() {
 		field := typTyp.Field(i)
 		v := field.Get(typV)
 		v = reflect.ValueOf(v).Elem().Interface()

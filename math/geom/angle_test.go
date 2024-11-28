@@ -4,7 +4,7 @@
  * @Created by jyb
  */
 
-package geometry
+package geom
 
 import (
 	"testing"

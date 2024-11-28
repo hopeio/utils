@@ -3,7 +3,7 @@ package gerber
 import (
 	"bufio"
 	"fmt"
-	"github.com/hopeio/utils/math/geometry"
+	"github.com/hopeio/utils/math/geom"
 	"io"
 	"math"
 	"strconv"
@@ -627,7 +627,7 @@ func (p *commandProcessor) setXY(x, y float64) {
 	p.y = y
 }
 
-func (p *commandProcessor) bounds(bounds *geometry.Bounds) {
+func (p *commandProcessor) bounds(bounds *geom.Bounds) {
 	if p.minX > bounds.Min.X {
 		p.minX = bounds.Min.X
 	}
@@ -671,7 +671,7 @@ func (p *commandProcessor) processD01(lineIdx int, word string) error {
 
 	switch p.interpolation {
 	case InterpolationLinear:
-		p.pc.Line(Line{lineIdx, geometry.Line{float64(p.x), float64(p.y), float64(x), float64(y)}, float64(diameter), LineCapRound})
+		p.pc.Line(Line{lineIdx, geom.Line{float64(p.x), float64(p.y), float64(x), float64(y)}, float64(diameter), LineCapRound})
 	case InterpolationClockwise:
 		fallthrough
 	case InterpolationCCW:
@@ -680,7 +680,7 @@ func (p *commandProcessor) processD01(lineIdx int, word string) error {
 			return fmt.Errorf("%+v", coords)
 		}
 		xc, yc := p.x+i, p.y+j
-		if err := p.pc.Arc(Arc{lineIdx, geometry.Arc{float64(p.x), float64(p.y), float64(x), float64(y), float64(xc), float64(yc)}, float64(diameter), p.interpolation}); err != nil {
+		if err := p.pc.Arc(Arc{lineIdx, geom.Arc{float64(p.x), float64(p.y), float64(x), float64(y), float64(xc), float64(yc)}, float64(diameter), p.interpolation}); err != nil {
 			return err
 		}
 	default:
@@ -722,15 +722,15 @@ func (p *commandProcessor) flash(lineIdx int) error {
 	params := p.ap.Params
 	switch p.ap.Template.Name {
 	case templateNameCircle:
-		c := Circle{lineIdx, p.polarity, geometry.Circle{float64(p.x), float64(p.y), p.u(params[0])}}
+		c := Circle{lineIdx, p.polarity, geom.Circle{float64(p.x), float64(p.y), p.u(params[0])}}
 		p.pc.Circle(c)
 		p.bounds(c.Bounds())
 	case templateNameRectangle:
-		r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geometry.Rectangle{CenterX: p.x, CenterY: p.y, Width: p.u(params[0]), Height: p.u(params[1])}}
+		r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geom.Rectangle{CenterX: p.x, CenterY: p.y, Width: p.u(params[0]), Height: p.u(params[1])}}
 		p.pc.Rectangle(r)
 		p.bounds(r.Bounds())
 	case templateNameObround:
-		o := Obround{lineIdx, p.polarity, geometry.Rectangle{p.x, p.y, p.u(params[0]), p.u(params[1]), 0}}
+		o := Obround{lineIdx, p.polarity, geom.Rectangle{p.x, p.y, p.u(params[0]), p.u(params[1]), 0}}
 		p.pc.Obround(o)
 		p.bounds(o.Bounds())
 	default:
@@ -750,7 +750,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if !pm.Exposure {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			c := Circle{lineIdx, p.polarity, geometry.Circle{p.x + p.u(pm.CenterX), p.y + p.u(pm.CenterY), p.u(pm.Diameter)}}
+			c := Circle{lineIdx, p.polarity, geom.Circle{p.x + p.u(pm.CenterX), p.y + p.u(pm.CenterY), p.u(pm.Diameter)}}
 			p.pc.Circle(c)
 			p.bounds(c.Bounds())
 		case vectorLinePrimitive:
@@ -760,7 +760,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if pm.Rotation != 0 {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			l := Line{lineIdx, geometry.Line{p.x + p.u(pm.StartX), p.y + p.u(pm.StartY), p.x + p.u(pm.EndX), p.y + p.u(pm.EndY)}, p.u(pm.Width), LineCapButt}
+			l := Line{lineIdx, geom.Line{p.x + p.u(pm.StartX), p.y + p.u(pm.StartY), p.x + p.u(pm.EndX), p.y + p.u(pm.EndY)}, p.u(pm.Width), LineCapButt}
 			p.pc.Line(l)
 			p.bounds(l.Bounds())
 		case outlinePrimitive:
@@ -785,7 +785,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if pm.Rotation != 0 {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geometry.Rectangle{CenterX: p.x + p.u(pm.X+pm.Width/2), CenterY: p.y + p.u(pm.Y+pm.Height/2),
+			r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geom.Rectangle{CenterX: p.x + p.u(pm.X+pm.Width/2), CenterY: p.y + p.u(pm.Y+pm.Height/2),
 				Width:  p.u(pm.Width),
 				Height: p.u(pm.Height), Angle: pm.Rotation}}
 			p.pc.Rectangle(r)
@@ -794,7 +794,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if !pm.Exposure {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geometry.Rectangle{CenterX: p.x + p.u(pm.CenterX), CenterY: p.y + p.u(pm.CenterY), Width: p.u(pm.Width),
+			r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geom.Rectangle{CenterX: p.x + p.u(pm.CenterX), CenterY: p.y + p.u(pm.CenterY), Width: p.u(pm.Width),
 				Height: p.u(pm.Height), Angle: pm.Rotation}}
 			p.pc.Rectangle(r)
 			p.bounds(r.Bounds())

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/hopeio/utils/encoding/gerber"
-	"github.com/hopeio/utils/math/geometry"
+	"github.com/hopeio/utils/math/geom"
 	psvg "github.com/hopeio/utils/media/image/svg"
 	"io"
 	"math"
@@ -33,9 +33,9 @@ type Circle struct {
 	Attr map[string]string
 }
 
-func (e Circle) Bounds() *geometry.Bounds {
+func (e Circle) Bounds() *geom.Bounds {
 	radius := e.Diameter / 2
-	return geometry.NewBounds(e.X-radius, e.Y-radius, e.X+radius, e.Y+radius)
+	return geom.NewBounds(e.X-radius, e.Y-radius, e.X+radius, e.Y+radius)
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -63,8 +63,8 @@ type Rectangle struct {
 	Attr    map[string]string
 }
 
-func (e Rectangle) Bounds() *geometry.Bounds {
-	return geometry.NewBounds(e.CenterX, e.CenterY, e.CenterX+e.Width, e.CenterY+e.Height)
+func (e Rectangle) Bounds() *geom.Bounds {
+	return geom.NewBounds(e.CenterX, e.CenterY, e.CenterX+e.Width, e.CenterY+e.Height)
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -122,8 +122,8 @@ type Path struct {
 	Attr     map[string]string
 }
 
-func (e Path) Bounds() (*geometry.Bounds, error) {
-	bounds := geometry.Bounds{Min: geometry.Point{math.MaxFloat64, math.MaxFloat64}, MaxX: geometry.Point{-math.MaxFloat64, -math.MaxFloat64}}
+func (e Path) Bounds() (*geom.Bounds, error) {
+	bounds := geom.Bounds{Min: geom.Point{math.MaxFloat64, math.MaxFloat64}, MaxX: geom.Point{-math.MaxFloat64, -math.MaxFloat64}}
 	updateMinMax := func(x, y float64) {
 		bounds.Min.X = min(bounds.Min.X, x)
 		bounds.MaxX.X = max(bounds.MaxX.X, x)
@@ -168,8 +168,8 @@ type Line struct {
 	Attr   map[string]string
 }
 
-func (e Line) Bounds() *geometry.Bounds {
-	return geometry.NewBounds(e.StartX, e.StartY, e.EndX, e.EndY)
+func (e Line) Bounds() *geom.Bounds {
+	return geom.NewBounds(e.StartX, e.StartY, e.EndX, e.EndY)
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -200,8 +200,8 @@ type Arc struct {
 	Attr   map[string]string
 }
 
-func (e Arc) Bounds() *geometry.Bounds {
-	return geometry.NewBounds(min(e.StartX, e.EndX), max(e.StartY, e.EndY), max(e.StartX, e.EndX), max(e.StartY, e.EndY))
+func (e Arc) Bounds() *geom.Bounds {
+	return geom.NewBounds(min(e.StartX, e.EndX), max(e.StartY, e.EndY), max(e.StartX, e.EndX), max(e.StartY, e.EndY))
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -284,7 +284,7 @@ func (p *Processor) Contour(contour gerber.Contour) error {
 			if s.X == contour.X && s.Y == contour.Y {
 				vx, vy := s.X-s.CenterX, s.Y-s.CenterY
 				r := math.Round(math.Sqrt(vx*vx + vy*vy))
-				c := Circle{Circle: gerber.Circle{Line: contour.Line, Circle: geometry.Circle{s.CenterX, s.CenterY, r * 2}},
+				c := Circle{Circle: gerber.Circle{Line: contour.Line, Circle: geom.Circle{s.CenterX, s.CenterY, r * 2}},
 					Fill: p.fill(contour.Polarity)}
 				p.Data = append(p.Data, c)
 				return nil
@@ -425,7 +425,7 @@ func (p *Processor) Write(w io.Writer) error {
 		}
 	}
 
-	svgBound := geometry.NewBounds(p.MinX, p.MinY, p.MaxX, p.MaxY)
+	svgBound := geom.NewBounds(p.MinX, p.MinY, p.MaxX, p.MaxY)
 	for _, datum := range p.Data {
 		bounds, err := Bounds(datum)
 		if err != nil {
@@ -476,7 +476,7 @@ func (p *Processor) Write(w io.Writer) error {
 	return nil
 }
 
-func Bounds(element interface{}) (*geometry.Bounds, error) {
+func Bounds(element interface{}) (*geom.Bounds, error) {
 	switch e := element.(type) {
 	case Circle:
 		return e.Bounds(), nil

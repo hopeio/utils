@@ -35,7 +35,7 @@ func HasCoincide[S ~[]T, T comparable](s1, s2 S) bool {
 	n, m := len(s1), len(s2)
 	tmpMap := make(map[T]struct{})
 	l := types.Match(n > m, n, m)
-	for i := 0; i < l; i++ {
+	for i := range l {
 		if i < n {
 			tmpMap[s1[i]] = struct{}{}
 		}
@@ -68,7 +68,7 @@ func HasCoincideByKey[S ~[]E, E cmp.EqualKey[T], T comparable](s1, s2 S) bool {
 	n, m := len(s1), len(s2)
 	tmpMap := make(map[T]struct{})
 	l := types.Match(n > m, n, m)
-	for i := 0; i < l; i++ {
+	for i := range l {
 		if i < n {
 			tmpMap[s1[i].EqualKey()] = struct{}{}
 		}

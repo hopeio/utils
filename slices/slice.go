@@ -46,7 +46,7 @@ func Zip[S ~[]T, T any](s1, s2 S) [][2]T {
 func Deduplicate[S ~[]T, T comparable](slice S) S {
 	if len(slice) < SmallArrayLen {
 		newslice := make(S, 0, 2)
-		for i := 0; i < len(slice); i++ {
+		for i := range slice {
 			if !slices.Contains(newslice, slice[i]) {
 				newslice = append(newslice, slice[i])
 			}
@@ -54,7 +54,7 @@ func Deduplicate[S ~[]T, T comparable](slice S) S {
 		return newslice
 	}
 	set := make(map[T]struct{})
-	for i := 0; i < len(slice); i++ {
+	for i := range slice {
 		set[slice[i]] = struct{}{}
 	}
 	newslice := make(S, 0, len(slice))
@@ -66,7 +66,7 @@ func Deduplicate[S ~[]T, T comparable](slice S) S {
 
 // Deprecated: use std slices.Contains
 func Contains[S ~[]T, T comparable](s S, v T) bool {
-	for i := 0; i < len(s); i++ {
+	for i := range s {
 		if s[i] == v {
 			return true
 		}
