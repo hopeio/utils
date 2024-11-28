@@ -123,12 +123,12 @@ type Path struct {
 }
 
 func (e Path) Bounds() (*geometry.Bounds, error) {
-	bounds := geometry.Bounds{Min: geometry.Point{math.MaxFloat64, math.MaxFloat64}, Max: geometry.Point{-math.MaxFloat64, -math.MaxFloat64}}
+	bounds := geometry.Bounds{Min: geometry.Point{math.MaxFloat64, math.MaxFloat64}, MaxX: geometry.Point{-math.MaxFloat64, -math.MaxFloat64}}
 	updateMinMax := func(x, y float64) {
 		bounds.Min.X = min(bounds.Min.X, x)
-		bounds.Max.X = max(bounds.Max.X, x)
+		bounds.MaxX.X = max(bounds.MaxX.X, x)
 		bounds.Min.Y = min(bounds.Min.Y, y)
-		bounds.Max.Y = max(bounds.Max.Y, y)
+		bounds.MaxX.Y = max(bounds.MaxX.Y, y)
 	}
 
 	updateMinMax(e.X, e.Y)
@@ -431,7 +431,7 @@ func (p *Processor) Write(w io.Writer) error {
 		if err != nil {
 			return err
 		}
-		if bounds.Min.X > svgBound.Max.X || svgBound.Min.X > bounds.Max.X || bounds.Min.Y > svgBound.Max.Y || svgBound.Min.Y > bounds.Max.Y {
+		if bounds.Min.X > svgBound.MaxX.X || svgBound.Min.X > bounds.MaxX.X || bounds.Min.Y > svgBound.MaxX.Y || svgBound.Min.Y > bounds.MaxX.Y {
 			continue
 		}
 

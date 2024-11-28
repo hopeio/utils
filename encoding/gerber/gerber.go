@@ -631,14 +631,14 @@ func (p *commandProcessor) bounds(bounds *geometry.Bounds) {
 	if p.minX > bounds.Min.X {
 		p.minX = bounds.Min.X
 	}
-	if p.maxX < bounds.Max.X {
-		p.maxX = bounds.Max.X
+	if p.maxX < bounds.MaxX.X {
+		p.maxX = bounds.MaxX.X
 	}
 	if p.minY > bounds.Min.Y {
 		p.minY = bounds.Min.Y
 	}
-	if p.maxY < bounds.Max.Y {
-		p.maxY = bounds.Max.Y
+	if p.maxY < bounds.MaxX.Y {
+		p.maxY = bounds.MaxX.Y
 	}
 }
 

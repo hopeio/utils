@@ -1,6 +1,7 @@
 package geometry
 
 import (
+	"github.com/hopeio/utils/math/geometry"
 	"golang.org/x/exp/constraints"
 	"math"
 	"sort"
@@ -8,12 +9,12 @@ import (
 
 // counter clockwise if clockwise ,Start.X,Start.Y <->  endX, endY
 type Arc struct {
-	Center Point
-	Start  Point
-	End    Point
+	Center geometry.Point
+	Start  geometry.Point
+	End    geometry.Point
 }
 
-func NewArc(center, start, end Point) *Arc {
+func NewArc(center, start, end geometry.Point) *Arc {
 	return &Arc{
 		Center: center,
 		Start:  start,
@@ -66,7 +67,7 @@ func (a *Arc) Bounds() *Bounds {
 	return NewBounds(minX, minY, maxX, maxY)
 }
 
-func (a *Arc) Sample(samples int) []Point {
+func (a *Arc) Sample(samples int) []geometry.Point {
 
 	r := math.Hypot(a.Start.X-a.Center.X, a.Start.Y-a.Center.Y)
 	thetaStart := math.Atan2(a.Start.Y-a.Center.Y, a.Start.X-a.Center.X)
@@ -75,20 +76,20 @@ func (a *Arc) Sample(samples int) []Point {
 		thetaEnd += 2 * math.Pi
 	}
 	thetaDiff := thetaEnd - thetaStart
-	points := make([]Point, 0, samples)
+	points := make([]geometry.Point, 0, samples)
 	// Sample points along the arc
 	for i := range samples {
 		theta := thetaStart + thetaDiff*float64(i)/float64(samples)
 		x := a.Center.X + r*math.Cos(theta)
 		y := a.Center.Y + r*math.Sin(theta) // Flip y for image coordinate system
-		points = append(points, Point{x, y})
+		points = append(points, geometry.Point{x, y})
 	}
 
 	return points
 }
 
 // Compute the convex hull of a set of points using Andrew's monotone chain algorithm
-func convexHull(points []Point) []Point {
+func convexHull(points []geometry.Point) []geometry.Point {
 	sort.Slice(points, func(i, j int) bool {
 		if points[i].X == points[j].X {
 			return points[i].Y < points[j].Y
@@ -96,7 +97,7 @@ func convexHull(points []Point) []Point {
 		return points[i].X < points[j].X
 	})
 
-	var lower, upper []Point
+	var lower, upper []geometry.Point
 	for _, p := range points {
 		for len(lower) >= 2 && cross(lower[len(lower)-2], lower[len(lower)-1], p) <= 0 {
 			lower = lower[:len(lower)-1]
@@ -116,24 +117,24 @@ func convexHull(points []Point) []Point {
 }
 
 // Cross product of vectors OA and OB
-func cross(o, a, b Point) float64 {
+func cross(o, a, b geometry.Point) float64 {
 	return (a.X-o.X)*(b.Y-o.Y) - (a.Y-o.Y)*(b.X-o.X)
 }
 
 // Rotating calipers to find the minimum bounding rectangle
 // untested
-func minimumBoundingRectangle(hull []Point) *Rectangle {
+func minimumBoundingRectangle(hull []geometry.Point) *Rectangle {
 	minArea := math.MaxFloat64
 	var centerX, centerY, length, width, angle float64
 	for i := 0; i < len(hull); i++ {
 		// Edge vector
-		edge := Point{hull[(i+1)%len(hull)].X - hull[i].X, hull[(i+1)%len(hull)].Y - hull[i].Y}
+		edge := geometry.Point{hull[(i+1)%len(hull)].X - hull[i].X, hull[(i+1)%len(hull)].Y - hull[i].Y}
 		edgeLength := math.Hypot(edge.X, edge.Y)
 		edge.X /= edgeLength
 		edge.Y /= edgeLength
 
 		// Perpendicular vector
-		perp := Point{-edge.Y, edge.X}
+		perp := geometry.Point{-edge.Y, edge.X}
 
 		// Project points onto edge and perpendicular
 		var minProj, maxProj float64
@@ -169,7 +170,7 @@ func minimumBoundingRectangle(hull []Point) *Rectangle {
 		}
 	}
 
-	return NewRect(centerX, centerY, length, width, angle)
+	return NewRect(geometry.Point{centerX, centerY}, length, width, angle)
 }
 
 // untested
@@ -180,9 +181,9 @@ func (a *Arc) minimumBoundingRectangle() *Rectangle {
 }
 
 type ArcInt[T constraints.Integer] struct {
-	Center PointInt[T]
-	Start  PointInt[T]
-	End    PointInt[T]
+	Center geometry.PointInt[T]
+	Start  geometry.PointInt[T]
+	End    geometry.PointInt[T]
 }
 
 func (e *ArcInt[T]) ToFloat64(factor float64) *Arc {
@@ -190,9 +191,9 @@ func (e *ArcInt[T]) ToFloat64(factor float64) *Arc {
 		factor = 1
 	}
 	return &Arc{
-		Center: Point{float64(e.Center.X) / factor, float64(e.Center.Y) / factor},
-		Start:  Point{float64(e.Start.X) / factor, float64(e.Start.Y) / factor},
-		End:    Point{float64(e.End.X) / factor, float64(e.End.Y) / factor},
+		Center: geometry.Point{float64(e.Center.X) / factor, float64(e.Center.Y) / factor},
+		Start:  geometry.Point{float64(e.Start.X) / factor, float64(e.Start.Y) / factor},
+		End:    geometry.Point{float64(e.End.X) / factor, float64(e.End.Y) / factor},
 	}
 }
 
@@ -201,11 +202,8 @@ func ArcIntFromFloat64[T constraints.Integer](e *Arc, factor float64) *ArcInt[T]
 		factor = 1
 	}
 	return &ArcInt[T]{
-		Center.X: T(math.Round(e.Center.X * factor)),
-		Center.Y: T(math.Round(e.Center.Y * factor)),
-		Start.X:  T(math.Round(e.Start.X * factor)),
-		Start.Y:  T(math.Round(e.Start.Y * factor)),
-		EndX:     T(math.Round(e.EndX * factor)),
-		EndY:     T(math.Round(e.EndY * factor)),
+		Center: geometry.PointInt[T]{T(math.Round(e.Center.X * factor)), T(math.Round(e.Center.Y * factor))},
+		Start:  geometry.PointInt[T]{T(math.Round(e.Start.X * factor)), T(math.Round(e.Start.Y * factor))},
+		End:    geometry.PointInt[T]{T(math.Round(e.End.X * factor)), T(math.Round(e.End.Y * factor))},
 	}
 }
