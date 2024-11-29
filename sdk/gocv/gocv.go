@@ -22,12 +22,11 @@ func SearchCircle(path string, rect image.Rectangle) (circles []Circle, err erro
 	gimg := gocv.IMRead(path, gocv.IMReadGrayScale)
 	// 定义高斯核的大小和标准差
 	ksize := image.Pt(11, 11)
-	sigmaX := 0.0
 	blurred := gocv.NewMat()
 	defer blurred.Close()
 	img := gimg.Region(rect)
 	defer img.Close()
-	gocv.GaussianBlur(img, &blurred, ksize, sigmaX, sigmaX, gocv.BorderDefault)
+	gocv.GaussianBlur(img, &blurred, ksize, 0, 0, gocv.BorderDefault)
 	edges := gocv.NewMat()
 	defer edges.Close()
 	gocv.Canny(blurred, &edges, 100, 200)

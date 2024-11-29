@@ -11,6 +11,7 @@ import (
 	"github.com/hopeio/utils/types/interfaces"
 	"iter"
 	"slices"
+	"strings"
 )
 
 // Filter keep elements which satisfy the Predicate.
@@ -420,4 +421,13 @@ func Merge[T any](iters ...iter.Seq[T]) iter.Seq[T] {
 			}
 		}
 	}
+}
+
+func JoinBy[T any](it iter.Seq[T], toString func(T) string, sep string) string {
+	var b strings.Builder
+	for v := range it {
+		b.WriteString(toString(v))
+		b.WriteString(sep)
+	}
+	return b.String()[:b.Len()-len(sep)]
 }

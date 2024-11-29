@@ -7,6 +7,7 @@
 package exec
 
 import (
+	osi "github.com/hopeio/utils/os"
 	stringsi "github.com/hopeio/utils/strings"
 	"log"
 	"os"
@@ -14,7 +15,7 @@ import (
 )
 
 func RunWithLog(arg string, opts ...Option) error {
-	words := Split(arg)
+	words := osi.Split(arg)
 	cmd := exec.Command(words[0], words[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -26,7 +27,7 @@ func RunWithLog(arg string, opts ...Option) error {
 }
 
 func Run(s string, opts ...Option) error {
-	words := Split(s)
+	words := osi.Split(s)
 	cmd := exec.Command(words[0], words[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -39,7 +40,7 @@ func Run(s string, opts ...Option) error {
 type Option func(cmd *exec.Cmd)
 
 func RunGetOut(s string, opts ...Option) (string, error) {
-	words := Split(s)
+	words := osi.Split(s)
 	cmd := exec.Command(words[0], words[1:]...)
 	buf, err := cmd.CombinedOutput()
 	if err != nil {

@@ -298,3 +298,9 @@ func ToPtrs[S ~[]T, T any](s S) []*T {
 	}
 	return ret
 }
+
+func Copy[S ~[]T, T any](s S) S {
+	c := make([]T, len(s))
+	copy(c, s)
+	return c
+}

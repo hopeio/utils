@@ -152,7 +152,7 @@ type Polyline struct {
 }
 
 func (r *Polyline) String() string {
-	return fmt.Sprintf(`<polyline points="%s"  stroke="%s" fill="%s" stroke-width="%f" %s`, stringsi.JoinByFunc(r.Points, func(f float64) string { return strconv.FormatFloat(f, 'f', -1, 64) }, " "), r.Stroke, r.Fill, r.StrokeWidth, FormatAttr(r.Attr))
+	return fmt.Sprintf(`<polyline points="%s"  stroke="%s" fill="%s" stroke-width="%f" %s`, stringsi.JoinByValue(r.Points, func(f float64) string { return strconv.FormatFloat(f, 'f', -1, 64) }, " "), r.Stroke, r.Fill, r.StrokeWidth, FormatAttr(r.Attr))
 }
 
 type Polygon struct {
@@ -164,7 +164,7 @@ type Polygon struct {
 }
 
 func (r *Polygon) String() string {
-	return fmt.Sprintf(`<polygon points="%s"  stroke="%s" fill="%s" stroke-width="%f" %s`, stringsi.JoinByFunc(r.Points, func(f float64) string { return strconv.FormatFloat(f, 'f', -1, 64) }, " "), r.Stroke, r.Fill, r.StrokeWidth, FormatAttr(r.Attr))
+	return fmt.Sprintf(`<polygon points="%s"  stroke="%s" fill="%s" stroke-width="%f" %s`, stringsi.JoinByValue(r.Points, func(f float64) string { return strconv.FormatFloat(f, 'f', -1, 64) }, " "), r.Stroke, r.Fill, r.StrokeWidth, FormatAttr(r.Attr))
 }
 
 type Rectangle struct {

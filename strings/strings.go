@@ -718,24 +718,50 @@ func JoinByIndex[S ~[]T, T any](s S, toString func(i int) string, sep string) st
 	return b.String()
 }
 
-func JoinByFunc[S ~[]T, T any](s S, toString func(v T) string, sep string) string {
+func JoinByValue[S ~[]T, T any](s S, toString func(v T) string, sep string) string {
 	switch len(s) {
 	case 0:
 		return ""
 	case 1:
 		return toString(s[0])
 	}
+	strs := make([]string, len(s))
 	n := len(sep) * (len(s) - 1)
 	for i := range len(s) {
-		n += len(toString(s[i]))
+		strs[i] = toString(s[i])
+		n += len(strs[i])
 	}
 
 	var b strings.Builder
 	b.Grow(n)
-	b.WriteString(toString(s[0]))
-	for _, s := range s[1:] {
+	b.WriteString(strs[0])
+	for i := range strs[1:] {
 		b.WriteString(sep)
-		b.WriteString(toString(s))
+		b.WriteString(strs[i])
+	}
+	return b.String()
+}
+
+func JoinBy[S ~[]T, T any](s S, toString func(idx int, v T) string, sep string) string {
+	switch len(s) {
+	case 0:
+		return ""
+	case 1:
+		return toString(0, s[0])
+	}
+	strs := make([]string, len(s))
+	n := len(sep) * (len(s) - 1)
+	for i := range len(s) {
+		strs[i] = toString(0, s[i])
+		n += len(strs[i])
+	}
+
+	var b strings.Builder
+	b.Grow(n)
+	b.WriteString(strs[0])
+	for i := range strs[1:] {
+		b.WriteString(sep)
+		b.WriteString(strs[i])
 	}
 	return b.String()
 }
@@ -747,17 +773,19 @@ func Join[S ~[]T, T fmt.Stringer](s S, sep string) string {
 	case 1:
 		return s[0].String()
 	}
+	strs := make([]string, len(s))
 	n := len(sep) * (len(s) - 1)
 	for i := range len(s) {
-		n += len(s[i].String())
+		strs[i] = s[i].String()
+		n += len(strs[i])
 	}
 
 	var b strings.Builder
 	b.Grow(n)
-	b.WriteString(s[0].String())
-	for _, s := range s[1:] {
+	b.WriteString(strs[0])
+	for i := range strs[1:] {
 		b.WriteString(sep)
-		b.WriteString(s.String())
+		b.WriteString(strs[i])
 	}
 	return b.String()
 }
