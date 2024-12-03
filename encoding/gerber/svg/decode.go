@@ -34,13 +34,13 @@ func (p *Processor) UnmarshalJSON(b []byte) error {
 		case "Data":
 			residue, err = p.decodeData(residue)
 		case "MinX":
-			p.MinX, residue, err = decodeFloat(residue)
+			p.Min.X, residue, err = decodeFloat(residue)
 		case "MaxX":
-			p.MaxX, residue, err = decodeFloat(residue)
+			p.Max.X, residue, err = decodeFloat(residue)
 		case "MinY":
-			p.MinY, residue, err = decodeFloat(residue)
+			p.Min.Y, residue, err = decodeFloat(residue)
 		case "MaxY":
-			p.MaxY, residue, err = decodeFloat(residue)
+			p.Max.Y, residue, err = decodeFloat(residue)
 		case "PolarityDark":
 			p.PolarityDark, residue, err = decodeString(residue)
 		case "PolarityClear":

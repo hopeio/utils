@@ -28,7 +28,7 @@ const (
 // A Circle is a circle.
 type Circle struct {
 	Type ElementType
-	gerber.Circle
+	*gerber.Circle
 	Fill string
 	Attr map[string]string
 }
@@ -56,7 +56,7 @@ func (e Circle) SetAttr(k, v string) Circle {
 type Rectangle struct {
 	Type     ElementType
 	Aperture string
-	gerber.Rectangle
+	*gerber.Rectangle
 	RadiusX float64
 	RadiusY float64
 	Fill    string
@@ -163,7 +163,7 @@ func (e Path) SetAttr(k, v string) Path {
 // A Line is a SVG line.
 type Line struct {
 	Type ElementType
-	gerber.Line
+	*gerber.Line
 	Stroke string
 	Attr   map[string]string
 }
@@ -189,7 +189,7 @@ func (e Line) SetAttr(k, v string) Line {
 // An Arc is a SVG Arc.
 type Arc struct {
 	Type ElementType
-	gerber.Arc
+	*gerber.Arc
 	RadiusX float64
 	RadiusY float64
 
@@ -224,10 +224,7 @@ type Processor struct {
 	Data []interface{}
 
 	// Viewbox of Gerber image.
-	MinX float64
-	MaxX float64
-	MinY float64
-	MaxY float64
+	*gerber.ViewBox
 
 	// Color for Gerber polarities, defaults to black and white.
 	PolarityDark  string
@@ -242,6 +239,7 @@ type Processor struct {
 
 	// Whether to output javascript for interactive panning and zooming in SVG.
 	PanZoom bool
+	err     error
 }
 
 // NewProcessor creates a Processor.
@@ -262,34 +260,34 @@ func (p *Processor) fill(polarity bool) string {
 	return p.PolarityClear
 }
 
-func (p *Processor) Circle(circle gerber.Circle) {
+func (p *Processor) Circle(circle *gerber.Circle) {
 	p.Data = append(p.Data, Circle{Circle: circle, Fill: p.fill(circle.Polarity)})
 }
 
-func (p *Processor) Rectangle(rectangle gerber.Rectangle) {
+func (p *Processor) Rectangle(rectangle *gerber.Rectangle) {
 	rectangle.Center.X -= rectangle.Width / 2
 	rectangle.Center.Y += rectangle.Height / 2
 	p.Data = append(p.Data, Rectangle{Aperture: "R", Rectangle: rectangle, Fill: p.fill(rectangle.Polarity)})
 }
 
-func (p *Processor) Obround(obround gerber.Obround) {
+func (p *Processor) Obround(obround *gerber.Obround) {
 	r := min(obround.Width, obround.Height) / 2
 	obround.Center.X -= obround.Width / 2
 	obround.Center.Y += obround.Height / 2
-	p.Data = append(p.Data, Rectangle{Aperture: "O", Rectangle: gerber.Rectangle{obround.Line, obround.Polarity, obround.Rectangle}, RadiusX: r, RadiusY: r, Fill: p.fill(obround.Polarity)})
+	p.Data = append(p.Data, Rectangle{Aperture: "O", Rectangle: &gerber.Rectangle{obround.Line, obround.Polarity, obround.Rectangle}, RadiusX: r, RadiusY: r, Fill: p.fill(obround.Polarity)})
 }
 
-func (p *Processor) Contour(contour gerber.Contour) error {
+func (p *Processor) Contour(contour *gerber.Contour) {
 	if len(contour.Segments) == 1 {
 		s := contour.Segments[0]
 		if s.Interpolation == gerber.InterpolationClockwise || s.Interpolation == gerber.InterpolationCCW {
 			if s.X == contour.X && s.Y == contour.Y {
 				vx, vy := s.X-s.CenterX, s.Y-s.CenterY
 				r := math.Round(math.Sqrt(vx*vx + vy*vy))
-				c := Circle{Circle: gerber.Circle{Line: contour.Line, Circle: geom.Circle{geom.Pt(s.X, s.Y), r * 2}},
+				c := Circle{Circle: &gerber.Circle{Line: contour.Line, Circle: geom.Circle{geom.Pt(s.X, s.Y), r * 2}},
 					Fill: p.fill(contour.Polarity)}
 				p.Data = append(p.Data, c)
-				return nil
+				return
 			}
 		}
 	}
@@ -304,15 +302,17 @@ func (p *Processor) Contour(contour gerber.Contour) error {
 		case gerber.InterpolationCCW:
 			arc, err := calcArc(contour, i)
 			if err != nil {
-				return err
+				p.err = err
+				return
 			}
 			svgPath.Commands = append(svgPath.Commands, arc)
 		default:
-			return fmt.Errorf("%d %+v", i, s)
+			p.err = fmt.Errorf("%d %+v", i, s)
+			return
 		}
 	}
 	p.Data = append(p.Data, svgPath)
-	return nil
+	return
 }
 
 func calcArcParams(vs, ve [2]float64, sweep int) (float64, int, error) {
@@ -333,7 +333,7 @@ func calcArcParams(vs, ve [2]float64, sweep int) (float64, int, error) {
 	return radiusS, largeArc, nil
 }
 
-func calcArc(contour gerber.Contour, idx int) (PathArc, error) {
+func calcArc(contour *gerber.Contour, idx int) (PathArc, error) {
 	var xs, ys float64
 	if idx == 0 {
 		xs, ys = contour.X, contour.Y
@@ -369,14 +369,15 @@ func calcArc(contour gerber.Contour, idx int) (PathArc, error) {
 	return arc, nil
 }
 
-func (p *Processor) Line(gline gerber.Line) {
+func (p *Processor) Line(gline *gerber.Line) {
 	line := Line{Line: gline, Stroke: p.PolarityDark}
 	p.Data = append(p.Data, line)
 }
 
-func (p *Processor) Arc(garc gerber.Arc) error {
+func (p *Processor) Arc(garc *gerber.Arc) {
 	if garc.End.X == garc.Start.X && garc.End.Y == garc.Start.Y {
-		return fmt.Errorf("degenerate arc")
+		p.err = fmt.Errorf("degenerate arc")
+		return
 	}
 
 	arc := Arc{Arc: garc, Stroke: p.PolarityDark}
@@ -385,8 +386,6 @@ func (p *Processor) Arc(garc gerber.Arc) error {
 		arc.Sweep = 1
 	case gerber.InterpolationCCW:
 		arc.Sweep = 0
-	default:
-		return fmt.Errorf("%d", garc.Interpolation)
 	}
 
 	vs := [2]float64{garc.Start.X - garc.Center.X, garc.Start.Y - garc.Center.Y}
@@ -394,20 +393,18 @@ func (p *Processor) Arc(garc gerber.Arc) error {
 
 	radius, largeArc, err := calcArcParams(vs, ve, arc.Sweep)
 	if err != nil {
-		return err
+		p.err = err
+		return
 	}
 	arc.RadiusX, arc.RadiusY = math.Round(radius), math.Round(radius)
 	arc.LargeArc = largeArc
 
 	p.Data = append(p.Data, arc)
-	return nil
+	return
 }
 
-func (p *Processor) SetViewBox(minX, maxX, minY, maxY float64) {
-	p.MinX = minX
-	p.MaxX = maxX
-	p.MinY = minY
-	p.MaxY = maxY
+func (p *Processor) SetViewBox(box *gerber.ViewBox) {
+	p.ViewBox = box
 }
 
 // Write writes Gerber graphics operations as SVG.
@@ -416,7 +413,7 @@ func (p *Processor) Write(w io.Writer) error {
 	if p.Width != "" && p.Height != "" {
 		svg += fmt.Sprintf(`width="%s" height="%s" `, p.Width, p.Height)
 	}
-	svg += fmt.Sprintf(`viewBox="%s %s %s %s" style="background-color: %s;" xmlns="http://www.w3.org/2000/svg">`+"\n", p.x(p.MinX), p.m(p.MinY), p.m(p.MaxX), p.m(p.MaxY), p.PolarityClear)
+	svg += fmt.Sprintf(`viewBox="%s %s %s %s" style="background-color: %s;" xmlns="http://www.w3.org/2000/svg">`+"\n", p.x(p.Min.X), p.m(p.Min.Y), p.m(p.Max.X), p.m(p.Max.Y), p.PolarityClear)
 	if _, err := w.Write([]byte(svg)); err != nil {
 		return err
 	}
@@ -427,13 +424,12 @@ func (p *Processor) Write(w io.Writer) error {
 		}
 	}
 
-	svgBound := geom.NewBounds(p.MinX, p.MinY, p.MaxX, p.MaxY)
 	for _, datum := range p.Data {
 		bounds, err := Bounds(datum)
 		if err != nil {
 			return err
 		}
-		if bounds.Min.X > svgBound.Max.X || svgBound.Min.X > bounds.Max.X || bounds.Min.Y > svgBound.Max.Y || svgBound.Min.Y > bounds.Max.Y {
+		if bounds.Min.X > p.Max.X || p.Min.X > bounds.Max.X || bounds.Min.Y > p.Max.Y || p.Min.Y > bounds.Max.Y {
 			continue
 		}
 
@@ -517,7 +513,7 @@ func (p *Processor) x(x float64) string {
 }
 
 func (p *Processor) y(y float64) string {
-	return strconv.FormatFloat((p.MaxY-y)*p.Scale, 'f', -1, 64)
+	return strconv.FormatFloat((p.Max.Y-y)*p.Scale, 'f', -1, 64)
 }
 
 func (p *Processor) m(f float64) string {

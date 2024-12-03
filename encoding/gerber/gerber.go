@@ -16,26 +16,26 @@ import (
 
 type Processor interface {
 	// Circle draws a circle.
-	Circle(Circle)
+	Circle(*Circle)
 
 	// Rectangle draws a rectangle.
-	Rectangle(Rectangle)
+	Rectangle(*Rectangle)
 
 	// Obround(oval) draws an olav.
-	Obround(Obround)
+	Obround(*Obround)
 
 	// Contour draws a contour.
-	Contour(Contour) error
+	Contour(*Contour)
 
 	// Line draws a line.
-	Line(Line)
+	Line(*Line)
 
 	// Arc draws an arc.
-	Arc(Arc) error
+	Arc(*Arc)
 
 	// SetViewbox sets the viewbox of the Gerber image.
 	// It is called by the Parser when parsing has completed.
-	SetViewBox(minX, maxX, minY, maxY float64)
+	SetViewBox(*ViewBox)
 }
 
 func parseApertureID(word string) (string, error) {
@@ -370,7 +370,8 @@ func (p *regionParser) process(lineIdx int, word string) error {
 	case strings.HasSuffix(word, commandD02):
 		return p.processD02(lineIdx, word[:len(word)-len(commandD02)])
 	case word == commandG37:
-		return p.cp.pc.Contour(p.contour)
+		p.cp.pc.Contour(&p.contour)
+		return nil
 	case word == commandG75:
 		return nil
 	case word == commandG74:
@@ -418,9 +419,7 @@ func (p *regionParser) processD01(lineIdx int, word string) error {
 
 func (p *regionParser) processD02(lineIdx int, word string) error {
 	if p.gotCommand {
-		if err := p.cp.pc.Contour(p.contour); err != nil {
-			return err
-		}
+		p.cp.pc.Contour(&p.contour)
 	}
 	p.gotCommand = true
 
@@ -523,12 +522,7 @@ type commandProcessor struct {
 	y             float64
 	ap            aperture
 	polarity      bool
-
-	minX float64
-	maxX float64
-	minY float64
-	maxY float64
-
+	ViewBox
 	modalD01 bool
 }
 
@@ -547,10 +541,10 @@ func newCommandProcessor(pc Processor) *commandProcessor {
 	// Default polarity is dark.
 	p.polarity = true
 
-	p.minX = math.MaxInt
-	p.maxX = -math.MaxInt
-	p.minY = math.MaxInt
-	p.maxY = -math.MaxInt
+	p.Min.X = math.MaxInt
+	p.Max.X = -math.MaxInt
+	p.Min.Y = math.MaxInt
+	p.Max.Y = -math.MaxInt
 
 	return p
 }
@@ -622,7 +616,7 @@ func (p *commandProcessor) processWord(lineIdx int, word string) error {
 		words := strings.Split(word, wordTerminator)
 		return p.processExtended(lineIdx, words)
 	case word == commandM02:
-		p.pc.SetViewBox(p.minX, p.maxX, p.minY, p.maxY)
+		p.pc.SetViewBox(&p.ViewBox)
 		return nil
 	default:
 		return fmt.Errorf("unknown command")
@@ -635,17 +629,17 @@ func (p *commandProcessor) setXY(x, y float64) {
 }
 
 func (p *commandProcessor) bounds(bounds *geom.Bounds) {
-	if p.minX > bounds.Min.X {
-		p.minX = bounds.Min.X
+	if p.Min.X > bounds.Min.X {
+		p.Min.X = bounds.Min.X
 	}
-	if p.maxX < bounds.Max.X {
-		p.maxX = bounds.Max.X
+	if p.Max.X < bounds.Max.X {
+		p.Max.X = bounds.Max.X
 	}
-	if p.minY > bounds.Min.Y {
-		p.minY = bounds.Min.Y
+	if p.Min.Y > bounds.Min.Y {
+		p.Min.Y = bounds.Min.Y
 	}
-	if p.maxY < bounds.Max.Y {
-		p.maxY = bounds.Max.Y
+	if p.Max.Y < bounds.Max.Y {
+		p.Max.Y = bounds.Max.Y
 	}
 }
 
@@ -678,7 +672,7 @@ func (p *commandProcessor) processD01(lineIdx int, word string) error {
 
 	switch p.interpolation {
 	case InterpolationLinear:
-		p.pc.Line(Line{lineIdx, geom.Line{geom.Pt(p.x, p.y), geom.Pt(x, y)}, diameter, LineCapRound})
+		p.pc.Line(&Line{lineIdx, geom.Line{geom.Pt(p.x, p.y), geom.Pt(x, y)}, diameter, LineCapRound})
 	case InterpolationClockwise:
 		fallthrough
 	case InterpolationCCW:
@@ -687,9 +681,7 @@ func (p *commandProcessor) processD01(lineIdx int, word string) error {
 			return fmt.Errorf("%+v", coords)
 		}
 		xc, yc := p.x+i, p.y+j
-		if err := p.pc.Arc(Arc{lineIdx, geom.Arc{geom.Pt(p.x, p.y), geom.Pt(x, y), geom.Pt(xc, yc)}, diameter, p.interpolation}); err != nil {
-			return err
-		}
+		p.pc.Arc(&Arc{lineIdx, geom.Arc{geom.Pt(p.x, p.y), geom.Pt(x, y), geom.Pt(xc, yc)}, diameter, p.interpolation})
 	default:
 		return fmt.Errorf("%d", p.interpolation)
 	}
@@ -730,15 +722,15 @@ func (p *commandProcessor) flash(lineIdx int) error {
 	switch p.ap.Template.Name {
 	case templateNameCircle:
 		c := Circle{lineIdx, p.polarity, geom.Circle{geom.Pt(p.x, p.y), params[0]}}
-		p.pc.Circle(c)
+		p.pc.Circle(&c)
 		p.bounds(c.Bounds())
 	case templateNameRectangle:
 		r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geom.Rectangle{Center: geom.Pt(p.x, p.y), Width: params[0], Height: params[1]}}
-		p.pc.Rectangle(r)
+		p.pc.Rectangle(&r)
 		p.bounds(r.Bounds())
 	case templateNameObround:
 		o := Obround{lineIdx, p.polarity, geom.Rectangle{geom.Pt(p.x, p.y), params[0], params[1], 0}}
-		p.pc.Obround(o)
+		p.pc.Obround(&o)
 		p.bounds(o.Bounds())
 	default:
 		return p.flashUserDefinedTmpl(lineIdx)
@@ -758,7 +750,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
 			c := Circle{lineIdx, p.polarity, geom.Circle{geom.Pt(p.x+pm.CenterX, p.y+pm.CenterY), pm.Diameter}}
-			p.pc.Circle(c)
+			p.pc.Circle(&c)
 			p.bounds(c.Bounds())
 		case vectorLinePrimitive:
 			if !pm.Exposure {
@@ -768,7 +760,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
 			l := Line{lineIdx, geom.Line{geom.Pt(p.x+pm.StartX, p.y+pm.StartY), geom.Pt(p.x+pm.EndX, p.y+pm.EndY)}, pm.Width, LineCapButt}
-			p.pc.Line(l)
+			p.pc.Line(&l)
 			p.bounds(l.Bounds())
 		case outlinePrimitive:
 			if !pm.Exposure {
@@ -781,9 +773,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if err != nil {
 				return fmt.Errorf("%d %+v %w", i, pm, err)
 			}
-			if err := p.pc.Contour(contour); err != nil {
-				return fmt.Errorf("%d %+v %w", i, pm, err)
-			}
+			p.pc.Contour(&contour)
 			p.bounds(contour.Bounds())
 		case lowerLeftLinePrimitive:
 			if !pm.Exposure {
@@ -795,7 +785,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geom.Rectangle{Center: geom.Pt(p.x+pm.X+pm.Width/2, p.y+pm.Y+pm.Height/2),
 				Width:  pm.Width,
 				Height: pm.Height, Angle: pm.Rotation}}
-			p.pc.Rectangle(r)
+			p.pc.Rectangle(&r)
 			p.bounds(r.Bounds())
 		case rectPrimitive:
 			if !pm.Exposure {
@@ -803,13 +793,13 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			}
 			r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geom.Rectangle{Center: geom.Pt(p.x+pm.CenterX, p.y+pm.CenterY), Width: pm.Width,
 				Height: pm.Height, Angle: pm.Rotation}}
-			p.pc.Rectangle(r)
+			p.pc.Rectangle(&r)
 			p.bounds(r.Bounds())
 		case obroundPrimitive:
 			if !pm.Exposure {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			p.pc.Obround(Obround{lineIdx, p.polarity, geom.Rectangle{geom.Pt(p.x, +p.y), pm.Width, pm.Height, pm.Rotation}})
+			p.pc.Obround(&Obround{lineIdx, p.polarity, geom.Rectangle{geom.Pt(p.x, +p.y), pm.Width, pm.Height, pm.Rotation}})
 		default:
 			return fmt.Errorf("%d %+v", i, p)
 		}

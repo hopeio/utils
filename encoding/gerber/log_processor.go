@@ -11,34 +11,32 @@ import "log"
 type LogProcessor struct {
 }
 
-func (l LogProcessor) Circle(circle Circle) {
+func (l LogProcessor) Circle(circle *Circle) {
 	log.Println("circle", circle)
 }
 
-func (l LogProcessor) Rectangle(rectangle Rectangle) {
+func (l LogProcessor) Rectangle(rectangle *Rectangle) {
 	log.Println("rectangle", rectangle)
 }
 
-func (l LogProcessor) Obround(obround Obround) {
+func (l LogProcessor) Obround(obround *Obround) {
 	log.Println("obround", obround)
 }
 
-func (l LogProcessor) Contour(contour Contour) error {
+func (l LogProcessor) Contour(contour *Contour) {
 	log.Println("contour", contour)
-	return nil
 }
 
-func (l LogProcessor) Line(line Line) {
+func (l LogProcessor) Line(line *Line) {
 	log.Println("line", line)
 }
 
-func (l LogProcessor) Arc(arc Arc) error {
+func (l LogProcessor) Arc(arc *Arc) {
 	log.Println("arc", arc)
-	return nil
 }
 
-func (l LogProcessor) SetViewBox(minX, maxX, minY, maxY float64) {
-	log.Println("SetViewBox", minX, maxX, minY, maxY)
+func (l LogProcessor) SetViewBox(box *ViewBox) {
+	log.Println("SetViewBox", box)
 }
 
 var _ Processor = (*LogProcessor)(nil)

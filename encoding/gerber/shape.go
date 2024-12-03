@@ -96,3 +96,5 @@ func (e *Line) Bounds() *geom.Bounds {
 	//TODO
 	return nil
 }
+
+type ViewBox = geom.Bounds
