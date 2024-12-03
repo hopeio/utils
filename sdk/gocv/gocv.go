@@ -12,38 +12,23 @@ import (
 	"image"
 )
 
-type Circle struct {
-	X        int `json:"x"`
-	Y        int `json:"y"`
-	Diameter int `json:"diameter"`
-}
-
-func SearchCircle(path string, rect image.Rectangle) (circles []Circle, err error) {
+func SearchCircle(path string, radius int) (circles []imagei.Circle, err error) {
 	gimg := gocv.IMRead(path, gocv.IMReadGrayScale)
 	// 定义高斯核的大小和标准差
-	ksize := image.Pt(11, 11)
 	blurred := gocv.NewMat()
 	defer blurred.Close()
-	img := gimg.Region(rect)
-	defer img.Close()
-	gocv.GaussianBlur(img, &blurred, ksize, 0, 0, gocv.BorderDefault)
-	edges := gocv.NewMat()
-	defer edges.Close()
-	gocv.Canny(blurred, &edges, 100, 200)
+	gocv.GaussianBlur(gimg, &blurred, image.Pt(9, 9), 0, 0, gocv.BorderDefault)
 	circleMap := gocv.NewMat()
 	defer circleMap.Close()
-	gocv.HoughCirclesWithParams(edges, &circleMap, gocv.HoughGradient, 1, float64(max(rect.Dx(), rect.Dy())), 300,
-		10, 50, 300)
+	gocv.HoughCirclesWithParams(blurred, &circleMap, gocv.HoughGradient, 1, float64(radius), 30,
+		30, radius, radius)
 	if !circleMap.Empty() {
 		for i := range circleMap.Cols() {
 			v := circleMap.GetVecfAt(0, i)
 			x := int(v[0])
 			y := int(v[1])
 			r := int(v[2])
-			// 检查圆是否完整，即圆的边缘不会超出图像边界
-			if (x-r) > 0 && (x+r) < gimg.Cols() && (y-r) > 0 && (y+r) < gimg.Rows() {
-				circles = append(circles, Circle{X: x + rect.Min.X, Y: y + rect.Min.Y, Diameter: r * 2})
-			}
+			circles = append(circles, imagei.Circle{Center: image.Pt(x, y), Radius: r})
 		}
 	}
 	return

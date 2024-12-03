@@ -3,6 +3,7 @@ package gerber
 import (
 	"bufio"
 	"fmt"
+	"github.com/hopeio/utils/log"
 	"github.com/hopeio/utils/math/geom"
 	"io"
 	"math"
@@ -45,7 +46,7 @@ func parseApertureID(word string) (string, error) {
 		return "", fmt.Errorf("%v", word[0])
 	}
 
-	var digits int = len(word) - 1
+	var digits = len(word) - 1
 	for i, c := range word[1:] {
 		if c >= '0' && c <= '9' {
 			continue
@@ -111,6 +112,16 @@ type ovalPrimitive struct {
 	Rotation float64
 }
 type ovalPrimitiveTemplate []primitiveValue
+
+func (o ovalPrimitiveTemplate) Primitive() obroundPrimitive {
+	dx, dy := o[4].value-o[2].value, o[5].value-o[3].value
+	rotation := math.Atan2(dy, dx) * (180.0 / math.Pi)
+	if rotation < 0 {
+		rotation += 360
+	}
+	return obroundPrimitive{Height: math.Hypot(dx, dy), Rotation: 360 - rotation, Width: o[1].value, Exposure: o[0].value == 1}
+}
+
 type obroundPrimitive struct {
 	Exposure bool
 	Width    float64
@@ -118,17 +129,6 @@ type obroundPrimitive struct {
 	CenterX  float64
 	CenterY  float64
 	Rotation float64
-}
-
-type obroundPrimitiveTemplate []primitiveValue
-
-func (o obroundPrimitiveTemplate) Primitive() obroundPrimitive {
-	dx, dy := o[4].value-o[2].value, o[5].value-o[3].value
-	rotation := math.Atan2(dy, dx) * (180.0 / math.Pi)
-	if rotation < 0 {
-		rotation += 360
-	}
-	return obroundPrimitive{Height: math.Sqrt(dx*dx + dy*dy), Rotation: 360 - rotation, Width: o[1].value, Exposure: o[0].value == 1}
 }
 
 // *20(or 2),$1,$2,$3,$4,$5,$6,$7*
@@ -236,6 +236,8 @@ func (p primitive) Parse() any {
 		return lowerLeftLinePrimitiveTemplate(p.value).Primitive()
 	case primitiveCodeRect:
 		return rectPrimitiveTemplate(p.value).Primitive()
+	case primitiveCodeOval:
+		return ovalPrimitiveTemplate(p.value).Primitive()
 	}
 	return nil
 }
@@ -273,6 +275,7 @@ func parsePrimitive(lineIdx int, word string) (primitive, error) {
 	if err != nil {
 		return p, err
 	}
+	p.code = code
 	p.value = make([]primitiveValue, len(splitted)-1)
 	for i := 1; i < len(splitted); i++ {
 		if strings.Contains(splitted[i], "\n") {
@@ -328,7 +331,7 @@ func parsePrimitive(lineIdx int, word string) (primitive, error) {
 			return p, fmt.Errorf("%+v", splitted)
 		}
 	}
-	return p, fmt.Errorf("%+v", splitted)
+	return p, nil
 }
 
 type aperture struct {
@@ -612,6 +615,10 @@ func (p *commandProcessor) processWord(lineIdx int, word string) error {
 	case strings.HasPrefix(word, "X"):
 		return p.processModalD01(lineIdx, word)
 	case strings.HasPrefix(word, commandAM):
+		// 特殊处理
+		if word == "AMOval*1,1,$1,$2,$3*1,1,$1,$4,$5*20,1,$1,$2,$3,$4,$5,0" {
+			return p.Oval(lineIdx, word)
+		}
 		words := strings.Split(word, wordTerminator)
 		return p.processExtended(lineIdx, words)
 	case word == commandM02:
@@ -623,22 +630,22 @@ func (p *commandProcessor) processWord(lineIdx int, word string) error {
 }
 
 func (p *commandProcessor) setXY(x, y float64) {
-	p.x = x
-	p.y = y
+	p.x = x / p.decimal
+	p.y = y / p.decimal
 }
 
 func (p *commandProcessor) bounds(bounds *geom.Bounds) {
 	if p.minX > bounds.Min.X {
 		p.minX = bounds.Min.X
 	}
-	if p.maxX < bounds.MaxX.X {
-		p.maxX = bounds.MaxX.X
+	if p.maxX < bounds.Max.X {
+		p.maxX = bounds.Max.X
 	}
 	if p.minY > bounds.Min.Y {
 		p.minY = bounds.Min.Y
 	}
-	if p.maxY < bounds.MaxX.Y {
-		p.maxY = bounds.MaxX.Y
+	if p.maxY < bounds.Max.Y {
+		p.maxY = bounds.Max.Y
 	}
 }
 
@@ -659,19 +666,19 @@ func (p *commandProcessor) processD01(lineIdx int, word string) error {
 	var diameter float64
 	switch p.ap.Template.Name {
 	case templateNameCircle:
-		diameter = p.u(p.ap.Params[0])
+		diameter = p.ap.Params[0]
 	case templateNameRectangle:
 		if p.ap.Params[0] != p.ap.Params[1] {
 			return fmt.Errorf("%+v", p.ap)
 		}
-		diameter = p.u(p.ap.Params[0])
+		diameter = p.ap.Params[0]
 	default:
 		return fmt.Errorf("%+v", p.ap)
 	}
 
 	switch p.interpolation {
 	case InterpolationLinear:
-		p.pc.Line(Line{lineIdx, geom.Line{float64(p.x), float64(p.y), float64(x), float64(y)}, float64(diameter), LineCapRound})
+		p.pc.Line(Line{lineIdx, geom.Line{geom.Pt(p.x, p.y), geom.Pt(x, y)}, diameter, LineCapRound})
 	case InterpolationClockwise:
 		fallthrough
 	case InterpolationCCW:
@@ -680,7 +687,7 @@ func (p *commandProcessor) processD01(lineIdx int, word string) error {
 			return fmt.Errorf("%+v", coords)
 		}
 		xc, yc := p.x+i, p.y+j
-		if err := p.pc.Arc(Arc{lineIdx, geom.Arc{float64(p.x), float64(p.y), float64(x), float64(y), float64(xc), float64(yc)}, float64(diameter), p.interpolation}); err != nil {
+		if err := p.pc.Arc(Arc{lineIdx, geom.Arc{geom.Pt(p.x, p.y), geom.Pt(x, y), geom.Pt(xc, yc)}, diameter, p.interpolation}); err != nil {
 			return err
 		}
 	default:
@@ -722,15 +729,15 @@ func (p *commandProcessor) flash(lineIdx int) error {
 	params := p.ap.Params
 	switch p.ap.Template.Name {
 	case templateNameCircle:
-		c := Circle{lineIdx, p.polarity, geom.Circle{float64(p.x), float64(p.y), p.u(params[0])}}
+		c := Circle{lineIdx, p.polarity, geom.Circle{geom.Pt(p.x, p.y), params[0]}}
 		p.pc.Circle(c)
 		p.bounds(c.Bounds())
 	case templateNameRectangle:
-		r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geom.Rectangle{CenterX: p.x, CenterY: p.y, Width: p.u(params[0]), Height: p.u(params[1])}}
+		r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geom.Rectangle{Center: geom.Pt(p.x, p.y), Width: params[0], Height: params[1]}}
 		p.pc.Rectangle(r)
 		p.bounds(r.Bounds())
 	case templateNameObround:
-		o := Obround{lineIdx, p.polarity, geom.Rectangle{p.x, p.y, p.u(params[0]), p.u(params[1]), 0}}
+		o := Obround{lineIdx, p.polarity, geom.Rectangle{geom.Pt(p.x, p.y), params[0], params[1], 0}}
 		p.pc.Obround(o)
 		p.bounds(o.Bounds())
 	default:
@@ -750,7 +757,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if !pm.Exposure {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			c := Circle{lineIdx, p.polarity, geom.Circle{p.x + p.u(pm.CenterX), p.y + p.u(pm.CenterY), p.u(pm.Diameter)}}
+			c := Circle{lineIdx, p.polarity, geom.Circle{geom.Pt(p.x+pm.CenterX, p.y+pm.CenterY), pm.Diameter}}
 			p.pc.Circle(c)
 			p.bounds(c.Bounds())
 		case vectorLinePrimitive:
@@ -760,7 +767,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if pm.Rotation != 0 {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			l := Line{lineIdx, geom.Line{p.x + p.u(pm.StartX), p.y + p.u(pm.StartY), p.x + p.u(pm.EndX), p.y + p.u(pm.EndY)}, p.u(pm.Width), LineCapButt}
+			l := Line{lineIdx, geom.Line{geom.Pt(p.x+pm.StartX, p.y+pm.StartY), geom.Pt(p.x+pm.EndX, p.y+pm.EndY)}, pm.Width, LineCapButt}
 			p.pc.Line(l)
 			p.bounds(l.Bounds())
 		case outlinePrimitive:
@@ -785,19 +792,24 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if pm.Rotation != 0 {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geom.Rectangle{CenterX: p.x + p.u(pm.X+pm.Width/2), CenterY: p.y + p.u(pm.Y+pm.Height/2),
-				Width:  p.u(pm.Width),
-				Height: p.u(pm.Height), Angle: pm.Rotation}}
+			r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geom.Rectangle{Center: geom.Pt(p.x+pm.X+pm.Width/2, p.y+pm.Y+pm.Height/2),
+				Width:  pm.Width,
+				Height: pm.Height, Angle: pm.Rotation}}
 			p.pc.Rectangle(r)
 			p.bounds(r.Bounds())
 		case rectPrimitive:
 			if !pm.Exposure {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geom.Rectangle{CenterX: p.x + p.u(pm.CenterX), CenterY: p.y + p.u(pm.CenterY), Width: p.u(pm.Width),
-				Height: p.u(pm.Height), Angle: pm.Rotation}}
+			r := Rectangle{Line: lineIdx, Polarity: p.polarity, Rectangle: geom.Rectangle{Center: geom.Pt(p.x+pm.CenterX, p.y+pm.CenterY), Width: pm.Width,
+				Height: pm.Height, Angle: pm.Rotation}}
 			p.pc.Rectangle(r)
 			p.bounds(r.Bounds())
+		case obroundPrimitive:
+			if !pm.Exposure {
+				return fmt.Errorf("%d %+v", i, pm)
+			}
+			p.pc.Obround(Obround{lineIdx, p.polarity, geom.Rectangle{geom.Pt(p.x, +p.y), pm.Width, pm.Height, pm.Rotation}})
 		default:
 			return fmt.Errorf("%d %+v", i, p)
 		}
@@ -810,11 +822,11 @@ func (p *commandProcessor) contourFromOutline(lineIdx int, outline outlinePrimit
 	if len(outline.Points) < 3 {
 		return Contour{}, fmt.Errorf("%+v", outline.Points)
 	}
-	contour.X = p.x + p.u(outline.Points[0][0])
-	contour.Y = p.y + p.u(outline.Points[0][1])
+	contour.X = p.x + outline.Points[0][0]
+	contour.Y = p.y + outline.Points[0][1]
 
 	for _, pt := range outline.Points[1:] {
-		s := Segment{Interpolation: InterpolationLinear, X: p.x + p.u(pt[0]), Y: p.y + p.u(pt[1])}
+		s := Segment{Interpolation: InterpolationLinear, X: p.x + pt[0], Y: p.y + pt[1]}
 		contour.Segments = append(contour.Segments, s)
 	}
 	return contour, nil
@@ -993,10 +1005,6 @@ func (p *commandProcessor) processFS(lineIdx int, word string) error {
 	return nil
 }
 
-func (p *commandProcessor) u(f float64) float64 {
-	return f * p.decimal
-}
-
 func (p *commandProcessor) processMO(lineIdx int, word string) error {
 	if len(word) != 4 {
 		return fmt.Errorf("%d", len(word))
@@ -1159,6 +1167,9 @@ func (parser *Parser) Parse(r io.Reader) error {
 		line := scanner.Text()
 		if line == "" {
 			continue
+		}
+		if lineIdx == 1781 {
+			log.Debug("debug")
 		}
 		if err := parser.parse(lineIdx, line); err != nil {
 			return fmt.Errorf("at line %d: \"%s\" %w", lineIdx, line, err)

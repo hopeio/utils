@@ -13,23 +13,21 @@ import (
 	"math"
 )
 
-type Triangle struct {
-	A, B, C Point
-}
-
 type Rectangle struct {
-	Center Point
-	Width  float64
-	Height float64
-	Angle  float64
+	CenterX float64
+	CenterY float64
+	Width   float64
+	Height  float64
+	Angle   float64
 }
 
-func NewRect(center Point, width, height float64, angleDeg float64) *Rectangle {
+func NewRect(centerX, centerY, width, height float64, angleDeg float64) *Rectangle {
 	return &Rectangle{
-		Center: center,
-		Width:  width,
-		Height: height,
-		Angle:  angleDeg,
+		CenterX: centerX,
+		CenterY: centerY,
+		Width:   width,
+		Height:  height,
+		Angle:   angleDeg,
 	}
 }
 
@@ -41,9 +39,10 @@ func RectNoRotate(x0, y0, x1, y1 float64) *Rectangle {
 		y0, y1 = y1, y0
 	}
 	return &Rectangle{
-		Center: Point{(x0 + x1) / 2, (y0 + y1) / 2},
-		Width:  x1 - x0,
-		Height: y1 - y0,
+		CenterX: (x0 + x1) / 2,
+		CenterY: (y0 + y1) / 2,
+		Width:   x1 - x0,
+		Height:  y1 - y0,
 	}
 }
 
@@ -53,7 +52,7 @@ func RectFromImageRect(r image.Rectangle) *Rectangle {
 
 func (rect *Rectangle) Bounds() *Bounds {
 	if rect.Angle == 0 {
-		return NewBounds(rect.Center.X-rect.Width/2, rect.Center.Y-rect.Height/2, rect.Center.X+rect.Width/2, rect.Center.Y+rect.Height/2)
+		return NewBounds(rect.CenterX-rect.Width/2, rect.CenterY-rect.Height/2, rect.CenterX+rect.Width/2, rect.CenterY+rect.Height/2)
 	}
 	corners := rect.Corners()
 	minx, maxx := mathi.MinAndMax(corners[0].X, corners[1].X, corners[2].X, corners[3].X)
@@ -63,10 +62,10 @@ func (rect *Rectangle) Bounds() *Bounds {
 
 func (rect *Rectangle) Corners() [4]Point {
 	if rect.Angle == 0 {
-		return [4]Point{{rect.Center.X - rect.Width/2, rect.Center.Y - rect.Height/2},
-			{rect.Center.X + rect.Width/2, rect.Center.Y - rect.Height/2},
-			{rect.Center.X + rect.Width/2, rect.Center.Y + rect.Height/2},
-			{rect.Center.X - rect.Width/2, rect.Center.Y + rect.Height/2}}
+		return [4]Point{{rect.CenterX - rect.Width/2, rect.CenterY - rect.Height/2},
+			{rect.CenterX + rect.Width/2, rect.CenterY - rect.Height/2},
+			{rect.CenterX + rect.Width/2, rect.CenterY + rect.Height/2},
+			{rect.CenterX - rect.Width/2, rect.CenterY + rect.Height/2}}
 	}
 	angleRad := rect.Angle * math.Pi / 180.0
 	// Calculate cosine and sine of the angle
@@ -74,14 +73,14 @@ func (rect *Rectangle) Corners() [4]Point {
 	sinA := math.Sin(angleRad)
 	halfW, halfH := rect.Width/2, rect.Height/2
 	// 计算矩形四个角的坐标 (A左下-B右下-C右上-D左上)
-	dx := rect.Center.X + halfW*cosA - halfH*sinA
-	dy := rect.Center.Y + halfW*sinA + halfH*cosA
-	ax := rect.Center.X - halfW*cosA - halfH*sinA
-	ay := rect.Center.Y - halfW*sinA + halfH*cosA
-	bx := rect.Center.X - halfW*cosA + halfH*sinA
-	by := rect.Center.Y - halfW*sinA - halfH*cosA
-	cx := rect.Center.X + halfW*cosA + halfH*sinA
-	cy := rect.Center.Y + halfW*sinA - halfH*cosA
+	dx := rect.CenterX + halfW*cosA - halfH*sinA
+	dy := rect.CenterY + halfW*sinA + halfH*cosA
+	ax := rect.CenterX - halfW*cosA - halfH*sinA
+	ay := rect.CenterY - halfW*sinA + halfH*cosA
+	bx := rect.CenterX - halfW*cosA + halfH*sinA
+	by := rect.CenterY - halfW*sinA - halfH*cosA
+	cx := rect.CenterX + halfW*cosA + halfH*sinA
+	cy := rect.CenterY + halfW*sinA - halfH*cosA
 	return [4]Point{{ax, ay}, {bx, by}, {cx, cy}, {dx, dy}}
 }
 
@@ -93,7 +92,7 @@ func (rect *Rectangle) ContainsPoint(p Point) bool {
 	intersections := 0
 	corners := rect.Corners()
 
-	for i := 0; i < len(corners); i++ {
+	for i := range corners {
 		x1, y1 := corners[i].X, corners[i].Y
 		x2, y2 := corners[(i+1)%len(corners)].X, corners[(i+1)%len(corners)].Y
 
@@ -129,10 +128,11 @@ func (rect *RectangleInt[T]) ToFloat64(factor float64) *Rectangle {
 		factor = 1
 	}
 	return &Rectangle{
-		Center: Point{float64(rect.Center.X) / factor, float64(rect.Center.Y) / factor},
-		Width:  float64(rect.Width) / factor,
-		Height: float64(rect.Height) / factor,
-		Angle:  rect.Angle,
+		CenterX: float64(rect.Center.X) / factor,
+		CenterY: float64(rect.Center.Y) / factor,
+		Width:   float64(rect.Width) / factor,
+		Height:  float64(rect.Height) / factor,
+		Angle:   rect.Angle,
 	}
 }
 
@@ -146,8 +146,8 @@ func RectIntFromFloat64[T constraints.Integer](e *Rectangle, factor float64) *Re
 	}
 	return &RectangleInt[T]{
 		Center: PointInt[T]{
-			X: T(math.Round(e.Center.X * factor)),
-			Y: T(math.Round(e.Center.Y * factor)),
+			X: T(math.Round(e.CenterX * factor)),
+			Y: T(math.Round(e.CenterY * factor)),
 		},
 		Width:  T(math.Round(e.Width * factor)),
 		Height: T(math.Round(e.Angle * factor)),
@@ -156,12 +156,14 @@ func RectIntFromFloat64[T constraints.Integer](e *Rectangle, factor float64) *Re
 }
 
 type Bounds struct {
-	Min Point
-	Max Point
+	MinX float64
+	MinY float64
+	MaxX float64
+	MaxY float64
 }
 
 func (b *Bounds) ToRect() *Rectangle {
-	return RectNoRotate((b.Min.X+b.Max.X)/2, (b.Min.Y+b.Max.Y)/2, b.Max.X-b.Min.X, b.Max.Y-b.Min.Y)
+	return RectNoRotate((b.MinX+b.MaxX)/2, (b.MinY+b.MaxY)/2, b.MaxX-b.MinX, b.MaxY-b.MinY)
 }
 
 func NewBounds(x0, y0, x1, y1 float64) *Bounds {
@@ -172,8 +174,10 @@ func NewBounds(x0, y0, x1, y1 float64) *Bounds {
 		y0, y1 = y1, y0
 	}
 	return &Bounds{
-		Min: Point{X: x0, Y: y0},
-		Max: Point{x1, y1},
+		MinX: x0,
+		MinY: y0,
+		MaxX: x1,
+		MaxY: y1,
 	}
 }
 

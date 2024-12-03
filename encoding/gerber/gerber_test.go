@@ -6,7 +6,7 @@ import (
 )
 
 func TestGerber(t *testing.T) {
-	path := `XXX`
+	path := `D:\Gerber_TopLayer.GTL`
 	p := LogProcessor{}
 
 	f, _ := os.Open(path)

@@ -3,15 +3,17 @@ package geom
 import "golang.org/x/exp/constraints"
 
 type Circle struct {
-	Center   Point
+	X        float64
+	Y        float64
 	Diameter float64
 }
 
 func (c *Circle) Bounds() *Bounds {
-	return NewBounds(c.Center.X, c.Center.Y, c.Diameter, c.Diameter)
+	return NewBounds(c.X, c.Y, c.Diameter, c.Diameter)
 }
 
 type CircleInt[T constraints.Integer] struct {
-	Center   PointInt[T]
+	X        T
+	Y        T
 	Diameter T
 }

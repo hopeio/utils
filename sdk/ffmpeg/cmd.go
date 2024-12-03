@@ -20,14 +20,10 @@ type Config struct {
 	Path string
 }
 
-var execPath = "ffmpeg"
-
-func SetExecPath(path string) {
-	execPath = path
-}
+var ExecPath = "ffmpeg"
 
 func Run(cmd string) error {
-	cmd = execPath + " " + cmd
+	cmd = ExecPath + " " + cmd
 	log.Debug("exec:", cmd)
 	err := execi.RunContainQuoted(cmd)
 	if err != nil {

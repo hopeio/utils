@@ -90,8 +90,8 @@ type Line struct {
 
 func (e *Line) Bounds() *geom.Bounds {
 	if e.Cap == LineCapButt {
-		vector := geom.NewVector(geom.Point{e.StartX, e.StartY}, geom.Point{e.EndX, e.EndY})
-		return geom.NewRect((e.StartX+e.EndX)/2, (e.StartY+e.EndY)/2, vector.Length(), e.StrokeWidth, vector.Angle()).Bounds()
+		vector := geom.NewVector(e.Start, e.End)
+		return geom.NewRect(geom.Pt((e.Start.X+e.End.X)/2, (e.Start.Y+e.End.Y)/2), vector.Length(), e.StrokeWidth, vector.Angle()).Bounds()
 	}
 	//TODO
 	return nil

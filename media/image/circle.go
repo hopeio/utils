@@ -1,5 +1,8 @@
 package image
 
+import "image"
+
 type Circle struct {
-	X, Y, R float64
+	Center image.Point
+	Radius int
 }

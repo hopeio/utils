@@ -35,7 +35,7 @@ type Circle struct {
 
 func (e Circle) Bounds() *geom.Bounds {
 	radius := e.Diameter / 2
-	return geom.NewBounds(e.X-radius, e.Y-radius, e.X+radius, e.Y+radius)
+	return geom.NewBounds(e.Center.X-radius, e.Center.Y-radius, e.Center.X+radius, e.Center.Y+radius)
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -64,7 +64,7 @@ type Rectangle struct {
 }
 
 func (e Rectangle) Bounds() *geom.Bounds {
-	return geom.NewBounds(e.CenterX, e.CenterY, e.CenterX+e.Width, e.CenterY+e.Height)
+	return geom.NewBounds(e.Center.X, e.Center.Y, e.Center.X+e.Width, e.Center.Y+e.Height)
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -123,12 +123,12 @@ type Path struct {
 }
 
 func (e Path) Bounds() (*geom.Bounds, error) {
-	bounds := geom.Bounds{Min: geom.Point{math.MaxFloat64, math.MaxFloat64}, MaxX: geom.Point{-math.MaxFloat64, -math.MaxFloat64}}
+	bounds := geom.Bounds{Min: geom.Point{math.MaxFloat64, math.MaxFloat64}, Max: geom.Point{-math.MaxFloat64, -math.MaxFloat64}}
 	updateMinMax := func(x, y float64) {
 		bounds.Min.X = min(bounds.Min.X, x)
-		bounds.MaxX.X = max(bounds.MaxX.X, x)
+		bounds.Max.X = max(bounds.Max.X, x)
 		bounds.Min.Y = min(bounds.Min.Y, y)
-		bounds.MaxX.Y = max(bounds.MaxX.Y, y)
+		bounds.Max.Y = max(bounds.Max.Y, y)
 	}
 
 	updateMinMax(e.X, e.Y)
@@ -169,7 +169,7 @@ type Line struct {
 }
 
 func (e Line) Bounds() *geom.Bounds {
-	return geom.NewBounds(e.StartX, e.StartY, e.EndX, e.EndY)
+	return geom.NewBounds(e.Start.X, e.Start.Y, e.End.X, e.End.Y)
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -201,7 +201,7 @@ type Arc struct {
 }
 
 func (e Arc) Bounds() *geom.Bounds {
-	return geom.NewBounds(min(e.StartX, e.EndX), max(e.StartY, e.EndY), max(e.StartX, e.EndX), max(e.StartY, e.EndY))
+	return geom.NewBounds(min(e.Start.X, e.End.X), max(e.Start.Y, e.End.Y), max(e.Start.X, e.End.X), max(e.Start.Y, e.End.Y))
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -267,13 +267,15 @@ func (p *Processor) Circle(circle gerber.Circle) {
 }
 
 func (p *Processor) Rectangle(rectangle gerber.Rectangle) {
-	rectangle.CenterX -= rectangle.Width / 2
-	rectangle.CenterY += rectangle.Height / 2
+	rectangle.Center.X -= rectangle.Width / 2
+	rectangle.Center.Y += rectangle.Height / 2
 	p.Data = append(p.Data, Rectangle{Aperture: "R", Rectangle: rectangle, Fill: p.fill(rectangle.Polarity)})
 }
 
 func (p *Processor) Obround(obround gerber.Obround) {
 	r := min(obround.Width, obround.Height) / 2
+	obround.Center.X -= obround.Width / 2
+	obround.Center.Y += obround.Height / 2
 	p.Data = append(p.Data, Rectangle{Aperture: "O", Rectangle: gerber.Rectangle{obround.Line, obround.Polarity, obround.Rectangle}, RadiusX: r, RadiusY: r, Fill: p.fill(obround.Polarity)})
 }
 
@@ -284,7 +286,7 @@ func (p *Processor) Contour(contour gerber.Contour) error {
 			if s.X == contour.X && s.Y == contour.Y {
 				vx, vy := s.X-s.CenterX, s.Y-s.CenterY
 				r := math.Round(math.Sqrt(vx*vx + vy*vy))
-				c := Circle{Circle: gerber.Circle{Line: contour.Line, Circle: geom.Circle{s.CenterX, s.CenterY, r * 2}},
+				c := Circle{Circle: gerber.Circle{Line: contour.Line, Circle: geom.Circle{geom.Pt(s.X, s.Y), r * 2}},
 					Fill: p.fill(contour.Polarity)}
 				p.Data = append(p.Data, c)
 				return nil
@@ -373,7 +375,7 @@ func (p *Processor) Line(gline gerber.Line) {
 }
 
 func (p *Processor) Arc(garc gerber.Arc) error {
-	if garc.EndX == garc.StartX && garc.EndY == garc.StartY {
+	if garc.End.X == garc.Start.X && garc.End.Y == garc.Start.Y {
 		return fmt.Errorf("degenerate arc")
 	}
 
@@ -387,8 +389,8 @@ func (p *Processor) Arc(garc gerber.Arc) error {
 		return fmt.Errorf("%d", garc.Interpolation)
 	}
 
-	vs := [2]float64{garc.StartX - garc.CenterX, garc.StartY - garc.CenterY}
-	ve := [2]float64{garc.EndX - garc.CenterX, garc.EndY - garc.CenterY}
+	vs := [2]float64{garc.Start.X - garc.Center.X, garc.Start.Y - garc.Center.Y}
+	ve := [2]float64{garc.End.X - garc.Center.X, garc.End.Y - garc.Center.Y}
 
 	radius, largeArc, err := calcArcParams(vs, ve, arc.Sweep)
 	if err != nil {
@@ -414,7 +416,7 @@ func (p *Processor) Write(w io.Writer) error {
 	if p.Width != "" && p.Height != "" {
 		svg += fmt.Sprintf(`width="%s" height="%s" `, p.Width, p.Height)
 	}
-	svg += fmt.Sprintf(`viewBox="%s %s %s %s" style="background-color: %s;" xmlns="http://www.w3.org/2000/svg">`+"\n", p.x(p.MinX), p.y(p.MaxY), p.m(p.MaxX-p.MinX), p.m(p.MaxY-p.MinY), p.PolarityClear)
+	svg += fmt.Sprintf(`viewBox="%s %s %s %s" style="background-color: %s;" xmlns="http://www.w3.org/2000/svg">`+"\n", p.x(p.MinX), p.m(p.MinY), p.m(p.MaxX), p.m(p.MaxY), p.PolarityClear)
 	if _, err := w.Write([]byte(svg)); err != nil {
 		return err
 	}
@@ -431,21 +433,20 @@ func (p *Processor) Write(w io.Writer) error {
 		if err != nil {
 			return err
 		}
-		if bounds.Min.X > svgBound.MaxX.X || svgBound.Min.X > bounds.MaxX.X || bounds.Min.Y > svgBound.MaxX.Y || svgBound.Min.Y > bounds.MaxX.Y {
+		if bounds.Min.X > svgBound.Max.X || svgBound.Min.X > bounds.Max.X || bounds.Min.Y > svgBound.Max.Y || svgBound.Min.Y > bounds.Max.Y {
 			continue
 		}
 
 		var b []byte
 		switch d := datum.(type) {
 		case Circle:
-			b = []byte(fmt.Sprintf(`<circle cx="%s" cy="%s" r="%s" fill="%s" %s/>`, p.x(d.X), p.y(d.Y),
+			b = []byte(fmt.Sprintf(`<circle cx="%s" cy="%s" r="%s" fill="%s" %s/>`, p.x(d.Center.X), p.y(d.Center.Y),
 				p.m(d.Diameter/2),
 				d.Fill, psvg.FormatAttr(d.Attr)))
 		case Rectangle:
 			w, h := p.m(d.Width), p.m(d.Height)
 			b = []byte(fmt.Sprintf(`<rect x="%s" y="%s" width="%s" height="%s" rx="%s" ry="%s" fill="%s" transform
-="rotate(%.1f, %s, %s)" %s/>`, p.x(d.CenterX), p.y(d.CenterY), w, h, p.m(d.RadiusX), p.m(d.RadiusY), d.Fill, d.Angle, p.x(d.CenterX+d.Width/2),
-				p.y(d.CenterY-d.Height/2), psvg.FormatAttr(d.Attr)))
+="rotate(%.1f, %s, %s)" %s/>`, p.x(d.Center.X), p.y(d.Center.Y), w, h, p.m(d.RadiusX), p.m(d.RadiusY), d.Fill, p.a(d.Angle), p.x(d.Center.X+d.Width/2), p.y(d.Center.Y-d.Height/2), psvg.FormatAttr(d.Attr)))
 		case Path:
 			var err error
 			b, err = p.pathBytes(d)
@@ -453,10 +454,10 @@ func (p *Processor) Write(w io.Writer) error {
 				return err
 			}
 		case Line:
-			b = []byte(fmt.Sprintf(`<line x1="%s" y1="%s" x2="%s" y2="%s" stroke-width="%s" stroke-linecap="%s" stroke="%s"%s/>`, p.x(d.StartX), p.y(d.StartY), p.x(d.EndX), p.y(d.EndY), p.m(d.StrokeWidth), d.Cap, d.Stroke, psvg.FormatAttr(d.Attr)))
+			b = []byte(fmt.Sprintf(`<line x1="%s" y1="%s" x2="%s" y2="%s" stroke-width="%s" stroke-linecap="%s" stroke="%s"%s/>`, p.x(d.Start.X), p.y(d.Start.Y), p.x(d.End.X), p.y(d.End.Y), p.m(d.StrokeWidth), d.Cap, d.Stroke, psvg.FormatAttr(d.Attr)))
 		case Arc:
 			b = []byte(fmt.Sprintf(`<path d="M %s %s A %s %s 0 %d %d %s %s" stroke-width="%s" stroke="%s" stroke
--linecap="round"%s/>`, p.x(d.StartX), p.y(d.StartY), p.m(d.RadiusX), p.m(d.RadiusY), d.LargeArc, d.Sweep, p.x(d.EndX), p.y(d.EndY), p.m(d.StrokeWidth), d.Stroke, psvg.FormatAttr(d.Attr)))
+-linecap="round"%s/>`, p.x(d.Start.X), p.y(d.Start.Y), p.m(d.RadiusX), p.m(d.RadiusY), d.LargeArc, d.Sweep, p.x(d.End.X), p.y(d.End.Y), p.m(d.StrokeWidth), d.Stroke, psvg.FormatAttr(d.Attr)))
 		default:
 			return fmt.Errorf("%+v", d)
 		}
@@ -516,11 +517,15 @@ func (p *Processor) x(x float64) string {
 }
 
 func (p *Processor) y(y float64) string {
-	return strconv.FormatFloat(y*p.Scale, 'f', -1, 64)
+	return strconv.FormatFloat((p.MaxY-y)*p.Scale, 'f', -1, 64)
 }
 
 func (p *Processor) m(f float64) string {
 	return strconv.FormatFloat(f*p.Scale, 'f', -1, 64)
+}
+
+func (p *Processor) a(a float64) float64 {
+	return 360 - a
 }
 
 // SVG parses Gerber input into SVG.

@@ -1,5 +1,7 @@
 package image
 
+import "image"
+
 type LineCap int
 
 const (
@@ -10,8 +12,6 @@ const (
 )
 
 type Line struct {
-	StartX int
-	StartY int
-	EndX   int
-	EndY   int
+	Start image.Point
+	End   image.Point
 }
