@@ -43,8 +43,37 @@ func RectNoRotate(x0, y0, x1, y1 float64) *Rectangle {
 	}
 }
 
+func RectNoRotate2(ltp, rdp Point) *Rectangle {
+	return &Rectangle{
+		Center: Point{(ltp.X + rdp.X) / 2, (ltp.Y + rdp.Y) / 2},
+		Width:  rdp.X - ltp.X,
+		Height: rdp.Y - ltp.Y,
+	}
+}
+
 func RectFromImageRect(r image.Rectangle) *Rectangle {
 	return RectNoRotate(float64(r.Min.X), float64(r.Min.Y), float64(r.Max.X), float64(r.Max.Y))
+}
+
+func RectFromCorners(points [4]Point) *Rectangle {
+	var center Point
+	for _, p := range points {
+		center.X += p.X
+		center.Y += p.Y
+	}
+	center.X /= 4
+	center.Y /= 4
+	width := points[0].Length(points[0])
+	height := points[1].Length(points[2])
+	dx := points[1].X - points[0].X
+	dy := points[1].Y - points[0].Y
+	angle := math.Atan2(dy, dx) * 180 / math.Pi // 转为度数
+	return &Rectangle{
+		Center: center,
+		Width:  width,
+		Height: height,
+		Angle:  angle,
+	}
 }
 
 func (rect *Rectangle) Bounds() *Bounds {
