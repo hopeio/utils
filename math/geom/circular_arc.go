@@ -7,49 +7,77 @@ import (
 )
 
 // counter clockwise if clockwise ,Start.X,Start.Y <->  endX, endY
-type Arc struct {
+type CircularArc struct {
+	Circle     Circle
+	StartAngle float64
+	EndAngle   float64
+}
+
+func NewCircularArc(circle Circle, startAngle, endAngle float64) *CircularArc {
+	return &CircularArc{
+		Circle:     circle,
+		StartAngle: startAngle,
+		EndAngle:   endAngle,
+	}
+}
+
+type CircularArc2 struct {
 	Center Point
 	Start  Point
 	End    Point
 }
 
-func NewArc(center, start, end Point) *Arc {
-	return &Arc{
+func NewCircularArc2(center, start, end Point) *CircularArc2 {
+	return &CircularArc2{
 		Center: center,
 		Start:  start,
 		End:    end,
 	}
 }
 
-func (a *Arc) Bounds() *Bounds {
-	r := math.Hypot(a.Start.X-a.Center.X, a.Start.Y-a.Center.Y)
-	thetaStart := math.Atan2(a.Start.Y-a.Center.Y, a.Start.X-a.Center.X)
-	thetaEnd := math.Atan2(a.End.Y-a.Center.Y, a.End.X-a.Center.X)
+func (a *CircularArc2) ToCircularArc() *CircularArc {
+	return CircularArcFromPoints(a.Center, a.Start, a.End)
+}
+
+func CircularArcFromPoints(center, start, end Point) *CircularArc {
+	r := math.Hypot(start.X-center.X, start.Y-center.Y)
+	thetaStart := math.Atan2(start.Y-center.Y, start.X-center.X)
+	thetaEnd := math.Atan2(end.Y-center.Y, end.X-center.X)
 	if thetaStart < 0 {
 		thetaStart += 2 * math.Pi
 	}
 	if thetaEnd < 0 {
 		thetaEnd += 2 * math.Pi
 	}
+	if thetaEnd < thetaStart {
+		thetaEnd += 2 * math.Pi
+	}
+	return &CircularArc{
+		Circle: Circle{
+			Center:   center,
+			Diameter: r * 2,
+		},
+		StartAngle: thetaStart / math.Pi * 180,
+		EndAngle:   thetaEnd / math.Pi * 180,
+	}
+}
 
-	angles := []float64{thetaStart, thetaEnd}
-	for _, a := range []float64{math.Pi / 2, math.Pi, 3 * math.Pi / 2, math.Pi * 2} {
-		if thetaStart < thetaEnd {
-			if thetaStart <= a && a <= thetaEnd {
-				angles = append(angles, a)
-			}
-		} else {
-			if a >= thetaStart || a <= thetaEnd {
-				angles = append(angles, a)
-			}
+func (a *CircularArc) Bounds() *Bounds {
+	r := a.Circle.Diameter / 2
+	startAngle, endAngle := a.StartAngle*math.Pi/180, a.EndAngle*math.Pi/180
+	angles := []float64{startAngle, endAngle}
+	start := float64(int(startAngle/math.Pi)) * math.Pi
+	for _, sa := range []float64{start + math.Pi/2, start + math.Pi, start + 3*math.Pi/2, start + math.Pi*2} {
+		if startAngle <= sa && sa <= endAngle {
+			angles = append(angles, sa)
 		}
 	}
 
-	minX, maxX := a.Start.X, a.Start.X
-	minY, maxY := a.Start.Y, a.Start.Y
+	minX, maxX := math.MaxFloat64, -math.MaxFloat64
+	minY, maxY := math.MaxFloat64, -math.MaxFloat64
 	for _, theta := range angles {
-		x := a.Center.X + r*math.Cos(theta)
-		y := a.Center.Y + r*math.Sin(theta)
+		x := a.Circle.Center.X + r*math.Cos(theta)
+		y := a.Circle.Center.Y + r*math.Sin(theta)
 		if x < minX {
 			minX = x
 		}
@@ -66,21 +94,16 @@ func (a *Arc) Bounds() *Bounds {
 	return NewBounds(minX, minY, maxX, maxY)
 }
 
-func (a *Arc) Sample(samples int) []Point {
-
-	r := math.Hypot(a.Start.X-a.Center.X, a.Start.Y-a.Center.Y)
-	thetaStart := math.Atan2(a.Start.Y-a.Center.Y, a.Start.X-a.Center.X)
-	thetaEnd := math.Atan2(a.End.Y-a.Center.Y, a.End.X-a.Center.X)
-	if thetaStart > thetaEnd {
-		thetaEnd += 2 * math.Pi
-	}
-	thetaDiff := thetaEnd - thetaStart
+func (a *CircularArc) Sample(samples int) []Point {
+	r := a.Circle.Diameter / 2
+	startAngle, endAngle := a.StartAngle*math.Pi/180, a.EndAngle*math.Pi/180
+	thetaDiff := endAngle - startAngle
 	points := make([]Point, 0, samples)
 	// Sample points along the arc
 	for i := range samples {
-		theta := thetaStart + thetaDiff*float64(i)/float64(samples)
-		x := a.Center.X + r*math.Cos(theta)
-		y := a.Center.Y + r*math.Sin(theta) // Flip y for image coordinate system
+		theta := startAngle + thetaDiff*float64(i)/float64(samples)
+		x := a.Circle.Center.X + r*math.Cos(theta)
+		y := a.Circle.Center.Y + r*math.Sin(theta) // Flip y for image coordinate system
 		points = append(points, Point{x, y})
 	}
 
@@ -173,36 +196,39 @@ func minimumBoundingRectangle(hull []Point) *Rectangle {
 }
 
 // untested
-func (a *Arc) minimumBoundingRectangle() *Rectangle {
+func (a *CircularArc) minimumBoundingRectangle() *Rectangle {
 	points := a.Sample(100)
 	hull := convexHull(points)
 	return minimumBoundingRectangle(hull)
 }
 
-type ArcInt[T constraints.Integer] struct {
-	Center PointInt[T]
-	Start  PointInt[T]
-	End    PointInt[T]
+type CircularArcInt[T constraints.Integer] struct {
+	Circle     CircleInt[T]
+	StartAngle float64
+	EndAngle   float64
 }
 
-func (e *ArcInt[T]) ToFloat64(factor float64) *Arc {
+func (e *CircularArcInt[T]) ToFloat64(factor float64) *CircularArc {
 	if factor == 0 {
 		factor = 1
 	}
-	return &Arc{
-		Center: Point{float64(e.Center.X) / factor, float64(e.Center.Y) / factor},
-		Start:  Point{float64(e.Start.X) / factor, float64(e.Start.Y) / factor},
-		End:    Point{float64(e.End.X) / factor, float64(e.End.Y) / factor},
+	return &CircularArc{
+		Circle:     *e.Circle.ToFloat64(factor),
+		StartAngle: e.StartAngle,
+		EndAngle:   e.EndAngle,
 	}
 }
 
-func ArcIntFromFloat64[T constraints.Integer](e *Arc, factor float64) *ArcInt[T] {
+func ArcIntFromFloat64[T constraints.Integer](e *CircularArc, factor float64) *CircularArcInt[T] {
 	if factor == 0 {
 		factor = 1
 	}
-	return &ArcInt[T]{
-		Center: PointInt[T]{T(math.Round(e.Center.X * factor)), T(math.Round(e.Center.Y * factor))},
-		Start:  PointInt[T]{T(math.Round(e.Start.X * factor)), T(math.Round(e.Start.Y * factor))},
-		End:    PointInt[T]{T(math.Round(e.End.X * factor)), T(math.Round(e.End.Y * factor))},
+	return &CircularArcInt[T]{
+		Circle: CircleInt[T]{
+			Center:   PointInt[T]{T(math.Round(e.Circle.Center.X * factor)), T(math.Round(e.Circle.Center.Y * factor))},
+			Diameter: T(math.Round(e.Circle.Diameter * factor)),
+		},
+		StartAngle: e.StartAngle,
+		EndAngle:   e.EndAngle,
 	}
 }

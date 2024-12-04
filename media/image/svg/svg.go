@@ -26,9 +26,9 @@ func (r *Path) String() string {
 }
 
 type PathArcA struct {
-	RadiusX  float64
-	RadiusY  float64
-	Rotation float64
+	XRadius  float64 // x轴半径
+	YRadius  float64 // y轴半径
+	Angle    float64
 	LargeArc float64
 	Sweep    float64
 	X        float64
@@ -36,7 +36,7 @@ type PathArcA struct {
 }
 
 func (r *PathArcA) String() string {
-	return fmt.Sprintf(`A%f %f %f %f %f %f %f`, r.RadiusX, r.RadiusY, r.Rotation, r.LargeArc, r.Sweep, r.X, r.Y)
+	return fmt.Sprintf(`A%f %f %f %f %f %f %f`, r.XRadius, r.YRadius, r.Angle, r.LargeArc, r.Sweep, r.X, r.Y)
 }
 
 type PathArcC struct {
@@ -116,9 +116,8 @@ func (r *Circle) String() string {
 type Ellipse struct {
 	X           float64
 	Y           float64
-	Radius      float64
-	RX          float64
-	RY          float64
+	XRadius     float64
+	YRadius     float64
 	StrokeWidth float64
 	Stroke      string
 	Fill        string
@@ -126,7 +125,7 @@ type Ellipse struct {
 }
 
 func (r *Ellipse) String() string {
-	return fmt.Sprintf(`<ellipse cx="%f" cy="%f" rx="%f" ry="%f" stroke="%s" stroke-width="%f" %s`, r.X, r.Y, r.RX, r.RY, r.Stroke, r.StrokeWidth, FormatAttr(r.Attr))
+	return fmt.Sprintf(`<ellipse cx="%f" cy="%f" rx="%f" ry="%f" stroke="%s" stroke-width="%f" %s`, r.X, r.Y, r.XRadius, r.YRadius, r.Stroke, r.StrokeWidth, FormatAttr(r.Attr))
 }
 
 type Line struct {
@@ -174,12 +173,17 @@ type Rectangle struct {
 	Height float64
 	RX     float64
 	RY     float64
+	Angle  float64
 	Fill   string
 	Attr   map[string]string
 }
 
 func (r *Rectangle) String() string {
-	return fmt.Sprintf(`<rect x="%f" y="%f" width="%f" height="%f" rx="%f" ry="%f" fill="%s" %s/>`,
+	if r.Angle != 0 {
+		return fmt.Sprintf(`<rect x="%f" y="%f" width="%f" height="%f" rx="%f" ry="%f" fill="%s" transform="rotate(%f,%f,%f)" %s />`,
+			r.X, r.Y, r.Width, r.Height, r.RX, r.RY, r.Fill, r.Angle, r.X+(r.Width/2), r.Y+(r.Height/2), FormatAttr(r.Attr))
+	}
+	return fmt.Sprintf(`<rect x="%f" y="%f" width="%f" height="%f" rx="%f" ry="%f" fill="%s" %s />`,
 		r.X, r.Y, r.Width, r.Height, r.RX, r.RY, r.Fill, FormatAttr(r.Attr))
 }
 

@@ -681,7 +681,7 @@ func (p *commandProcessor) processD01(lineIdx int, word string) error {
 			return fmt.Errorf("%+v", coords)
 		}
 		xc, yc := p.x+i, p.y+j
-		p.pc.Arc(&Arc{lineIdx, geom.Arc{geom.Pt(p.x, p.y), geom.Pt(x, y), geom.Pt(xc, yc)}, diameter, p.interpolation})
+		p.pc.Arc(&Arc{lineIdx, geom.CircularArc2{geom.Pt(p.x, p.y), geom.Pt(x, y), geom.Pt(xc, yc)}, diameter, p.interpolation})
 	default:
 		return fmt.Errorf("%d", p.interpolation)
 	}

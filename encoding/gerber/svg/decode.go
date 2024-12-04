@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/hopeio/utils/encoding/gerber"
-	"strconv"
+	jsoni "github.com/hopeio/utils/encoding/json"
 
 	"github.com/mitchellh/mapstructure"
 )
@@ -34,25 +34,25 @@ func (p *Processor) UnmarshalJSON(b []byte) error {
 		case "Data":
 			residue, err = p.decodeData(residue)
 		case "MinX":
-			p.Min.X, residue, err = decodeFloat(residue)
+			p.Min.X, residue, err = jsoni.DecodeFloat(residue)
 		case "MaxX":
-			p.Max.X, residue, err = decodeFloat(residue)
+			p.Max.X, residue, err = jsoni.DecodeFloat(residue)
 		case "MinY":
-			p.Min.Y, residue, err = decodeFloat(residue)
+			p.Min.Y, residue, err = jsoni.DecodeFloat(residue)
 		case "MaxY":
-			p.Max.Y, residue, err = decodeFloat(residue)
+			p.Max.Y, residue, err = jsoni.DecodeFloat(residue)
 		case "PolarityDark":
-			p.PolarityDark, residue, err = decodeString(residue)
+			p.PolarityDark, residue, err = jsoni.DecodeString(residue)
 		case "PolarityClear":
-			p.PolarityClear, residue, err = decodeString(residue)
+			p.PolarityClear, residue, err = jsoni.DecodeString(residue)
 		case "Scale":
-			p.Scale, residue, err = decodeFloat(residue)
+			p.Scale, residue, err = jsoni.DecodeFloat(residue)
 		case "StrokeWidth":
-			p.Width, residue, err = decodeString(residue)
+			p.Width, residue, err = jsoni.DecodeString(residue)
 		case "Height":
-			p.Height, residue, err = decodeString(residue)
+			p.Height, residue, err = jsoni.DecodeString(residue)
 		case "PanZoom":
-			p.PanZoom, residue, err = decodeBool(residue)
+			p.PanZoom, residue, err = jsoni.DecodeBool(residue)
 		default:
 			err = fmt.Errorf("\"%s\"", key)
 		}
@@ -305,18 +305,18 @@ func decodeCircle(b []byte, elm *Circle) error {
 		switch key {
 		case "Type":
 			var elmType string
-			elmType, residue, err = decodeString(residue)
+			elmType, residue, err = jsoni.DecodeString(residue)
 			elm.Type = ElementType(elmType)
 		case "Line":
-			elm.Line, residue, err = decodeInt(residue)
+			elm.Line, residue, err = jsoni.DecodeInt(residue)
 		case "X":
-			elm.Center.X, residue, err = decodeFloat(residue)
+			elm.Center.X, residue, err = jsoni.DecodeFloat(residue)
 		case "Y":
-			elm.Center.Y, residue, err = decodeFloat(residue)
+			elm.Center.Y, residue, err = jsoni.DecodeFloat(residue)
 		case "Diameter":
-			elm.Diameter, residue, err = decodeFloat(residue)
+			elm.Diameter, residue, err = jsoni.DecodeFloat(residue)
 		case "Fill":
-			elm.Fill, residue, err = decodeString(residue)
+			elm.Fill, residue, err = jsoni.DecodeString(residue)
 		case "Attr":
 			// Attr is expected to be always null.
 			residue = residue[5:]
@@ -351,26 +351,26 @@ func decodeRectangle(b []byte, elm *Rectangle) error {
 		switch key {
 		case "Type":
 			var elmType string
-			elmType, residue, err = decodeString(residue)
+			elmType, residue, err = jsoni.DecodeString(residue)
 			elm.Type = ElementType(elmType)
 		case "Line":
-			elm.Line, residue, err = decodeInt(residue)
+			elm.Line, residue, err = jsoni.DecodeInt(residue)
 		case "Aperture":
-			elm.Aperture, residue, err = decodeString(residue)
+			elm.Aperture, residue, err = jsoni.DecodeString(residue)
 		case "X":
-			elm.Center.X, residue, err = decodeFloat(residue)
+			elm.Center.X, residue, err = jsoni.DecodeFloat(residue)
 		case "Y":
-			elm.Center.Y, residue, err = decodeFloat(residue)
+			elm.Center.Y, residue, err = jsoni.DecodeFloat(residue)
 		case "StrokeWidth":
-			elm.Width, residue, err = decodeFloat(residue)
+			elm.Width, residue, err = jsoni.DecodeFloat(residue)
 		case "Height":
-			elm.Height, residue, err = decodeFloat(residue)
+			elm.Height, residue, err = jsoni.DecodeFloat(residue)
 		case "CenterX":
-			elm.RadiusX, residue, err = decodeFloat(residue)
+			elm.RadiusX, residue, err = jsoni.DecodeFloat(residue)
 		case "CenterY":
-			elm.RadiusY, residue, err = decodeFloat(residue)
+			elm.RadiusY, residue, err = jsoni.DecodeFloat(residue)
 		case "Fill":
-			elm.Fill, residue, err = decodeString(residue)
+			elm.Fill, residue, err = jsoni.DecodeString(residue)
 		case "Attr":
 			// Attr is expected to be always null.
 			residue = residue[5:]
@@ -405,18 +405,18 @@ func decodePath(b []byte, elm *Path) error {
 		switch key {
 		case "Type":
 			var elmType string
-			elmType, residue, err = decodeString(residue)
+			elmType, residue, err = jsoni.DecodeString(residue)
 			elm.Type = ElementType(elmType)
 		case "Line":
-			elm.Line, residue, err = decodeInt(residue)
+			elm.Line, residue, err = jsoni.DecodeInt(residue)
 		case "X":
-			elm.X, residue, err = decodeFloat(residue)
+			elm.X, residue, err = jsoni.DecodeFloat(residue)
 		case "Y":
-			elm.Y, residue, err = decodeFloat(residue)
+			elm.Y, residue, err = jsoni.DecodeFloat(residue)
 		case "Commands":
 			residue, err = decodePathCommands(elm, residue)
 		case "Fill":
-			elm.Fill, residue, err = decodeString(residue)
+			elm.Fill, residue, err = jsoni.DecodeString(residue)
 		case "Attr":
 			// Attr is expected to be always null.
 			residue = residue[5:]
@@ -451,26 +451,26 @@ func decodeLine(b []byte, elm *Line) error {
 		switch key {
 		case "Type":
 			var elmType string
-			elmType, residue, err = decodeString(residue)
+			elmType, residue, err = jsoni.DecodeString(residue)
 			elm.Type = ElementType(elmType)
 		case "Line":
-			elm.Line.LineNo, residue, err = decodeInt(residue)
+			elm.Line.LineNo, residue, err = jsoni.DecodeInt(residue)
 		case "StartX":
-			elm.Start.X, residue, err = decodeFloat(residue)
+			elm.Start.X, residue, err = jsoni.DecodeFloat(residue)
 		case "StartY":
-			elm.Start.Y, residue, err = decodeFloat(residue)
+			elm.Start.Y, residue, err = jsoni.DecodeFloat(residue)
 		case "EndX":
-			elm.End.X, residue, err = decodeFloat(residue)
+			elm.End.X, residue, err = jsoni.DecodeFloat(residue)
 		case "EndY":
-			elm.End.Y, residue, err = decodeFloat(residue)
+			elm.End.Y, residue, err = jsoni.DecodeFloat(residue)
 		case "StrokeWidth":
-			elm.StrokeWidth, residue, err = decodeFloat(residue)
+			elm.StrokeWidth, residue, err = jsoni.DecodeFloat(residue)
 		case "Cap":
 			var lineCap string
-			lineCap, residue, err = decodeString(residue)
+			lineCap, residue, err = jsoni.DecodeString(residue)
 			elm.Cap = gerber.LineCap(lineCap)
 		case "Stroke":
-			elm.Stroke, residue, err = decodeString(residue)
+			elm.Stroke, residue, err = jsoni.DecodeString(residue)
 		case "Attr":
 			// Attr is expected to be always null.
 			residue = residue[5:]
@@ -505,34 +505,34 @@ func decodeArc(b []byte, elm *Arc) error {
 		switch key {
 		case "Type":
 			var elmType string
-			elmType, residue, err = decodeString(residue)
+			elmType, residue, err = jsoni.DecodeString(residue)
 			elm.Type = ElementType(elmType)
 		case "Line":
-			elm.Line, residue, err = decodeInt(residue)
+			elm.Line, residue, err = jsoni.DecodeInt(residue)
 		case "StartX":
-			elm.Start.X, residue, err = decodeFloat(residue)
+			elm.Start.X, residue, err = jsoni.DecodeFloat(residue)
 		case "StartY":
-			elm.Start.Y, residue, err = decodeFloat(residue)
-		case "RadiusX":
-			elm.RadiusX, residue, err = decodeFloat(residue)
-		case "RadiusY":
-			elm.RadiusY, residue, err = decodeFloat(residue)
+			elm.Start.Y, residue, err = jsoni.DecodeFloat(residue)
+		case "XRadius":
+			elm.RadiusX, residue, err = jsoni.DecodeFloat(residue)
+		case "YRadius":
+			elm.RadiusY, residue, err = jsoni.DecodeFloat(residue)
 		case "LargeArc":
-			elm.LargeArc, residue, err = decodeInt(residue)
+			elm.LargeArc, residue, err = jsoni.DecodeInt(residue)
 		case "Sweep":
-			elm.Sweep, residue, err = decodeInt(residue)
+			elm.Sweep, residue, err = jsoni.DecodeInt(residue)
 		case "EndX":
-			elm.End.X, residue, err = decodeFloat(residue)
+			elm.End.X, residue, err = jsoni.DecodeFloat(residue)
 		case "EndY":
-			elm.End.Y, residue, err = decodeFloat(residue)
+			elm.End.Y, residue, err = jsoni.DecodeFloat(residue)
 		case "StrokeWidth":
-			elm.StrokeWidth, residue, err = decodeFloat(residue)
+			elm.StrokeWidth, residue, err = jsoni.DecodeFloat(residue)
 		case "CenterX":
-			elm.Center.X, residue, err = decodeFloat(residue)
+			elm.Center.X, residue, err = jsoni.DecodeFloat(residue)
 		case "CenterY":
-			elm.Center.Y, residue, err = decodeFloat(residue)
+			elm.Center.Y, residue, err = jsoni.DecodeFloat(residue)
 		case "Stroke":
-			elm.Stroke, residue, err = decodeString(residue)
+			elm.Stroke, residue, err = jsoni.DecodeString(residue)
 		case "Attr":
 			// Attr is expected to be always null.
 			residue = residue[5:]
@@ -567,12 +567,12 @@ func decodePathLine(b []byte, elm *PathLine) error {
 		switch key {
 		case "Type":
 			var elmType string
-			elmType, residue, err = decodeString(residue)
+			elmType, residue, err = jsoni.DecodeString(residue)
 			elm.Type = ElementType(elmType)
 		case "X":
-			elm.X, residue, err = decodeFloat(residue)
+			elm.X, residue, err = jsoni.DecodeFloat(residue)
 		case "Y":
-			elm.Y, residue, err = decodeFloat(residue)
+			elm.Y, residue, err = jsoni.DecodeFloat(residue)
 		default:
 			err = fmt.Errorf("\"%s\"", key)
 		}
@@ -604,16 +604,16 @@ func decodePathArc(b []byte, elm *PathArc) error {
 		switch key {
 		case "Type":
 			var elmType string
-			elmType, residue, err = decodeString(residue)
+			elmType, residue, err = jsoni.DecodeString(residue)
 			elm.Type = ElementType(elmType)
 		case "LargeArc":
-			elm.LargeArc, residue, err = decodeInt(residue)
+			elm.LargeArc, residue, err = jsoni.DecodeInt(residue)
 		case "Sweep":
-			elm.Sweep, residue, err = decodeInt(residue)
+			elm.Sweep, residue, err = jsoni.DecodeInt(residue)
 		case "X":
-			elm.X, residue, err = decodeFloat(residue)
+			elm.X, residue, err = jsoni.DecodeFloat(residue)
 		case "Y":
-			elm.Y, residue, err = decodeFloat(residue)
+			elm.Y, residue, err = jsoni.DecodeFloat(residue)
 		default:
 			err = fmt.Errorf("\"%s\"", key)
 		}
@@ -677,65 +677,4 @@ func decodePathSegment(ph *Path, b []byte) error {
 		return fmt.Errorf("\"%s\"", elmType)
 	}
 	return nil
-}
-
-func decodeInt(b []byte) (int, []byte, error) {
-	idx := bytes.IndexByte(b, ',')
-	if idx == -1 {
-		idx = bytes.IndexByte(b, '}')
-		if idx == -1 {
-			return -1, b, fmt.Errorf("no comma")
-		}
-	}
-	i, err := strconv.Atoi(string(b[:idx]))
-	if err != nil {
-		return -1, b, err
-	}
-	return i, b[idx+1:], nil
-}
-
-func decodeFloat(b []byte) (float64, []byte, error) {
-	idx := bytes.IndexByte(b, ',')
-	if idx == -1 {
-		idx = bytes.IndexByte(b, '}')
-		if idx == -1 {
-			return -1, b, fmt.Errorf("no comma")
-		}
-	}
-	f, err := strconv.ParseFloat(string(b[:idx]), 64)
-	if err != nil {
-		return -1, b, err
-	}
-	return f, b[idx+1:], nil
-}
-
-func decodeString(b []byte) (string, []byte, error) {
-	idx := bytes.Index(b, []byte(`",`))
-	if idx == -1 {
-		idx = bytes.IndexByte(b, '}')
-		if idx == -1 {
-			return "", b, fmt.Errorf("no comma")
-		}
-	}
-	// Opening '"'
-	if len(b) < 1 {
-		return "", b, fmt.Errorf("%d", len(b))
-	}
-	s := string(b[1:idx])
-	return s, b[idx+2:], nil
-}
-
-func decodeBool(b []byte) (bool, []byte, error) {
-	idx := bytes.IndexByte(b, ',')
-	if idx == -1 {
-		idx = bytes.IndexByte(b, '}')
-		if idx == -1 {
-			return false, b, fmt.Errorf("no comma")
-		}
-	}
-	bol, err := strconv.ParseBool(string(b[:idx]))
-	if err != nil {
-		return false, b, err
-	}
-	return bol, b[idx+1:], nil
 }

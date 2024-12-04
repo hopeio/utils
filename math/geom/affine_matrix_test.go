@@ -19,3 +19,16 @@ func TestTransformPoint(t *testing.T) {
 	mat = NewTranslateRotationMat(point1B, point1A, -angle)
 	t.Log(mat.Transform(point2B))
 }
+
+func TestAffineMatrix(t *testing.T) {
+	p1, p2, p3, q1, q2, q3 := Point{2000, 7000}, Point{48000, 80000}, Point{2000, 85000}, Point{3558, 17895}, Point{11016, 5997}, Point{3538, 5182}
+	transformMatrix, err := NewAffineMatrix(p1, p2, p3, q1, q2, q3)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// 对某个点应用变换
+	p := Point{X: 48000, Y: 13000}
+	q := transformMatrix.Transform(p)
+	t.Log(q)
+}

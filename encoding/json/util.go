@@ -7,8 +7,11 @@
 package json
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/hopeio/utils/strings"
 	unicodei "github.com/hopeio/utils/strings/unicode"
+	"strconv"
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -134,4 +137,65 @@ func unquoteBytes(s []byte) (t []byte, ok bool) {
 		}
 	}
 	return b[0:w], true
+}
+
+func DecodeInt(b []byte) (int, []byte, error) {
+	idx := bytes.IndexByte(b, ',')
+	if idx == -1 {
+		idx = bytes.IndexByte(b, '}')
+		if idx == -1 {
+			return -1, b, fmt.Errorf("no comma")
+		}
+	}
+	i, err := strconv.Atoi(string(b[:idx]))
+	if err != nil {
+		return -1, b, err
+	}
+	return i, b[idx+1:], nil
+}
+
+func DecodeFloat(b []byte) (float64, []byte, error) {
+	idx := bytes.IndexByte(b, ',')
+	if idx == -1 {
+		idx = bytes.IndexByte(b, '}')
+		if idx == -1 {
+			return -1, b, fmt.Errorf("no comma")
+		}
+	}
+	f, err := strconv.ParseFloat(string(b[:idx]), 64)
+	if err != nil {
+		return -1, b, err
+	}
+	return f, b[idx+1:], nil
+}
+
+func DecodeString(b []byte) (string, []byte, error) {
+	idx := bytes.Index(b, []byte(`",`))
+	if idx == -1 {
+		idx = bytes.IndexByte(b, '}')
+		if idx == -1 {
+			return "", b, fmt.Errorf("no comma")
+		}
+	}
+	// Opening '"'
+	if len(b) < 1 {
+		return "", b, fmt.Errorf("%d", len(b))
+	}
+	s := string(b[1:idx])
+	return s, b[idx+2:], nil
+}
+
+func DecodeBool(b []byte) (bool, []byte, error) {
+	idx := bytes.IndexByte(b, ',')
+	if idx == -1 {
+		idx = bytes.IndexByte(b, '}')
+		if idx == -1 {
+			return false, b, fmt.Errorf("no comma")
+		}
+	}
+	bol, err := strconv.ParseBool(string(b[:idx]))
+	if err != nil {
+		return false, b, err
+	}
+	return bol, b[idx+1:], nil
 }

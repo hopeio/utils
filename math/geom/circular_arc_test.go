@@ -3,10 +3,10 @@ package geom
 import "testing"
 
 func TestArc(t *testing.T) {
-	arc := NewArc(0, 2, -3, -2, 3, -2)
+	arc := CircularArcFromPoints(Pt(0, 2), Pt(-3, -2), Pt(3, -2))
 	t.Log(arc.Bounds())
 	t.Log(arc.minimumBoundingRectangle())
-	arc = NewArc(0, 2, 3, -2, -3, -2)
+	arc = CircularArcFromPoints(Pt(0, 2), Pt(3, -2), Pt(-3, -2))
 	t.Log(arc.Bounds())
 	t.Log(arc.minimumBoundingRectangle())
 }

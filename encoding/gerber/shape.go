@@ -71,14 +71,13 @@ func (e *Circle) Bounds() *geom.Bounds {
 
 type Arc struct {
 	Line int
-	geom.Arc
+	geom.CircularArc2
 	StrokeWidth float64
 	Interpolation
 }
 
 func (e *Arc) Bounds() *geom.Bounds {
-	//TODO
-	return nil
+	return e.CircularArc2.ToCircularArc().Bounds()
 }
 
 type Line struct {

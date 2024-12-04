@@ -22,7 +22,7 @@ const (
 	ElementTypeRectangle ElementType = "Rect"
 	ElementTypePath      ElementType = "Path"
 	ElementTypeLine      ElementType = "Line"
-	ElementTypeArc       ElementType = "Arc"
+	ElementTypeArc       ElementType = "CircularArc"
 )
 
 // A Circle is a circle.
@@ -97,8 +97,8 @@ func (e PathLine) MarshalJSON() ([]byte, error) {
 // A PathArc is an arc in a SVG path.
 type PathArc struct {
 	Type     ElementType
-	RadiusX  float64
-	RadiusY  float64
+	XRadius  float64
+	YRadius  float64
 	LargeArc int
 	Sweep    int
 	X        float64
@@ -201,7 +201,7 @@ type Arc struct {
 }
 
 func (e Arc) Bounds() *geom.Bounds {
-	return geom.NewBounds(min(e.Start.X, e.End.X), max(e.Start.Y, e.End.Y), max(e.Start.X, e.End.X), max(e.Start.Y, e.End.Y))
+	return e.Arc.Bounds()
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -363,7 +363,7 @@ func calcArc(contour *gerber.Contour, idx int) (PathArc, error) {
 	if err != nil {
 		return PathArc{}, fmt.Errorf("%f %f %v %w", xs, ys, s, err)
 	}
-	arc.RadiusX, arc.RadiusY = math.Round(radius), math.Round(radius)
+	arc.XRadius, arc.YRadius = math.Round(radius), math.Round(radius)
 	arc.LargeArc = largeArc
 
 	return arc, nil
@@ -498,7 +498,7 @@ func (p *Processor) pathBytes(svgp Path) ([]byte, error) {
 		case PathLine:
 			s = fmt.Sprintf("L %s %s", p.x(c.X), p.y(c.Y))
 		case PathArc:
-			s = fmt.Sprintf("A %s %s 0 %d %d %s %s", p.m(c.RadiusX), p.m(c.RadiusY), c.LargeArc, c.Sweep, p.x(c.X), p.y(c.Y))
+			s = fmt.Sprintf("A %s %s 0 %d %d %s %s", p.m(c.XRadius), p.m(c.YRadius), c.LargeArc, c.Sweep, p.x(c.X), p.y(c.Y))
 		default:
 			return nil, fmt.Errorf("%+v", c)
 		}

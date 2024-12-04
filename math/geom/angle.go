@@ -10,33 +10,29 @@ import (
 	"math"
 )
 
-type AngleDegrees float64
-type AngleRadian float64
-
-func (a AngleDegrees) Radian() AngleRadian {
-	return AngleRadian(a * math.Pi / 180.0)
+func AngleRadian(angleDegrees float64) float64 {
+	return angleDegrees * math.Pi / 180.0
+}
+func AngleDegrees(angleRadian float64) float64 {
+	return angleRadian / math.Pi * 180.0
 }
 
-func (a AngleDegrees) Normalize() AngleDegrees {
-	if a == 0 {
+func NormalizeAngleRadian(theta float64) float64 {
+	if theta == 0 {
 		return 0
 	}
-
-	if a > 0 {
-		for a > 360 {
-			a -= 360
+	pi2 := math.Pi * 2
+	if theta > pi2 {
+		for theta > pi2 {
+			theta -= pi2
 		}
 	} else {
-		a += 360
-		for a < 0 {
-			a += 360
+		theta += pi2
+		for theta < 0 {
+			theta += pi2
 		}
 	}
-	return a
-}
-
-func (a AngleRadian) Degrees() AngleDegrees {
-	return AngleDegrees(a / math.Pi * 180.0)
+	return theta
 }
 
 func NormalizeAngleDegrees(theta float64) float64 {
