@@ -3,10 +3,12 @@ package main
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"github.com/hopeio/utils/encoding/gerber"
 	"github.com/hopeio/utils/log"
 	"github.com/hopeio/utils/math/geom"
 	imagei "github.com/hopeio/utils/media/image"
+	gocvi "github.com/hopeio/utils/sdk/gocv"
 	"gocv.io/x/gocv"
 	"image"
 	"image/color"
@@ -22,8 +24,8 @@ import (
 
 func main() {
 	path := `D:\Gerber_TopLayer.GTL`
-	maxWidth := 1000.0
-	maxHeight := 2000.0
+	maxWidth := 100.0
+	maxHeight := 170.0
 	rotation := 0.0
 	p := &gerber.StoreProcessor{}
 	pp := gerber.NewParser(p)
@@ -111,9 +113,6 @@ func main() {
 			removeRectCount++
 			continue
 		}
-		if rect.Angle == 45 {
-			log.Debugf("rotate %v", rect)
-		}
 		if rotation != 0 {
 			newP := affineMatrix.Transform(geom.Pt(float64(rect.Center.X-imageRect.Min.X)/factor, float64(rect.Center.Y-imageRect.Min.Y)/factor))
 			p.Rectangle(&gerber.Rectangle{Rectangle: geom.Rectangle{newP, float64(rect.Width) / factor, float64(rect.Height) / factor, rect.Angle + 90}})
@@ -136,19 +135,34 @@ func CvGerber(path string, radius int, maxWidth, maxHeight int) ([]*RotatedRect,
 	var rects []*RotatedRect
 	img := gocv.IMRead(path, gocv.IMReadUnchanged)
 	defer img.Close()
+	imgWidth, imgHeight := img.Cols(), img.Rows()
 	gary := gocv.NewMat()
 	defer gary.Close()
 	gocv.CvtColor(img, &gary, gocv.ColorBGRToGray)
 	binary := gocv.NewMat()
 	defer binary.Close()
 	gocv.Threshold(gary, &binary, 1, 255, gocv.ThresholdBinary)
-	contours := gocv.FindContours(binary, gocv.RetrievalExternal, gocv.ChainApproxSimple)
+	hierarchy := gocv.NewMat()
+	defer hierarchy.Close()
+	contours := gocv.FindContoursWithParams(binary, &hierarchy, gocv.RetrievalList, gocv.ChainApproxSimple)
 	maxArea := 0
 	maxRect := image.Rect(0, 0, 0, 0)
 	secondRect := image.Rect(0, 0, 0, 0)
 	for i := range contours.Size() {
 		minRect := gocv.MinAreaRect(contours.At(i))
 		rect := minRect.BoundingRect
+		if rect.Min.X < 0 {
+			rect.Min.X = 0
+		}
+		if rect.Max.X > imgWidth {
+			rect.Max.X = imgWidth
+		}
+		if rect.Min.Y < 0 {
+			rect.Min.Y = 0
+		}
+		if rect.Max.Y > imgHeight {
+			rect.Max.Y = imgHeight
+		}
 		w, h := rect.Dx(), rect.Dy()
 		area := w * h
 		if area > maxArea {
@@ -156,10 +170,15 @@ func CvGerber(path string, radius int, maxWidth, maxHeight int) ([]*RotatedRect,
 			secondRect = maxRect
 			maxRect = rect
 		}
-
-		if area < 90000 && w != 1 && h != 1 {
-			rects = append(rects, (*RotatedRect)(unsafe.Pointer(&minRect)))
+		notZero := gocv.CountNonZero(binary.Region(rect))
+		fmt.Println(notZero)
+		notZero = gocvi.CountNonZeroInPointsVector(binary, gocvi.PointsVectorFromPoints(minRect.Points))
+		fmt.Println(notZero)
+		fillRadio := float64(notZero) / float64(minRect.Height*minRect.Width)
+		if w == 1 || h == 1 || fillRadio < 0.5 {
+			continue
 		}
+		rects = append(rects, (*RotatedRect)(unsafe.Pointer(&minRect)))
 	}
 
 	if secondRect.Dx() < maxWidth-400 || secondRect.Dy() < maxHeight-400 {
@@ -190,10 +209,7 @@ func CvGerber(path string, radius int, maxWidth, maxHeight int) ([]*RotatedRect,
 	}
 	//debug
 	for _, rect := range rects {
-		if rect.Angle == 45 {
-			log.Debug(rect.Points)
-			gocv.Polylines(&img, gocv.NewPointsVectorFromPoints([][]image.Point{rect.Points}), true, color.RGBA{0, 255, 0, 0}, 1)
-		}
+		gocv.Polylines(&img, gocv.NewPointsVectorFromPoints([][]image.Point{rect.Points}), true, color.RGBA{0, 255, 0, 0}, 1)
 	}
 	target := img.Region(secondRect)
 	for _, c := range circles {

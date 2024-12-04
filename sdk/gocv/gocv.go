@@ -10,6 +10,7 @@ import (
 	imagei "github.com/hopeio/utils/media/image"
 	"gocv.io/x/gocv"
 	"image"
+	"image/color"
 )
 
 func SearchCircle(path string, radius int) (circles []imagei.Circle, err error) {
@@ -173,4 +174,22 @@ func CropRotated(img gocv.Mat, centerX, centerY, length, width float64, angle fl
 	})
 	transformMat.Close()
 	return dst
+}
+
+func CountNonZeroInPointsVector(img gocv.Mat, pointsVector gocv.PointsVector) int {
+	mask := gocv.Zeros(img.Rows(), img.Cols(), img.Type())
+	gocv.FillPoly(&mask, pointsVector, color.RGBA{255, 255, 255, 255})
+	maskedImage := gocv.NewMat()
+	defer maskedImage.Close()
+	gocv.BitwiseAnd(img, mask, &maskedImage)
+	nonZeroCount := gocv.CountNonZero(maskedImage)
+	return nonZeroCount
+}
+
+func PointVectorToPointsVector(pointVector gocv.PointVector) gocv.PointsVector {
+	return gocv.NewPointsVectorFromPoints([][]image.Point{pointVector.ToPoints()})
+}
+
+func PointsVectorFromPoints(points []image.Point) gocv.PointsVector {
+	return gocv.NewPointsVectorFromPoints([][]image.Point{points})
 }

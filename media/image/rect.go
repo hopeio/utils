@@ -19,3 +19,18 @@ func RectUnionPoint(rect image.Rectangle, p image.Point) image.Rectangle {
 	}
 	return rect
 }
+
+func RectClipInBounds(rect *image.Rectangle, imgWidth, imgHeight int) {
+	if rect.Min.X < 0 {
+		rect.Min.X = 0
+	}
+	if rect.Max.X > imgWidth {
+		rect.Max.X = imgWidth
+	}
+	if rect.Min.Y < 0 {
+		rect.Min.Y = 0
+	}
+	if rect.Max.Y > imgHeight {
+		rect.Max.Y = imgHeight
+	}
+}
