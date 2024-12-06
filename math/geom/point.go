@@ -78,3 +78,15 @@ func (l *Point3DInt[T]) ToFloat64(factor float64) *Point3D {
 		Z: float64(l.Z) / factor,
 	}
 }
+
+func (p Point) Mirror(line *StraightLine) Point {
+	denominator := line.X*line.X + line.Y*line.Y
+	if denominator == 0 {
+		panic("Invalid line equation: the line cannot be vertical and horizontal at the same time.")
+	}
+	factor := (line.X*p.X + line.Y*p.Y + line.C) / denominator
+	return Point{
+		X: p.X - 2*line.X*factor,
+		Y: p.Y - 2*line.Y*factor,
+	}
+}

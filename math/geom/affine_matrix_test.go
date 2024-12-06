@@ -31,4 +31,10 @@ func TestAffineMatrix(t *testing.T) {
 	p := Point{X: 48000, Y: 13000}
 	q := transformMatrix.Transform(p)
 	t.Log(q)
+
+	transformMatrix = NewRotationMat(Pt(1, 1), 90)
+	t.Log(transformMatrix.Transform(Pt(0, 0)))
+	t.Log(transformMatrix.Transform(Pt(2, 2)))
+	t.Log(transformMatrix.Transform(Pt(0, 2)))
+	t.Log(transformMatrix.Transform(Pt(2, 0)))
 }

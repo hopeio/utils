@@ -32,3 +32,14 @@ func LineIntFromFloat64[T constraints.Integer](e *Line, factor float64) *LineInt
 		End:   PointInt[T]{T(math.Round(e.End.X * factor)), T(math.Round(e.End.Y * factor))},
 	}
 }
+
+// ax + by + c = 0
+type StraightLine struct {
+	X float64
+	Y float64
+	C float64
+}
+
+func NewStraightLine(x, y, c float64) StraightLine {
+	return StraightLine{x, y, c}
+}
