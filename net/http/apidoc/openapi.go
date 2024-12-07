@@ -1,25 +1,16 @@
-/*
- * Copyright 2024 hopeio. All rights reserved.
- * Licensed under the MIT License that can be found in the LICENSE file.
- * @Created by jyb
- */
-
 package apidoc
 
 import (
-	"github.com/go-openapi/spec"
+	"github.com/getkin/kin-openapi/openapi3"
 	reflecti "github.com/hopeio/utils/reflect"
 	"reflect"
 	"strings"
 )
 
-func DefinitionsApi(definitions map[string]spec.Schema, v interface{}) {
-	schema := spec.Schema{
-		SchemaProps: spec.SchemaProps{
-			Type:       []string{"object"},
-			Properties: make(map[string]spec.Schema),
-		},
-	}
+func DefinitionsApi(schema *openapi3.Schema, v interface{}) {
+	typs := openapi3.Types{"object"}
+	schema.Type = &typs
+	schema.Properties = make(map[string]*openapi3.SchemaRef)
 
 	body := reflect.TypeOf(v).Elem()
 	var typ, subFieldName string
@@ -53,26 +44,26 @@ func DefinitionsApi(definitions map[string]spec.Schema, v interface{}) {
 			typ = "boolean"
 
 		}
-		subSchema := spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{typ},
+		typs := openapi3.Types{typ}
+		subSchema := openapi3.SchemaRef{
+			Value: &openapi3.Schema{
+				Type: &typs,
 			},
 		}
 		if typ == "object" {
-			subSchema.Ref = spec.MustCreateRef("#/definitions/" + subFieldName)
-			DefinitionsApi(definitions, v)
+			subSchema.Ref = "#/definitions/" + subFieldName
+			DefinitionsApi(subSchema.Value, v)
 		}
 		if typ == "array" {
-			subSchema.Items = new(spec.SchemaOrArray)
-			subSchema.Items.Schema = &spec.Schema{}
-			subSchema.Items.Schema.Ref = spec.MustCreateRef("#/definitions/" + subFieldName)
-			DefinitionsApi(definitions, v)
+			subSchema.Value.Items = new(openapi3.SchemaRef)
+			subSchema.Value.Items.Value = &openapi3.Schema{}
+			subSchema.Value.Items.Ref = "#/definitions/" + subFieldName
+			DefinitionsApi(subSchema.Value, v)
 		}
-		schema.Properties[json] = subSchema
+		schema.Properties[json] = &subSchema
 	}
-	definitions[body.Name()] = schema
 }
 
-func genSchema(v interface{}) *spec.Schema {
+func genSchema(v interface{}) *openapi3.Schema {
 	return nil
 }

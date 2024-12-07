@@ -4,11 +4,12 @@
  * @Created by jyb
  */
 
-package gin
+package apidoc
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/hopeio/utils/net/http/apidoc"
+	gin2 "github.com/hopeio/utils/net/http/gin"
 	"github.com/hopeio/utils/os/fs"
 	_ "github.com/ugorji/go"
 )
@@ -25,7 +26,7 @@ func OpenApi(mux *gin.Engine, uriPrefix, dir string) {
 		apidoc.UriPrefix = uriPrefix
 	}
 
-	mux.GET(apidoc.UriPrefix, Wrap(apidoc.DocList))
-	mux.GET(apidoc.UriPrefix+"/markdown/*file", Wrap(apidoc.Markdown))
-	mux.GET(apidoc.UriPrefix+"/swagger/*file", Wrap(apidoc.Swagger))
+	mux.GET(apidoc.UriPrefix, gin2.Wrap(apidoc.DocList))
+	mux.GET(apidoc.UriPrefix+"/markdown/*file", gin2.Wrap(apidoc.Markdown))
+	mux.GET(apidoc.UriPrefix+"/swagger/*file", gin2.Wrap(apidoc.Swagger))
 }

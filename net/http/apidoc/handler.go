@@ -8,7 +8,6 @@ package apidoc
 
 import (
 	"bytes"
-	"github.com/go-openapi/runtime/middleware"
 	httpi "github.com/hopeio/utils/net/http"
 	"github.com/hopeio/utils/os/fs"
 	"net/http"
@@ -42,14 +41,15 @@ func Swagger(w http.ResponseWriter, r *http.Request) {
 	}
 	mod := r.RequestURI[len(prefixUri):]
 	if mod == rootModName {
-		middleware.Redoc(middleware.RedocOpts{
+
+		Redoc(RedocOpts{
 			BasePath: prefixUri,
 			SpecURL:  path.Join(prefixUri, rootModName+SwaggerEXT),
 			Path:     mod,
 		}, http.NotFoundHandler()).ServeHTTP(w, r)
 		return
 	}
-	middleware.Redoc(middleware.RedocOpts{
+	Redoc(RedocOpts{
 		BasePath: prefixUri,
 		SpecURL:  path.Join(prefixUri+mod, mod+SwaggerEXT),
 		Path:     mod,

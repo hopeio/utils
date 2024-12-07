@@ -7,21 +7,20 @@
 package apidoc
 
 import (
-	"bytes"
 	"encoding/json"
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/invopop/yaml"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	"github.com/go-openapi/spec"
-	"github.com/go-openapi/swag"
 	"github.com/hopeio/utils/log"
 )
 
-var Doc *spec.Swagger
+var Doc *openapi3.T
 
 // 参数为路径和格式
-func GetDoc(realPath, modName string) *spec.Swagger {
+func GetDoc(realPath, modName string) *openapi3.T {
 	if Doc != nil {
 		return Doc
 	}
@@ -62,65 +61,44 @@ func GetDoc(realPath, modName string) *spec.Swagger {
 				log.Error(err)
 			}
 		} else {
-			/*var v map[string]interface{}//子类型 json: unsupported type: map[interface{}]interface{}
+			//var v map[string]interface{}//子类型 json: unsupported type: map[interface{}]interface{}
 			//var v interface{} //json: unsupported type: map[interface{}]interface{}
-			err = yaml.Unmarshal(data, &v)
-			b, err := json.Marshal(&v)
+			err = yaml.Unmarshal(data, &Doc)
 			if err != nil {
-				ulog.Error(err)
-			}
-			json.Unmarshal(b, &Doc)*/
-			trimmed := bytes.TrimSpace(data)
-			if len(trimmed) > 0 {
-				if trimmed[0] != '{' && trimmed[0] != '[' {
-					yml, err := swag.BytesToYAMLDoc(trimmed)
-					if err != nil {
-						log.Error(err)
-					}
-					d, err := swag.YAMLToJSON(yml)
-					if err != nil {
-						log.Error(err)
-					}
-					if err = json.Unmarshal(d, &Doc); err != nil {
-						log.Error(err)
-					}
-				}
+				log.Error(err)
 			}
 		}
 	}
 	return Doc
 }
 
-func generate() *spec.Swagger {
-	Doc = new(spec.Swagger)
-	info := new(spec.Info)
+func generate() *openapi3.T {
+	Doc = &openapi3.T{}
+	info := new(openapi3.Info)
 	Doc.Info = info
 
-	Doc.Swagger = "2.0"
-	Doc.Paths = new(spec.Paths)
-	Doc.Definitions = make(spec.Definitions)
+	Doc.OpenAPI = "2.0"
+	Doc.Paths = openapi3.NewPaths()
 
 	info.Title = "Title"
 	info.Description = "Description"
 	info.Version = "0.01"
 	info.TermsOfService = "TermsOfService"
 
-	var contact spec.ContactInfo
+	var contact openapi3.Contact
 	contact.Name = "Contact Name"
 	contact.Email = "Contact Mail"
 	contact.URL = "Contact URL"
 	info.Contact = &contact
 
-	var license spec.License
+	var license openapi3.License
 	license.Name = "License Name"
 	license.URL = "License URL"
 	info.License = &license
 
-	Doc.Host = "localhost:80"
-	Doc.BasePath = "/"
-	Doc.Schemes = []string{"http", "https"}
-	Doc.Consumes = []string{"application/json"}
-	Doc.Produces = []string{"application/json"}
+	Doc.Servers = []*openapi3.Server{{
+		URL: "localhost:80",
+	}}
 	return Doc
 }
 

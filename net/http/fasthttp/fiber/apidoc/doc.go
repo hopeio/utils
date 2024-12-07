@@ -4,12 +4,11 @@
  * @Created by jyb
  */
 
-package fiber
+package apidoc
 
 import (
 	"bytes"
 	"fmt"
-	"github.com/go-openapi/runtime/middleware"
 	"github.com/gofiber/fiber/v3"
 	"github.com/hopeio/utils/net/http/apidoc"
 	"github.com/hopeio/utils/os/fs"
@@ -34,7 +33,7 @@ func Swagger(ctx fiber.Ctx) error {
 	}
 	mod := requestURI[len(prefixUri):]
 
-	opts := middleware.RedocOpts{
+	opts := apidoc.RedocOpts{
 		BasePath: prefixUri,
 		SpecURL:  path.Join(prefixUri+mod, mod+apidoc.SwaggerEXT),
 		Path:     mod,

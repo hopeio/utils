@@ -7,8 +7,8 @@
 package middleware
 
 import (
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-gonic/gin"
-	"github.com/go-openapi/spec"
 	"github.com/hopeio/utils/net/http/apidoc"
 	"net/http"
 )
@@ -18,22 +18,22 @@ type ModName string
 func (m ModName) ApiDocMiddle(ctx *gin.Context) {
 	currentRouteName := ctx.Request.RequestURI[len(ctx.Request.Method):]
 
-	var pathItem *spec.PathItem
+	var pathItem *openapi3.PathItem
 
 	doc := apidoc.GetDoc(apidoc.Dir, string(m))
 
-	if doc.Paths != nil && doc.Paths.Paths != nil {
-		if path, ok := doc.Paths.Paths[currentRouteName]; ok {
-			pathItem = &path
+	if doc.Paths != nil {
+		if path := doc.Paths.Value(currentRouteName); path != nil {
+			pathItem = path
 		} else {
-			pathItem = new(spec.PathItem)
+			pathItem = new(openapi3.PathItem)
 		}
 	} else {
-		doc.Paths = &spec.Paths{Paths: map[string]spec.PathItem{}}
-		pathItem = new(spec.PathItem)
+		doc.Paths = openapi3.NewPaths()
+		pathItem = new(openapi3.PathItem)
 	}
 
-	parameters := make([]spec.Parameter, len(ctx.Params), len(ctx.Params))
+	parameters := make([]*openapi3.ParameterRef, len(ctx.Params), len(ctx.Params))
 
 	params := ctx.Params
 
@@ -41,8 +41,8 @@ func (m ModName) ApiDocMiddle(ctx *gin.Context) {
 		key := params[i].Key
 
 		//val := params[i].ValueRaw
-		parameters[i] = spec.Parameter{
-			ParamProps: spec.ParamProps{
+		parameters[i] = &openapi3.ParameterRef{
+			Value: &openapi3.Parameter{
 				Name:        key,
 				In:          "path",
 				Description: "Description",
@@ -54,17 +54,14 @@ func (m ModName) ApiDocMiddle(ctx *gin.Context) {
 		defer apidoc.WriteToFile(apidoc.Dir, string(m))
 	}
 
-	var res spec.Responses
-	op := spec.Operation{
-		OperationProps: spec.OperationProps{
-			Description: "Description",
-			Consumes:    []string{"application/x-www-form-urlencoded"},
-			Tags:        []string{"Tags"},
-			Summary:     "Summary",
-			ID:          "currentRouteName" + ctx.Request.Method,
-			Parameters:  parameters,
-			Responses:   &res,
-		},
+	ress := openapi3.NewResponses()
+	op := openapi3.Operation{
+		Description: "Description",
+		Tags:        []string{"Tags"},
+		Summary:     "Summary",
+		OperationID: "currentRouteName" + ctx.Request.Method,
+		Parameters:  parameters,
+		Responses:   ress,
 	}
 
 	switch ctx.Request.Method {
@@ -83,6 +80,6 @@ func (m ModName) ApiDocMiddle(ctx *gin.Context) {
 	case http.MethodHead:
 		pathItem.Head = &op
 	}
-	doc.Paths.Paths[currentRouteName] = *pathItem
+	doc.Paths.Set(currentRouteName, pathItem)
 	ctx.Next()
 }
