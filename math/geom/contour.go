@@ -10,15 +10,12 @@ const (
 // A Segment is a stroked line.
 type Segment struct {
 	Interpolation Interpolation
-	X             float64
-	Y             float64
-	XCenter       float64
-	YCenter       float64
+	End           Point
+	Centre        Point
 }
 
 // A Contour is a closed sequence of connected linear or circular segments.
 type Contour struct {
-	X        float64
-	Y        float64
+	Start    Point
 	Segments []Segment
 }

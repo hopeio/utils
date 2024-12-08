@@ -672,7 +672,7 @@ func (p *commandProcessor) processD01(lineIdx int, word string) error {
 
 	switch p.interpolation {
 	case InterpolationLinear:
-		p.pc.Line(&Line{lineIdx, geom.Line{geom.Pt(p.x, p.y), geom.Pt(x, y)}, diameter, LineCapRound})
+		p.pc.Line(&Line{lineIdx, geom.LineSegment{geom.Pt(p.x, p.y), geom.Pt(x, y)}, diameter, LineCapRound})
 	case InterpolationClockwise:
 		fallthrough
 	case InterpolationCCW:
@@ -759,7 +759,7 @@ func (p *commandProcessor) flashUserDefinedTmpl(lineIdx int) error {
 			if pm.Rotation != 0 {
 				return fmt.Errorf("%d %+v", i, pm)
 			}
-			l := Line{lineIdx, geom.Line{geom.Pt(p.x+pm.StartX, p.y+pm.StartY), geom.Pt(p.x+pm.EndX, p.y+pm.EndY)}, pm.Width, LineCapButt}
+			l := Line{lineIdx, geom.LineSegment{geom.Pt(p.x+pm.StartX, p.y+pm.StartY), geom.Pt(p.x+pm.EndX, p.y+pm.EndY)}, pm.Width, LineCapButt}
 			p.pc.Line(&l)
 			p.bounds(l.Bounds())
 		case outlinePrimitive:

@@ -54,7 +54,7 @@ func CircularArcFromPoints(center, start, end Point) *CircularArc {
 	}
 	return &CircularArc{
 		Circle: Circle{
-			Center:   center,
+			Centre:   center,
 			Diameter: r * 2,
 		},
 		StartAngle: thetaStart / math.Pi * 180,
@@ -76,8 +76,8 @@ func (a *CircularArc) Bounds() *Bounds {
 	minX, maxX := math.MaxFloat64, -math.MaxFloat64
 	minY, maxY := math.MaxFloat64, -math.MaxFloat64
 	for _, theta := range angles {
-		x := a.Circle.Center.X + r*math.Cos(theta)
-		y := a.Circle.Center.Y + r*math.Sin(theta)
+		x := a.Circle.Centre.X + r*math.Cos(theta)
+		y := a.Circle.Centre.Y + r*math.Sin(theta)
 		if x < minX {
 			minX = x
 		}
@@ -102,8 +102,8 @@ func (a *CircularArc) Sample(samples int) []Point {
 	// Sample points along the arc
 	for i := range samples {
 		theta := startAngle + thetaDiff*float64(i)/float64(samples)
-		x := a.Circle.Center.X + r*math.Cos(theta)
-		y := a.Circle.Center.Y + r*math.Sin(theta) // Flip y for image coordinate system
+		x := a.Circle.Centre.X + r*math.Cos(theta)
+		y := a.Circle.Centre.Y + r*math.Sin(theta) // Flip y for image coordinate system
 		points = append(points, Point{x, y})
 	}
 
@@ -225,7 +225,7 @@ func ArcIntFromFloat64[T constraints.Integer](e *CircularArc, factor float64) *C
 	}
 	return &CircularArcInt[T]{
 		Circle: CircleInt[T]{
-			Center:   PointInt[T]{T(math.Round(e.Circle.Center.X * factor)), T(math.Round(e.Circle.Center.Y * factor))},
+			Center:   PointInt[T]{T(math.Round(e.Circle.Centre.X * factor)), T(math.Round(e.Circle.Centre.Y * factor))},
 			Diameter: T(math.Round(e.Circle.Diameter * factor)),
 		},
 		StartAngle: e.StartAngle,

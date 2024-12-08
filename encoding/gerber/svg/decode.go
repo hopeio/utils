@@ -310,9 +310,9 @@ func decodeCircle(b []byte, elm *Circle) error {
 		case "Line":
 			elm.Line, residue, err = jsoni.DecodeInt(residue)
 		case "X":
-			elm.Center.X, residue, err = jsoni.DecodeFloat(residue)
+			elm.Centre.X, residue, err = jsoni.DecodeFloat(residue)
 		case "Y":
-			elm.Center.Y, residue, err = jsoni.DecodeFloat(residue)
+			elm.Centre.Y, residue, err = jsoni.DecodeFloat(residue)
 		case "Diameter":
 			elm.Diameter, residue, err = jsoni.DecodeFloat(residue)
 		case "Fill":

@@ -3,7 +3,7 @@ package geom
 import "math"
 
 type Ellipse struct {
-	Center    Point
+	Centre    Point
 	MajorAxis float64 // Length of the major axis
 	MinorAxis float64 // Length of the minor axis
 	Angle     float64 // Angle angle in degrees from the x-axis
