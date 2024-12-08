@@ -7,9 +7,9 @@
 package middleware
 
 import (
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-gonic/gin"
 	"github.com/hopeio/utils/net/http/apidoc"
+	v3high "github.com/pb33f/libopenapi/datamodel/high/v3"
 	"net/http"
 )
 
@@ -18,22 +18,17 @@ type ModName string
 func (m ModName) ApiDocMiddle(ctx *gin.Context) {
 	currentRouteName := ctx.Request.RequestURI[len(ctx.Request.Method):]
 
-	var pathItem *openapi3.PathItem
+	var pathItem *v3high.PathItem
 
 	doc := apidoc.GetDoc(apidoc.Dir, string(m))
 
-	if doc.Paths != nil {
-		if path := doc.Paths.Value(currentRouteName); path != nil {
-			pathItem = path
-		} else {
-			pathItem = new(openapi3.PathItem)
-		}
+	if path, ok := doc.Paths.PathItems.Load(currentRouteName); ok {
+		pathItem = path
 	} else {
-		doc.Paths = openapi3.NewPaths()
-		pathItem = new(openapi3.PathItem)
+		pathItem = new(v3high.PathItem)
 	}
 
-	parameters := make([]*openapi3.ParameterRef, len(ctx.Params), len(ctx.Params))
+	parameters := make([]*v3high.Parameter, len(ctx.Params), len(ctx.Params))
 
 	params := ctx.Params
 
@@ -41,12 +36,10 @@ func (m ModName) ApiDocMiddle(ctx *gin.Context) {
 		key := params[i].Key
 
 		//val := params[i].ValueRaw
-		parameters[i] = &openapi3.ParameterRef{
-			Value: &openapi3.Parameter{
-				Name:        key,
-				In:          "path",
-				Description: "Description",
-			},
+		parameters[i] = &v3high.Parameter{
+			Name:        key,
+			In:          "path",
+			Description: "Description",
 		}
 	}
 
@@ -54,14 +47,12 @@ func (m ModName) ApiDocMiddle(ctx *gin.Context) {
 		defer apidoc.WriteToFile(apidoc.Dir, string(m))
 	}
 
-	ress := openapi3.NewResponses()
-	op := openapi3.Operation{
+	op := v3high.Operation{
 		Description: "Description",
 		Tags:        []string{"Tags"},
 		Summary:     "Summary",
-		OperationID: "currentRouteName" + ctx.Request.Method,
+		OperationId: "currentRouteName" + ctx.Request.Method,
 		Parameters:  parameters,
-		Responses:   ress,
 	}
 
 	switch ctx.Request.Method {
@@ -80,6 +71,6 @@ func (m ModName) ApiDocMiddle(ctx *gin.Context) {
 	case http.MethodHead:
 		pathItem.Head = &op
 	}
-	doc.Paths.Set(currentRouteName, pathItem)
+	doc.Paths.PathItems.Set(currentRouteName, pathItem)
 	ctx.Next()
 }

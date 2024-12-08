@@ -7,9 +7,8 @@
 package apidoc
 
 import (
-	"encoding/json"
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/invopop/yaml"
+	"github.com/pb33f/libopenapi"
+	v3high "github.com/pb33f/libopenapi/datamodel/high/v3"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -17,10 +16,10 @@ import (
 	"github.com/hopeio/utils/log"
 )
 
-var Doc *openapi3.T
+var Doc *v3high.Document
 
 // 参数为路径和格式
-func GetDoc(realPath, modName string) *openapi3.T {
+func GetDoc(realPath, modName string) *v3high.Document {
 	if Doc != nil {
 		return Doc
 	}
@@ -36,8 +35,6 @@ func GetDoc(realPath, modName string) *openapi3.T {
 
 	realPath = filepath.Join(realPath, modName+SwaggerEXT)
 
-	apiType := filepath.Ext(realPath)
-
 	if _, err := os.Stat(realPath); os.IsNotExist(err) {
 		return generate()
 	} else {
@@ -50,55 +47,28 @@ func GetDoc(realPath, modName string) *openapi3.T {
 		if err != nil {
 			log.Error(err)
 		}
-		/*var buf bytes.Buffer
-		err = json.Compact(&buf, data)
-		if err != nil {
-			ulog.Error(err)
-		}*/
-		if apiType == ".json" {
-			err = json.Unmarshal(data, &Doc)
-			if err != nil {
-				log.Error(err)
-			}
-		} else {
-			//var v map[string]interface{}//子类型 json: unsupported type: map[interface{}]interface{}
-			//var v interface{} //json: unsupported type: map[interface{}]interface{}
-			err = yaml.Unmarshal(data, &Doc)
-			if err != nil {
-				log.Error(err)
-			}
-		}
+		doc, _ := libopenapi.NewDocument(data)
+		model, _ := doc.BuildV3Model()
+		Doc = &model.Model
 	}
 	return Doc
 }
 
-func generate() *openapi3.T {
-	Doc = &openapi3.T{}
-	info := new(openapi3.Info)
-	Doc.Info = info
-
-	Doc.OpenAPI = "2.0"
-	Doc.Paths = openapi3.NewPaths()
-
-	info.Title = "Title"
-	info.Description = "Description"
-	info.Version = "0.01"
-	info.TermsOfService = "TermsOfService"
-
-	var contact openapi3.Contact
-	contact.Name = "Contact Name"
-	contact.Email = "Contact Mail"
-	contact.URL = "Contact URL"
-	info.Contact = &contact
-
-	var license openapi3.License
-	license.Name = "License Name"
-	license.URL = "License URL"
-	info.License = &license
-
-	Doc.Servers = []*openapi3.Server{{
-		URL: "localhost:80",
-	}}
+func generate() *v3high.Document {
+	doc, err := libopenapi.NewDocumentWithTypeCheck([]byte(`{"type":"openapi","version":"3.0"}`), true)
+	if err != nil {
+		log.Error(err)
+	}
+	model, errs := doc.BuildV3Model()
+	if err != nil {
+		log.Error(errs)
+	}
+	Doc = &model.Model
+	Doc.Paths = &v3high.Paths{}
+	Doc.Components = &v3high.Components{}
+	Doc.Servers = append(Doc.Servers, &v3high.Server{
+		URL: "http://localhost:80",
+	})
 	return Doc
 }
 
@@ -121,18 +91,15 @@ func WriteToFile(realPath, modName string) {
 	if _, err := os.Stat(realPath); err == nil {
 		os.Remove(realPath)
 	}
-	var file *os.File
-	file, err = os.Create(realPath)
+	data, err := Doc.RenderJSON("")
 	if err != nil {
 		log.Error(err)
+		return
 	}
-	defer file.Close()
-
-	enc := json.NewEncoder(file)
-	enc.SetIndent("", "  ")
-	err = enc.Encode(Doc)
+	err = os.WriteFile(realPath, data, 0666)
 	if err != nil {
 		log.Error(err)
+		return
 	}
 
 	/*b, err := yaml.Marshal(swag.ToDynamicJSON(Doc))

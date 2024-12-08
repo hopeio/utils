@@ -5,29 +5,29 @@ import (
 	"math"
 )
 
-type Line struct {
+type LineSegment struct {
 	Start Point
 	End   Point
 }
 
-func (l *Line) Vector() Vector {
+func (l *LineSegment) Vector() Vector {
 	return Vector{l.End.X - l.Start.X, l.End.Y - l.Start.Y}
 }
 
-func (l *Line) StraightLine() *SlopeInterceptLine {
+func (l *LineSegment) StraightLine() *SlopeInterceptLine {
 	var line SlopeInterceptLine
 	if l.Start.X == l.End.X {
 		// Vertical line
-		line.M = math.Inf(1) // Positive infinity to indicate vertical line
-		line.B = l.Start.X   // The x-coordinate of the vertical line
+		line.Slope = math.Inf(1) // Positive infinity to indicate vertical line
+		line.B = l.Start.X       // The x-coordinate of the vertical line
 		return &line
 	}
 
 	// Calculate slope (m)
-	line.M = (l.End.Y - l.Start.Y) / (l.End.X - l.Start.X)
+	line.Slope = (l.End.Y - l.Start.Y) / (l.End.X - l.Start.X)
 
 	// Calculate y-intercept (b)
-	line.B = l.Start.Y - line.M*l.Start.X
+	line.B = l.Start.Y - line.Slope*l.Start.X
 	return &line
 }
 
@@ -36,14 +36,14 @@ type LineInt[T constraints.Integer] struct {
 	End   PointInt[T]
 }
 
-func (l *LineInt[T]) ToFloat64(factor float64) *Line {
-	return &Line{
+func (l *LineInt[T]) ToFloat64(factor float64) *LineSegment {
+	return &LineSegment{
 		Start: Point{float64(l.Start.X) / factor, float64(l.Start.Y) / factor},
 		End:   Point{float64(l.End.X) / factor, float64(l.End.Y) / factor},
 	}
 }
 
-func LineIntFromFloat64[T constraints.Integer](e *Line, factor float64) *LineInt[T] {
+func LineIntFromFloat64[T constraints.Integer](e *LineSegment, factor float64) *LineInt[T] {
 	return &LineInt[T]{
 		Start: PointInt[T]{T(math.Round(e.Start.X * factor)), T(math.Round(e.Start.Y * factor))},
 		End:   PointInt[T]{T(math.Round(e.End.X * factor)), T(math.Round(e.End.Y * factor))},
@@ -52,12 +52,12 @@ func LineIntFromFloat64[T constraints.Integer](e *Line, factor float64) *LineInt
 
 // y=mx+b
 type SlopeInterceptLine struct {
-	M float64
-	B float64
+	Slope float64
+	B     float64
 }
 
 func (l *SlopeInterceptLine) IsVertical() bool {
-	return math.IsInf(l.M, 0)
+	return math.IsInf(l.Slope, 0)
 }
 
 func (l *SlopeInterceptLine) ToGeneralFormLine() *StraightLine {
@@ -67,7 +67,7 @@ func (l *SlopeInterceptLine) ToGeneralFormLine() *StraightLine {
 		return &StraightLine{A: 1, B: 0, C: -k}
 	}
 
-	return &StraightLine{A: l.M, B: -1, C: l.B}
+	return &StraightLine{A: l.Slope, B: -1, C: l.B}
 }
 func NewSlopeInterceptLine(m, b float64) *SlopeInterceptLine {
 	return &SlopeInterceptLine{m, b}
@@ -85,8 +85,8 @@ func (l *StraightLine) ToSlopeInterceptLine() *SlopeInterceptLine {
 		return &SlopeInterceptLine{math.Inf(1), -l.C}
 	}
 	return &SlopeInterceptLine{
-		M: -l.A / l.B,
-		B: l.C / l.B,
+		Slope: -l.A / l.B,
+		B:     l.C / l.B,
 	}
 }
 

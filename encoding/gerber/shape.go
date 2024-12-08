@@ -82,7 +82,7 @@ func (e *Arc) Bounds() *geom.Bounds {
 
 type Line struct {
 	LineNo int
-	geom.Line
+	geom.LineSegment
 	StrokeWidth float64
 	Cap         LineCap
 }

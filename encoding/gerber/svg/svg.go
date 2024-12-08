@@ -35,7 +35,7 @@ type Circle struct {
 
 func (e Circle) Bounds() *geom.Bounds {
 	radius := e.Diameter / 2
-	return geom.NewBounds(e.Center.X-radius, e.Center.Y-radius, e.Center.X+radius, e.Center.Y+radius)
+	return geom.NewBounds(e.Centre.X-radius, e.Centre.Y-radius, e.Centre.X+radius, e.Centre.Y+radius)
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -436,7 +436,7 @@ func (p *Processor) Write(w io.Writer) error {
 		var b []byte
 		switch d := datum.(type) {
 		case Circle:
-			b = []byte(fmt.Sprintf(`<circle cx="%s" cy="%s" r="%s" fill="%s" %s/>`, p.x(d.Center.X), p.y(d.Center.Y),
+			b = []byte(fmt.Sprintf(`<circle cx="%s" cy="%s" r="%s" fill="%s" %s/>`, p.x(d.Centre.X), p.y(d.Centre.Y),
 				p.m(d.Diameter/2),
 				d.Fill, psvg.FormatAttr(d.Attr)))
 		case Rectangle:

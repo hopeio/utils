@@ -1,16 +1,16 @@
 package apidoc
 
 import (
-	"github.com/getkin/kin-openapi/openapi3"
 	reflecti "github.com/hopeio/utils/reflect"
+	basehigh "github.com/pb33f/libopenapi/datamodel/high/base"
+	"github.com/pb33f/libopenapi/orderedmap"
 	"reflect"
 	"strings"
 )
 
-func DefinitionsApi(schema *openapi3.Schema, v interface{}) {
-	typs := openapi3.Types{"object"}
-	schema.Type = &typs
-	schema.Properties = make(map[string]*openapi3.SchemaRef)
+func DefinitionsApi(schema *basehigh.Schema, v any) {
+	schema.Type = []string{"object"}
+	schema.Properties = orderedmap.New[string, *basehigh.SchemaProxy]()
 
 	body := reflect.TypeOf(v).Elem()
 	var typ, subFieldName string
@@ -44,26 +44,20 @@ func DefinitionsApi(schema *openapi3.Schema, v interface{}) {
 			typ = "boolean"
 
 		}
-		typs := openapi3.Types{typ}
-		subSchema := openapi3.SchemaRef{
-			Value: &openapi3.Schema{
-				Type: &typs,
-			},
-		}
+		var subSchemaProxy *basehigh.SchemaProxy
 		if typ == "object" {
-			subSchema.Ref = "#/definitions/" + subFieldName
-			DefinitionsApi(subSchema.Value, v)
+			subSchemaProxy = basehigh.CreateSchemaProxyRef(subFieldName)
+			subSchema := subSchemaProxy.Schema()
+			subSchema.Type = []string{typ}
+			DefinitionsApi(subSchema, v)
 		}
 		if typ == "array" {
-			subSchema.Value.Items = new(openapi3.SchemaRef)
-			subSchema.Value.Items.Value = &openapi3.Schema{}
-			subSchema.Value.Items.Ref = "#/definitions/" + subFieldName
-			DefinitionsApi(subSchema.Value, v)
+			subSchemaProxy = basehigh.CreateSchemaProxyRef(subFieldName)
+			subSchema := subSchemaProxy.Schema()
+			arrSubSchemaProxy := basehigh.CreateSchemaProxyRef(subFieldName)
+			subSchema.Items = &basehigh.DynamicValue[*basehigh.SchemaProxy, bool]{A: arrSubSchemaProxy}
+			DefinitionsApi(arrSubSchemaProxy.Schema(), v)
 		}
-		schema.Properties[json] = &subSchema
+		schema.Properties.Set(json, subSchemaProxy)
 	}
-}
-
-func genSchema(v interface{}) *openapi3.Schema {
-	return nil
 }
