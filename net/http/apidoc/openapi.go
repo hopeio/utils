@@ -7,7 +7,22 @@ import (
 	"strings"
 )
 
-func DefinitionsApi(schema *openapi3.Schema, v interface{}) {
+type ComponentType int
+
+const (
+	ComponentTypeParameters ComponentType = iota
+	ComponentTypeHeaders
+	ComponentTypeRequestBodies
+	ComponentTypeResponses
+	ComponentTypeSecuritySchemes
+	ComponentTypeExamples
+	ComponentTypeLinks
+	ComponentTypeCallbacks
+)
+
+func AddComponent(name string, v interface{}) {
+	schema := openapi3.NewSchema()
+	schemaRef := openapi3.NewSchemaRef("", schema)
 	typs := openapi3.Types{"object"}
 	schema.Type = &typs
 	schema.Properties = make(map[string]*openapi3.SchemaRef)
@@ -16,8 +31,11 @@ func DefinitionsApi(schema *openapi3.Schema, v interface{}) {
 	var typ, subFieldName string
 	for i := range body.NumField() {
 		json := strings.Split(body.Field(i).Tag.Get("json"), ",")[0]
-		if json == "" || json == "-" {
+		if json == "-" {
 			continue
+		}
+		if json == "" {
+			json = body.Field(i).Name
 		}
 		fieldType := body.Field(i).Type
 		switch fieldType.Kind() {
@@ -44,26 +62,22 @@ func DefinitionsApi(schema *openapi3.Schema, v interface{}) {
 			typ = "boolean"
 
 		}
-		typs := openapi3.Types{typ}
-		subSchema := openapi3.SchemaRef{
-			Value: &openapi3.Schema{
-				Type: &typs,
-			},
-		}
+
+		subSchema := openapi3.SchemaRef{Value: new(openapi3.Schema)}
 		if typ == "object" {
-			subSchema.Ref = "#/definitions/" + subFieldName
-			DefinitionsApi(subSchema.Value, v)
+			subSchema.Ref = "#/components/schemas/" + subFieldName
+			AddComponent(subFieldName, v)
 		}
 		if typ == "array" {
+			subSchema.Value.Type = &openapi3.Types{"array"}
 			subSchema.Value.Items = new(openapi3.SchemaRef)
-			subSchema.Value.Items.Value = &openapi3.Schema{}
-			subSchema.Value.Items.Ref = "#/definitions/" + subFieldName
-			DefinitionsApi(subSchema.Value, v)
+			subSchema.Value.Items.Ref = "#/components/schemas/" + subFieldName
+			AddComponent(subFieldName, v)
 		}
 		schema.Properties[json] = &subSchema
 	}
-}
-
-func genSchema(v interface{}) *openapi3.Schema {
-	return nil
+	if Doc.Components == nil {
+		Doc.Components = &openapi3.Components{Schemas: make(map[string]*openapi3.SchemaRef)}
+	}
+	Doc.Components.Schemas[name] = schemaRef
 }

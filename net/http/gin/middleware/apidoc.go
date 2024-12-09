@@ -59,7 +59,7 @@ func (m ModName) ApiDocMiddle(ctx *gin.Context) {
 		Description: "Description",
 		Tags:        []string{"Tags"},
 		Summary:     "Summary",
-		OperationID: "currentRouteName" + ctx.Request.Method,
+		OperationID: ctx.Request.Method + ctx.Request.RequestURI,
 		Parameters:  parameters,
 		Responses:   ress,
 	}

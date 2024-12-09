@@ -26,7 +26,6 @@ const times = 3
 
 func mock(value reflect.Value, field *reflect.StructField, typMap map[reflect.Type]int) {
 	typ := value.Type()
-	value = value.Elem()
 	var tag string
 	if field != nil {
 		tag = field.Tag.Get("mock")

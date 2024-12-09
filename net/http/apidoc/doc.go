@@ -77,7 +77,7 @@ func generate() *openapi3.T {
 	info := new(openapi3.Info)
 	Doc.Info = info
 
-	Doc.OpenAPI = "2.0"
+	Doc.OpenAPI = "3.1.0"
 	Doc.Paths = openapi3.NewPaths()
 
 	info.Title = "Title"

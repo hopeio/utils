@@ -75,7 +75,7 @@ func DocList(ctx fiber.Ctx) error {
 	var buff bytes.Buffer
 	for i := range fileInfos {
 		if fileInfos[i].IsDir() {
-			buff.Write([]byte(`<a href="` + requestURI + "/swagger/" + fileInfos[i].Name() + `"> swagger: ` + fileInfos[i].Name() + `</a><br>`))
+			buff.Write([]byte(`<a href="` + requestURI + "/openapi/" + fileInfos[i].Name() + `"> openapi: ` + fileInfos[i].Name() + `</a><br>`))
 			buff.Write([]byte(`<a href="` + requestURI + "/markdown/" + fileInfos[i].Name() + `"> markdown: ` + fileInfos[i].Name() + `</a><br>`))
 		}
 	}
@@ -96,5 +96,5 @@ func OpenApi(mux *fiber.App, uriPrefix, dir string) {
 	}
 	mux.Get(apidoc.UriPrefix+"/markdown/", Markdown)
 	mux.Get(apidoc.UriPrefix, DocList)
-	mux.Get(apidoc.UriPrefix+"/swagger/", Swagger)
+	mux.Get(apidoc.UriPrefix+"/openapi/", Swagger)
 }

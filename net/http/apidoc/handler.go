@@ -16,7 +16,7 @@ import (
 )
 
 // 目录结构 ./api/mod/mod.swagger.json ./api/mod/mod.apidoc.md
-// 请求路由 /apidoc /apidoc/swagger/mod/mod.swagger.json /apidoc/markdown/mod/mod.apidoc.md
+// 请求路由 /apidoc /apidoc/openapi/mod/mod.swagger.json /apidoc/markdown/mod/mod.apidoc.md
 var UriPrefix = "/apidoc"
 var Dir = "./apidoc/"
 
@@ -84,13 +84,13 @@ func DocList(w http.ResponseWriter, r *http.Request) {
 	for i := range fileInfos {
 		if fileInfos[i].Name() == "root.swagger.json" {
 			// TODO: 解决root重名 /apidoc=root /apidoc/root
-			buff.Write([]byte(`<a href="` + r.RequestURI + "/swagger/" + rootModName + `"> swagger: ` + fileInfos[i].Name() + `</a><br>`))
+			buff.Write([]byte(`<a href="` + r.RequestURI + "/openapi/" + rootModName + `"> openapi: ` + fileInfos[i].Name() + `</a><br>`))
 		}
 		if fileInfos[i].Name() == "root.markdown.json" {
 			buff.Write([]byte(`<a href="` + r.RequestURI + "/markdown/" + rootModName + `"> markdown: ` + fileInfos[i].Name() + `</a><br>`))
 		}
 		if fileInfos[i].IsDir() {
-			buff.Write([]byte(`<a href="` + r.RequestURI + "/swagger/" + fileInfos[i].Name() + `"> swagger: ` + fileInfos[i].Name() + `</a><br>`))
+			buff.Write([]byte(`<a href="` + r.RequestURI + "/openapi/" + fileInfos[i].Name() + `"> openapi: ` + fileInfos[i].Name() + `</a><br>`))
 			buff.Write([]byte(`<a href="` + r.RequestURI + "/markdown/" + fileInfos[i].Name() + `"> markdown: ` + fileInfos[i].Name() + `</a><br>`))
 		}
 	}
@@ -110,5 +110,5 @@ func OpenApi(mux *http.ServeMux, uriPrefix, dir string) {
 	}
 	mux.Handle(UriPrefix, http.HandlerFunc(DocList))
 	mux.Handle(UriPrefix+"/markdown/", http.HandlerFunc(Markdown))
-	mux.Handle(UriPrefix+"/swagger/", http.HandlerFunc(Swagger))
+	mux.Handle(UriPrefix+"/openapi/", http.HandlerFunc(Swagger))
 }
