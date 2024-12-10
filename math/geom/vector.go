@@ -32,6 +32,10 @@ func (v Vector) AngleWith(v2 Vector) float64 {
 	return angleInRadians * (180.0 / math.Pi)
 }
 
+func (v Vector) CrossProduct(v2 Vector) float64 {
+	return v.X*v2.Y - v.Y*v2.X
+}
+
 type VectorInt[T constraints.Integer] struct {
 	X T
 	Y T

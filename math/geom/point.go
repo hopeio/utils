@@ -79,7 +79,7 @@ func (l *Point3DInt[T]) ToFloat64(factor float64) *Point3D {
 	}
 }
 
-func (p Point) Mirror(line *StraightLine) Point {
+func (p Point) Mirror(line *GeneralFormLine) Point {
 	denominator := line.A*line.A + line.B*line.B
 	if denominator == 0 {
 		panic("Invalid line equation: the line cannot be vertical and horizontal at the same time.")

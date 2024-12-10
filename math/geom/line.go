@@ -1,5 +1,6 @@
 package geom
 
+import "C"
 import (
 	"golang.org/x/exp/constraints"
 	"math"
@@ -10,16 +11,20 @@ type LineSegment struct {
 	End   Point
 }
 
+func NewLineSegment(start, end Point) *LineSegment {
+	return &LineSegment{start, end}
+}
+
 func (l *LineSegment) Vector() Vector {
 	return Vector{l.End.X - l.Start.X, l.End.Y - l.Start.Y}
 }
 
-func (l *LineSegment) StraightLine() *SlopeInterceptLine {
-	var line SlopeInterceptLine
+func (l *LineSegment) StraightLine() *SlopeInterceptFormLine {
+	var line SlopeInterceptFormLine
 	if l.Start.X == l.End.X {
 		// Vertical line
-		line.Slope = math.Inf(1) // Positive infinity to indicate vertical line
-		line.B = l.Start.X       // The x-coordinate of the vertical line
+		line.Slope = math.Inf(1)   // Positive infinity to indicate vertical line
+		line.Intercept = l.Start.X // The x-coordinate of the vertical line
 		return &line
 	}
 
@@ -27,8 +32,23 @@ func (l *LineSegment) StraightLine() *SlopeInterceptLine {
 	line.Slope = (l.End.Y - l.Start.Y) / (l.End.X - l.Start.X)
 
 	// Calculate y-intercept (b)
-	line.B = l.Start.Y - line.Slope*l.Start.X
+	line.Intercept = l.Start.Y - line.Slope*l.Start.X
 	return &line
+}
+
+func (l *LineSegment) ContainsPoint(p Point) bool {
+	// Ensure the point is within the bounding box of the line segment
+	if math.Min(l.Start.X, l.End.X) <= p.X && p.X <= math.Max(l.Start.X, l.End.X) &&
+		math.Min(l.Start.Y, l.End.Y) <= p.Y && p.Y <= math.Max(l.Start.Y, l.End.Y) {
+
+		// Calculate the area of the triangle formed by the three points
+		area := 0.5 * math.Abs(l.Start.X*l.End.Y+p.X*l.Start.Y+l.End.X*p.Y-p.X*l.End.Y-l.Start.X*p.Y-l.End.X*l.Start.Y)
+
+		// If the area is effectively zero, the point is on the line
+		return math.Abs(area) < 1e-9
+	}
+
+	return false
 }
 
 type LineInt[T constraints.Integer] struct {
@@ -51,45 +71,95 @@ func LineIntFromFloat64[T constraints.Integer](e *LineSegment, factor float64) *
 }
 
 // y=mx+b
-type SlopeInterceptLine struct {
-	Slope float64
-	B     float64
+type SlopeInterceptFormLine struct {
+	Slope     float64
+	Intercept float64
 }
 
-func (l *SlopeInterceptLine) IsVertical() bool {
+func (l *SlopeInterceptFormLine) IsVertical() bool {
 	return math.IsInf(l.Slope, 0)
 }
 
-func (l *SlopeInterceptLine) ToGeneralFormLine() *StraightLine {
+func (l *SlopeInterceptFormLine) ToGeneralFormLine() *GeneralFormLine {
 	if l.IsVertical() {
 		// For vertical lines: x = k, convert to Ax + By + C = 0 where A = 1, B = 0, C = -k
-		k := l.B
-		return &StraightLine{A: 1, B: 0, C: -k}
+		k := l.Intercept
+		return &GeneralFormLine{A: 1, B: 0, C: -k}
 	}
 
-	return &StraightLine{A: l.Slope, B: -1, C: l.B}
+	return &GeneralFormLine{A: l.Slope, B: -1, C: l.Intercept}
 }
-func NewSlopeInterceptLine(m, b float64) *SlopeInterceptLine {
-	return &SlopeInterceptLine{m, b}
+func NewSlopeInterceptLine(m, b float64) *SlopeInterceptFormLine {
+	return &SlopeInterceptFormLine{m, b}
 }
 
 // ax + by + c = 0
-type StraightLine struct {
+type GeneralFormLine struct {
 	A float64
 	B float64
 	C float64
 }
 
-func (l *StraightLine) ToSlopeInterceptLine() *SlopeInterceptLine {
+func (l *GeneralFormLine) ToSlopeInterceptLine() *SlopeInterceptFormLine {
 	if l.B == 0 {
-		return &SlopeInterceptLine{math.Inf(1), -l.C}
+		return &SlopeInterceptFormLine{math.Inf(1), -l.C}
 	}
-	return &SlopeInterceptLine{
-		Slope: -l.A / l.B,
-		B:     l.C / l.B,
+	return &SlopeInterceptFormLine{
+		Slope:     -l.A / l.B,
+		Intercept: l.C / l.B,
 	}
 }
 
-func NewGeneralFormLine(a, b, c float64) *StraightLine {
-	return &StraightLine{a, b, c}
+func NewGeneralFormLine(a, b, c float64) *GeneralFormLine {
+	return &GeneralFormLine{a, b, c}
+}
+
+type StraightLine struct {
+	Point
+	Angle float64
+}
+
+func NewStraightLine(p Point, angle float64) *StraightLine {
+	return &StraightLine{p, angle}
+}
+
+func (l *StraightLine) ToGeneralFormLine() *GeneralFormLine {
+	return &GeneralFormLine{math.Cos(l.Angle), math.Sin(l.Angle), -l.X*math.Cos(l.Angle) - l.Y*math.Sin(l.Angle)}
+}
+
+func (l *StraightLine) ToSlopeInterceptLine() *SlopeInterceptFormLine {
+	return l.ToGeneralFormLine().ToSlopeInterceptLine()
+}
+
+func (l *StraightLine) ContainsPoint(p Point) bool {
+	// Convert angle from degrees to radians
+	angleInRadians := l.Angle * math.Pi / 180
+
+	// Handle vertical line case (angle is 90 or 270 degrees)
+	if math.Mod(math.Abs(l.Angle-90), 180) < 1e-9 || math.Mod(math.Abs(l.Angle-270), 360) < 1e-9 {
+		return math.Abs(p.X-l.X) < 1e-9
+	}
+
+	// Calculate slope m and intercept b
+	m := math.Tan(angleInRadians)
+	b := l.Y - m*l.X
+
+	// Check if the point satisfies the line equation within a small tolerance
+	tolerance := 1e-9
+	return math.Abs(p.Y-(m*p.X+b)) < tolerance
+}
+
+func (l *StraightLine) IntersectStraightLine(l2 *StraightLine) bool {
+	sinL := math.Sin(l.Angle)
+	sinL2 := math.Sin(l2.Angle)
+	return sinL == sinL2 || sinL == -sinL2
+}
+
+type Ray struct {
+	Point
+	Angle float64
+}
+
+func NewRay(p Point, angle float64) *Ray {
+	return &Ray{p, angle}
 }
