@@ -43,17 +43,17 @@ func NewTranslateRotationMat(pA, pB Point, angleDeg float64) AffineMatrix {
 }
 
 // 计算仿射变换矩阵
-func NewAffineMatrix(p1, p2, p3, q1, q2, q3 Point) (AffineMatrix, error) {
+func newAffineMatrix(src, dst [3]Point) (AffineMatrix, error) {
 	// 构造线性方程组的系数矩阵A和常数向量b
 	A := [][]float64{
-		{p1.X, p1.Y, 1, 0, 0, 0},
-		{0, 0, 0, p1.X, p1.Y, 1},
-		{p2.X, p2.Y, 1, 0, 0, 0},
-		{0, 0, 0, p2.X, p2.Y, 1},
-		{p3.X, p3.Y, 1, 0, 0, 0},
-		{0, 0, 0, p3.X, p3.Y, 1},
+		{src[0].X, src[0].Y, 1, 0, 0, 0},
+		{0, 0, 0, src[0].X, src[0].Y, 1},
+		{src[1].X, src[1].Y, 1, 0, 0, 0},
+		{0, 0, 0, src[1].X, src[1].Y, 1},
+		{src[2].X, src[2].Y, 1, 0, 0, 0},
+		{0, 0, 0, src[2].X, src[2].Y, 1},
 	}
-	b := []float64{q1.X, q1.Y, q2.X, q2.Y, q3.X, q3.Y}
+	b := []float64{dst[0].X, dst[0].Y, dst[1].X, dst[1].Y, dst[2].X, dst[2].Y}
 
 	// 使用高斯-约旦消元法求解线性方程组 Ax = b
 	solution, err := GaussJordanElimination(A, b)
@@ -68,6 +68,60 @@ func NewAffineMatrix(p1, p2, p3, q1, q2, q3 Point) (AffineMatrix, error) {
 	}
 
 	return transformMatrix, nil
+}
+
+func NewAffineMatrix(src, dst [3]Point) (AffineMatrix, error) {
+	// 构造源点矩阵和目标点矩阵
+	srcMatrix := [3][3]float64{
+		{src[0].X, src[0].Y, 1},
+		{src[1].X, src[1].Y, 1},
+		{src[2].X, src[2].Y, 1},
+	}
+	dstMatrix := [3][2]float64{
+		{dst[0].X, dst[0].Y},
+		{dst[1].X, dst[1].Y},
+		{dst[2].X, dst[2].Y},
+	}
+
+	// 计算源点矩阵的逆
+	invSrcMatrix, err := InverseMatrix(srcMatrix)
+	if err != nil {
+		return AffineMatrix{}, err
+	}
+
+	// 计算仿射变换矩阵：inv(srcMatrix) * dstMatrix
+	affineMatrix := AffineMatrix{}
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 2; j++ {
+			affineMatrix[j][i] = invSrcMatrix[i][0]*dstMatrix[0][j] + invSrcMatrix[i][1]*dstMatrix[1][j] + invSrcMatrix[i][2]*dstMatrix[2][j]
+		}
+	}
+	// 转换为 2x3 形式
+	return affineMatrix, nil
+}
+
+// InverseMatrix 计算 3x3 矩阵的逆
+func InverseMatrix(m [3][3]float64) ([3][3]float64, error) {
+	det := m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1]) -
+		m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0]) +
+		m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0])
+
+	if det == 0 {
+		return [3][3]float64{}, fmt.Errorf("矩阵不可逆")
+	}
+
+	inv := [3][3]float64{}
+	inv[0][0] = (m[1][1]*m[2][2] - m[1][2]*m[2][1]) / det
+	inv[0][1] = (m[0][2]*m[2][1] - m[0][1]*m[2][2]) / det
+	inv[0][2] = (m[0][1]*m[1][2] - m[0][2]*m[1][1]) / det
+	inv[1][0] = (m[1][2]*m[2][0] - m[1][0]*m[2][2]) / det
+	inv[1][1] = (m[0][0]*m[2][2] - m[0][2]*m[2][0]) / det
+	inv[1][2] = (m[0][2]*m[1][0] - m[0][0]*m[1][2]) / det
+	inv[2][0] = (m[1][0]*m[2][1] - m[1][1]*m[2][0]) / det
+	inv[2][1] = (m[0][1]*m[2][0] - m[0][0]*m[2][1]) / det
+	inv[2][2] = (m[0][0]*m[1][1] - m[0][1]*m[1][0]) / det
+
+	return inv, nil
 }
 
 // GaussJordanElimination 高斯-约旦消元法求解线性方程组 Ax = b

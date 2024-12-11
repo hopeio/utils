@@ -22,7 +22,7 @@ func TestTransformPoint(t *testing.T) {
 
 func TestAffineMatrix(t *testing.T) {
 	p1, p2, p3, q1, q2, q3 := Point{2000, 7000}, Point{48000, 80000}, Point{2000, 85000}, Point{3558, 17895}, Point{11016, 5997}, Point{3538, 5182}
-	transformMatrix, err := NewAffineMatrix(p1, p2, p3, q1, q2, q3)
+	transformMatrix, err := NewAffineMatrix([3]Point{p1, p2, p3}, [3]Point{q1, q2, q3})
 	if err != nil {
 		t.Error(err)
 	}
