@@ -8,39 +8,16 @@ package decimal
 
 import (
 	"fmt"
-	"github.com/hopeio/utils/math/bits"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"log"
 	"math/big"
 	"testing"
 	"time"
-	"unsafe"
 )
 
 func Test_Dec(t *testing.T) {
-	fmt.Printf("%#v", Decimal{exp: 6})
-}
-
-const maxUint64 uint64 = 1<<64 - 1
-
-func Test_Decimal(t *testing.T) {
-	a, _ := New1("2.555")
-	b, _ := New1(" 0.06")
-	fmt.Println(a, b, a.Add(b))
-	//fmt.Println(new(big.Int).Lsh(big.NewInt(1),100))
-	c, _ := New11("2.11", 8)
-	d, _ := New11("0.89", 8)
-	fmt.Println(c.Add(d))
-	e := New3(205, -2, true)
-	f := New3(2, 2, false)
-	fmt.Println(e.Sub(*f))
-	fmt.Println(e.Mul(*f))
-	fmt.Println(e.Div(*f, HALFUP))
-	g := &Decimal{mant: []byte("123456"), exp: 10}
-	fmt.Println(g)
-	bits.ViewBin(9007199254741004.0)
-	h := uint64(111)
-	fmt.Println(*(*float64)(unsafe.Pointer(&h)))
+	fmt.Printf("%#v", DecimalModel{exponent: 6})
 }
 
 func Test_Float(t *testing.T) {
@@ -57,14 +34,18 @@ func Test_Float(t *testing.T) {
 func Test_DB(t *testing.T) {
 	type DecTest struct {
 		Id   uint64
-		Dec  DecimalV4 `gorm:"type:decimal(10,2)"`
+		Dec  decimal.Decimal `gorm:"type:decimal(10,2)"`
 		Time time.Time
 	}
 	db := &gorm.DB{}
 	tx := db.Begin()
 	/*	tx.DropTable(&DecTest{})
 		tx.CreateTable(&DecTest{})*/
-	var dec = DecTest{Dec: DecimalV4{123, -2, false}}
+	d, err := decimal.NewFromString("0.1")
+	if err != nil {
+		t.Error(err)
+	}
+	var dec = DecTest{Dec: d}
 	tx.Save(&dec)
 	log.Println(dec.Id)
 	var dec1 DecTest
