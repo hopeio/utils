@@ -55,16 +55,6 @@ func mapping(value reflect.Value, field *reflect.StructField, setter Setter, tag
 		return isSet, nil
 	}
 
-	if vKind != reflect.Struct || !field.Anonymous {
-		ok, err := tryToSetValue(value, field, setter, tagValue)
-		if err != nil {
-			return false, err
-		}
-		if ok {
-			return true, nil
-		}
-	}
-
 	if vKind == reflect.Struct {
 		tValue := value.Type()
 
@@ -82,6 +72,17 @@ func mapping(value reflect.Value, field *reflect.StructField, setter Setter, tag
 		}
 		return isSet, nil
 	}
+
+	if field != nil && !field.Anonymous {
+		ok, err := tryToSetValue(value, field, setter, tagValue)
+		if err != nil {
+			return false, err
+		}
+		if ok {
+			return true, nil
+		}
+	}
+
 	return false, nil
 }
 
