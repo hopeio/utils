@@ -7,9 +7,8 @@
 package model
 
 type Dict struct {
-	Type    int    `gorm:"comment:类型" gorm:"primaryKey"`
-	Key     string `gorm:"comment:键" gorm:"primaryKey"`
-	Name    string `gorm:"comment:名称"`
-	Value   string `gorm:"comment:值"`
-	Comment string `gorm:"comment:注释"`
+	Type  int    `json:"type" gorm:"primaryKey;comment:类型"`
+	Key   string `json:"key" gorm:"primaryKey;comment:键"`
+	Value string `json:"value" gorm:"comment:值"`
+	Seq   int    `json:"seq" gorm:"comment:排序"`
 }
