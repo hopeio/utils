@@ -25,8 +25,8 @@ type ResData[T any] struct {
 	Data T `json:"data,omitempty"`
 }
 
-func (res *ResData[T]) Response(w http.ResponseWriter, httpcode int) {
-	w.WriteHeader(httpcode)
+func (res *ResData[T]) Response(w http.ResponseWriter, statusCode int) {
+	w.WriteHeader(statusCode)
 	w.Header().Set(HeaderContentType, "application/json; charset=utf-8")
 	jsonBytes, _ := json.Marshal(res)
 	w.Write(jsonBytes)
@@ -124,8 +124,8 @@ func Stream(w http.ResponseWriter) {
 	})
 }
 
-var ResponseSysErr = []byte(`{"code":-1,"msg":"system error"}`)
-var ResponseOk = []byte(`{"code":0}`)
+var ResponseSysErr = json.RawMessage(`{"code":-1,"msg":"system error"}`)
+var ResponseOk = json.RawMessage(`{"code":0}`)
 
 type ReceiveData = ResData[json.RawMessage]
 

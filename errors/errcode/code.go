@@ -24,5 +24,5 @@ func RegisterErrCode(code ErrCode, msg string) {
 func init() {
 	RegisterErrCode(Canceled, "Canceled")
 	RegisterErrCode(Unknown, "Unknown")
-	RegisterErrCode(InvalidArgument, "InvalidArgument")
+	RegisterErrCode(InvalidArgument, "Invalid Argument")
 }
