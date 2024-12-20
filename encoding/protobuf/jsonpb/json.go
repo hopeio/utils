@@ -8,7 +8,9 @@ package jsonpb
 
 import (
 	"github.com/hopeio/utils/encoding/json"
+	"github.com/hopeio/utils/errors/errcode"
 	responsei "github.com/hopeio/utils/net/http"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -22,8 +24,11 @@ func (*JSONPb) ContentType(_ interface{}) string {
 }
 
 func (j *JSONPb) Marshal(v any) ([]byte, error) {
-	if _, ok := v.(error); ok {
-		return json.Marshal(v)
+	if err, ok := v.(error); ok {
+		return json.Marshal(&responsei.ResAnyData{
+			Code: errcode.ErrCode(codes.Unknown),
+			Msg:  err.Error(),
+		})
 	}
 	if msg, ok := v.(*wrapperspb.StringValue); ok {
 		v = msg.Value

@@ -9,6 +9,7 @@ package gin
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/hopeio/utils/errors/errcode"
+	"google.golang.org/grpc/codes"
 
 	"github.com/hopeio/utils/encoding/protobuf/jsonpb"
 	httpi "github.com/hopeio/utils/net/http"
@@ -39,7 +40,10 @@ func HttpError(ctx *gin.Context, err error) {
 	ctx.Header(httpi.HeaderContentType, contentType)
 
 	se := &errcode.ErrRep{Code: errcode.ErrCode(s.Code()), Msg: s.Message()}
-
+	if !ok {
+		se.Code = errcode.ErrCode(codes.Unknown)
+		se.Msg = err.Error()
+	}
 	buf, merr := jsonpb.JsonPb.Marshal(se)
 	if merr != nil {
 		grpclog.Infof("Failed to marshal error message %q: %v", se, merr)
