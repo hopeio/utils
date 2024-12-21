@@ -88,7 +88,6 @@ func (u *Encoding) unmarshalText(t *time.Time, data []byte) error {
 	}
 
 	if u.EncodeType == EncodeTypeLayout {
-		data = data[1 : len(data)-1]
 		if u.Layout == "" || u.Layout == time.RFC3339Nano {
 			return t.UnmarshalText(data)
 		} else {
@@ -148,7 +147,6 @@ func (u *Encoding) unmarshalJSON(t *time.Time, data []byte) error {
 		return nil
 	}
 	if u.EncodeType == EncodeTypeLayout {
-		data = data[1 : len(data)-1]
 		if u.Layout == "" || u.Layout == time.RFC3339Nano {
 			return t.UnmarshalJSON(data)
 		} else {
