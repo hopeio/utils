@@ -17,7 +17,7 @@ import (
 
 // only example
 
-type GinService[REQ, RES any] func(*gin.Context, REQ) (RES, error)
+type GinService[REQ, RES any] func(*gin.Context, REQ) (RES, *httpi.ResError)
 
 func HandlerWrap[REQ, RES any](service GinService[*REQ, *RES]) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -27,9 +27,9 @@ func HandlerWrap[REQ, RES any](service GinService[*REQ, *RES]) gin.HandlerFunc {
 			ctx.JSON(http.StatusOK, errcode.InvalidArgument.Wrap(err))
 			return
 		}
-		res, err := service(ctx, req)
-		if err != nil {
-			ctx.JSON(http.StatusOK, err)
+		res, reserr := service(ctx, req)
+		if reserr != nil {
+			ctx.JSON(http.StatusOK, reserr)
 			return
 		}
 		ctx.JSON(http.StatusOK, httpi.NewSuccessResData(res))

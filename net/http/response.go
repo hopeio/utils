@@ -149,3 +149,15 @@ type HttpResponse struct {
 	Body       []byte            `json:"body"`
 	StatusCode int               `json:"status"`
 }
+
+type ResError struct {
+	Code errcode.ErrCode `json:"code"`
+	Msg  string          `json:"msg,omitempty"`
+}
+
+func (res *ResError) Response(w http.ResponseWriter, statusCode int) {
+	w.WriteHeader(statusCode)
+	w.Header().Set(HeaderContentType, "application/json; charset=utf-8")
+	jsonBytes, _ := json.Marshal(res)
+	w.Write(jsonBytes)
+}
