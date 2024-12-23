@@ -7,7 +7,6 @@
 package http
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/hopeio/utils/errors/errcode"
@@ -127,7 +126,8 @@ func NewReceiveData(code errcode.ErrCode, msg string, data any) *ReceiveData {
 type IHttpResponse interface {
 	StatusCode() int
 	RespHeader() map[string]string
-	RespBody() io.ReadCloser
+	io.WriterTo
+	io.Closer
 }
 
 func ResponseWrite(w http.ResponseWriter, httpres IHttpResponse) (int, error) {
@@ -135,12 +135,11 @@ func ResponseWrite(w http.ResponseWriter, httpres IHttpResponse) (int, error) {
 	for k, v := range httpres.RespHeader() {
 		w.Header().Set(k, v)
 	}
-	body := httpres.RespBody()
-	i, err := io.Copy(w, body)
+	i, err := httpres.WriteTo(w)
 	if err != nil {
 		return int(i), err
 	}
-	err = body.Close()
+	err = httpres.Close()
 	if err != nil {
 		return int(i), err
 	}
@@ -157,8 +156,13 @@ func (res *HttpResponseRawBody) RespHeader() map[string]string {
 	return res.Header
 }
 
-func (res *HttpResponseRawBody) RespBody() io.ReadCloser {
-	return io.NopCloser(bytes.NewReader(res.Body))
+func (res *HttpResponseRawBody) WriteTo(writer io.Writer) (int64, error) {
+	i, err := writer.Write(res.Body)
+	return int64(i), err
+}
+
+func (res *HttpResponseRawBody) Close() error {
+	return nil
 }
 
 func (res *HttpResponseRawBody) StatusCode() int {
@@ -183,8 +187,12 @@ func (res *HttpResponse) RespHeader() map[string]string {
 	return res.Header
 }
 
-func (res *HttpResponse) RespBody() io.ReadCloser {
-	return res.Body
+func (res *HttpResponse) WriteTo(writer io.Writer) (int64, error) {
+	return io.Copy(writer, res.Body)
+}
+
+func (res *HttpResponse) Close() error {
+	return res.Body.Close()
 }
 
 func (res *HttpResponse) StatusCode() int {
@@ -232,10 +240,13 @@ func (res *ResponseFile) RespHeader() map[string]string {
 	return map[string]string{HeaderContentType: ContentTypeOctetStream, HeaderContentDisposition: fmt.Sprintf(AttachmentTmpl, res.Name)}
 }
 
-func (res *ResponseFile) RespBody() io.ReadCloser {
-	return res.Body
+func (res *ResponseFile) WriteTo(writer io.Writer) (int64, error) {
+	return io.Copy(writer, res.Body)
 }
 
+func (res *ResponseFile) Close() error {
+	return res.Body.Close()
+}
 func (res *ResponseFile) StatusCode() int {
 	return http.StatusOK
 }
@@ -245,27 +256,32 @@ type StreamWriter interface {
 	Flush() error
 }
 
-type HttpResponseWriteTo struct {
-	Status int               `json:"status,omitempty"`
-	Header map[string]string `json:"header,omitempty"`
-	Body   io.WriterTo       `json:"body,omitempty"`
+type WriteToCloser interface {
+	io.WriterTo
+	io.Closer
 }
 
-func (res *HttpResponseWriteTo) RespHeader() map[string]string {
-	return res.Header
+type ResponseFileWriteTo struct {
+	Name string        `json:"name"`
+	Body WriteToCloser `json:"body,omitempty"`
 }
 
-func (res *HttpResponseWriteTo) StatusCode() int {
-	return res.Status
+func (res *ResponseFileWriteTo) RespHeader() map[string]string {
+	return map[string]string{HeaderContentType: ContentTypeOctetStream, HeaderContentDisposition: fmt.Sprintf(AttachmentTmpl, res.Name)}
 }
 
-func (res *HttpResponseWriteTo) ResBody() io.WriterTo {
-	return res.Body
+func (res *ResponseFileWriteTo) WriteTo(writer io.Writer) (int64, error) {
+	return res.Body.WriteTo(writer)
 }
 
-func (res *HttpResponseWriteTo) Response(w http.ResponseWriter) (int, error) {
-	w.WriteHeader(res.Status)
-	body := res.ResBody()
-	i, err := body.WriteTo(w)
-	return int(i), err
+func (res *ResponseFileWriteTo) Close() error {
+	return res.Body.Close()
+}
+
+func (res *ResponseFileWriteTo) StatusCode() int {
+	return http.StatusOK
+}
+
+type IHttpResponseWriteTo interface {
+	Response(w http.ResponseWriter) (int, error)
 }

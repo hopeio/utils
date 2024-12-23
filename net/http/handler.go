@@ -8,6 +8,7 @@ package http
 
 import (
 	"encoding/json"
+	"github.com/hopeio/utils/errors/errcode"
 	"github.com/hopeio/utils/net/http/binding"
 	"github.com/hopeio/utils/types"
 	"net/http"
@@ -52,14 +53,25 @@ func HandlerWrap[REQ, RES any](service Service[*REQ, *RES]) http.Handler {
 		req := new(REQ)
 		err := binding.Bind(r, req)
 		if err != nil {
+			RespSuccessData(w, errcode.InvalidArgument.Wrap(err))
 			return
 		}
 		res, err := service(ReqResp{r, w}, req)
 		if err != nil {
+			if errcode, ok := err.(errcode.ErrCode); ok {
+				RespErrcode(w, errcode)
+				return
+			}
+			RespSuccessData(w, err)
 			return
 		}
-		if httpres, ok := any(res).(IHttpResponse); ok {
+		anyres := any(res)
+		if httpres, ok := anyres.(IHttpResponse); ok {
 			ResponseWrite(w, httpres)
+			return
+		}
+		if httpres, ok := anyres.(IHttpResponseWriteTo); ok {
+			httpres.Response(w)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -72,14 +84,25 @@ func HandlerWrapCompatibleGRPC[REQ, RES any](method types.GrpcServiceMethod[*REQ
 		req := new(REQ)
 		err := binding.Bind(r, req)
 		if err != nil {
+			RespSuccessData(w, errcode.InvalidArgument.Wrap(err))
 			return
 		}
 		res, err := method(r.Context(), req)
 		if err != nil {
+			if errcode, ok := err.(errcode.ErrCode); ok {
+				RespErrcode(w, errcode)
+				return
+			}
+			RespSuccessData(w, err)
 			return
 		}
-		if httpres, ok := any(res).(IHttpResponse); ok {
+		anyres := any(res)
+		if httpres, ok := anyres.(IHttpResponse); ok {
 			ResponseWrite(w, httpres)
+			return
+		}
+		if httpres, ok := anyres.(IHttpResponseWriteTo); ok {
+			httpres.Response(w)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
