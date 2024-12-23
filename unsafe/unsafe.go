@@ -14,3 +14,7 @@ func NoEscape(p unsafe.Pointer) unsafe.Pointer {
 	x := uintptr(p)
 	return unsafe.Pointer(x ^ 0)
 }
+
+func Cast[T1, T2 any](p *T2) *T1 {
+	return (*T1)(unsafe.Pointer(p))
+}

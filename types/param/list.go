@@ -22,17 +22,15 @@ func NewList[T Ordered](pageNo, pageSize int) *List[T] {
 	}
 }
 
-func (req *List[T]) WithSort(field string, typ SortType) *List[T] {
+func (req *List[T]) WithSort(typ SortType) *List[T] {
 	req.Sort = &Sort{
-		SortField: field,
-		SortType:  typ,
+		SortType: typ,
 	}
 	return req
 }
 
-func (req *List[T]) WithRange(field string, start, end T, include bool) *List[T] {
+func (req *List[T]) WithRange(start, end T, include bool) *List[T] {
 	req.Range = &Range[T]{
-		RangeField: field,
 		RangeBegin: start,
 		RangeEnd:   end,
 		Include:    include,

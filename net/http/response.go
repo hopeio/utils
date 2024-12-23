@@ -7,12 +7,12 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/hopeio/utils/errors/errcode"
 	"io"
 	"net/http"
-	"time"
 )
 
 type Body map[string]any
@@ -25,11 +25,11 @@ type ResData[T any] struct {
 	Data T `json:"data,omitempty"`
 }
 
-func (res *ResData[T]) Response(w http.ResponseWriter, statusCode int) {
+func (res *ResData[T]) Response(w http.ResponseWriter, statusCode int) (int, error) {
 	w.WriteHeader(statusCode)
 	w.Header().Set(HeaderContentType, "application/json; charset=utf-8")
 	jsonBytes, _ := json.Marshal(res)
-	w.Write(jsonBytes)
+	return w.Write(jsonBytes)
 }
 
 func NewResData[T any](code errcode.ErrCode, msg string, data T) *ResData[T] {
@@ -71,27 +71,29 @@ func RespError(w http.ResponseWriter, code errcode.ErrCode, msg string) {
 	NewResData[any](code, msg, nil).Response(w, http.StatusOK)
 }
 
-func RespSuccess[T any](w http.ResponseWriter, msg string, data T) {
-	NewResData(errcode.Success, msg, data).Response(w, http.StatusOK)
+func RespSuccess[T any](w http.ResponseWriter, msg string, data T) (int, error) {
+	return NewResData(errcode.Success, msg, data).Response(w, http.StatusOK)
 }
 
-func RespSuccessMsg(w http.ResponseWriter, msg string) {
-	NewResData[any](errcode.Success, msg, nil).Response(w, http.StatusOK)
+func RespSuccessMsg(w http.ResponseWriter, msg string) (int, error) {
+	return NewResData[any](errcode.Success, msg, nil).Response(w, http.StatusOK)
 }
 
-func RespSuccessData(w http.ResponseWriter, data any) {
-	NewResData[any](errcode.Success, errcode.Success.String(), data).Response(w, http.StatusOK)
+func RespSuccessData(w http.ResponseWriter, data any) (int, error) {
+	return NewResData[any](errcode.Success, errcode.Success.String(), data).Response(w, http.StatusOK)
 }
 
-func RespErrRep(w http.ResponseWriter, rep *errcode.ErrRep) {
-	NewResData[any](rep.Code, rep.Msg, nil).Response(w, http.StatusOK)
+func RespErrRep(w http.ResponseWriter, rep *errcode.ErrRep) (int, error) {
+	return NewResData[any](rep.Code, rep.Msg, nil).Response(w, http.StatusOK)
 }
 
-func Response[T any](w http.ResponseWriter, code errcode.ErrCode, msg string, data T) {
-	NewResData(code, msg, data).Response(w, http.StatusOK)
+func Response[T any](w http.ResponseWriter, code errcode.ErrCode, msg string, data T) (int, error) {
+	return NewResData(code, msg, data).Response(w, http.StatusOK)
 }
 
-func StreamWriter(w http.ResponseWriter, writer func(w io.Writer) bool) {
+func ResponseStreamWrite(w http.ResponseWriter, writer func(w io.Writer) bool) {
+	w.Header().Set(HeaderXAccelBuffering, "no") //nginx的锅必须加
+	w.Header().Set(HeaderTransferEncoding, "chunked")
 	notifyClosed := w.(http.CloseNotifier).CloseNotify()
 	for {
 		select {
@@ -106,22 +108,6 @@ func StreamWriter(w http.ResponseWriter, writer func(w io.Writer) bool) {
 			}
 		}
 	}
-}
-
-func Stream(w http.ResponseWriter) {
-	w.Header().Set(HeaderXAccelBuffering, "no") //nginx的锅必须加
-	w.Header().Set(HeaderTransferEncoding, "chunked")
-	i := 0
-	ints := []int{1, 2, 3, 5, 7, 9, 11, 13, 15, 17, 23, 29}
-	StreamWriter(w, func(w io.Writer) bool {
-		fmt.Fprintf(w, "Msg number %d<br>", ints[i])
-		time.Sleep(500 * time.Millisecond) // simulate delay.
-		if i == len(ints)-1 {
-			return false //关闭并刷新
-		}
-		i++
-		return true //继续写入数据
-	})
 }
 
 var ResponseSysErr = json.RawMessage(`{"code":-1,"msg":"system error"}`)
@@ -139,15 +125,90 @@ func NewReceiveData(code errcode.ErrCode, msg string, data any) *ReceiveData {
 }
 
 type IHttpResponse interface {
-	Header() http.Header
-	Body() []byte
 	StatusCode() int
+	RespHeader() map[string]string
+	RespBody() io.ReadCloser
+}
+
+func ResponseWrite(w http.ResponseWriter, httpres IHttpResponse) (int, error) {
+	w.WriteHeader(httpres.StatusCode())
+	for k, v := range httpres.RespHeader() {
+		w.Header().Set(k, v)
+	}
+	body := httpres.RespBody()
+	i, err := io.Copy(w, body)
+	if err != nil {
+		return int(i), err
+	}
+	err = body.Close()
+	if err != nil {
+		return int(i), err
+	}
+	return int(i), err
+}
+
+type HttpResponseRawBody struct {
+	Status int               `json:"status,omitempty"`
+	Header map[string]string `json:"header,omitempty"`
+	Body   []byte            `json:"body,omitempty"`
+}
+
+func (res *HttpResponseRawBody) RespHeader() map[string]string {
+	return res.Header
+}
+
+func (res *HttpResponseRawBody) RespBody() io.ReadCloser {
+	return io.NopCloser(bytes.NewReader(res.Body))
+}
+
+func (res *HttpResponseRawBody) StatusCode() int {
+	return res.Status
+}
+
+func (res *HttpResponseRawBody) Response(w http.ResponseWriter) (int, error) {
+	w.WriteHeader(res.Status)
+	for k, v := range res.Header {
+		w.Header().Set(k, v)
+	}
+	return w.Write(res.Body)
 }
 
 type HttpResponse struct {
-	Header     map[string]string `json:"header"`
-	Body       []byte            `json:"body"`
-	StatusCode int               `json:"status"`
+	Status int               `json:"status,omitempty"`
+	Header map[string]string `json:"header,omitempty"`
+	Body   io.ReadCloser     `json:"body,omitempty"`
+}
+
+func (res *HttpResponse) RespHeader() map[string]string {
+	return res.Header
+}
+
+func (res *HttpResponse) RespBody() io.ReadCloser {
+	return res.Body
+}
+
+func (res *HttpResponse) StatusCode() int {
+	return res.Status
+}
+
+func (res *HttpResponse) Flush() error {
+	return nil
+}
+
+func (res *HttpResponse) Response(w http.ResponseWriter) (int, error) {
+	w.WriteHeader(res.Status)
+	for k, v := range res.Header {
+		w.Header().Set(k, v)
+	}
+	i, err := io.Copy(w, res.Body)
+	if err != nil {
+		return int(i), err
+	}
+	err = res.Body.Close()
+	if err != nil {
+		return int(i), err
+	}
+	return int(i), err
 }
 
 type ResError struct {
@@ -155,9 +216,56 @@ type ResError struct {
 	Msg  string          `json:"msg,omitempty"`
 }
 
-func (res *ResError) Response(w http.ResponseWriter, statusCode int) {
+func (res *ResError) Response(w http.ResponseWriter, statusCode int) (int, error) {
 	w.WriteHeader(statusCode)
-	w.Header().Set(HeaderContentType, "application/json; charset=utf-8")
+	w.Header().Set(HeaderContentType, ContentTypeJsonUtf8)
 	jsonBytes, _ := json.Marshal(res)
-	w.Write(jsonBytes)
+	return w.Write(jsonBytes)
+}
+
+type ResponseFile struct {
+	Name string        `json:"name"`
+	Body io.ReadCloser `json:"body,omitempty"`
+}
+
+func (res *ResponseFile) RespHeader() map[string]string {
+	return map[string]string{HeaderContentType: ContentTypeOctetStream, HeaderContentDisposition: fmt.Sprintf(AttachmentTmpl, res.Name)}
+}
+
+func (res *ResponseFile) RespBody() io.ReadCloser {
+	return res.Body
+}
+
+func (res *ResponseFile) StatusCode() int {
+	return http.StatusOK
+}
+
+type StreamWriter interface {
+	Write(io.Writer) (n int, err error)
+	Flush() error
+}
+
+type HttpResponseWriteTo struct {
+	Status int               `json:"status,omitempty"`
+	Header map[string]string `json:"header,omitempty"`
+	Body   io.WriterTo       `json:"body,omitempty"`
+}
+
+func (res *HttpResponseWriteTo) RespHeader() map[string]string {
+	return res.Header
+}
+
+func (res *HttpResponseWriteTo) StatusCode() int {
+	return res.Status
+}
+
+func (res *HttpResponseWriteTo) ResBody() io.WriterTo {
+	return res.Body
+}
+
+func (res *HttpResponseWriteTo) Response(w http.ResponseWriter) (int, error) {
+	w.WriteHeader(res.Status)
+	body := res.ResBody()
+	i, err := body.WriteTo(w)
+	return int(i), err
 }

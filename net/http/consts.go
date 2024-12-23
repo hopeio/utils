@@ -51,18 +51,18 @@ const (
 	ContentTypeForm = "application/x-www-form-urlencoded"
 
 	// ContentTypeGrpc Content-Type header value for gRPC.
-	ContentTypeGrpc    = "application/grpc"
-	ContentTypeGrpcWeb = "application/grpc-web"
-	ContentPdf         = "application/pdf"
-	ContentJsonUtf8    = "application/json;charset=utf-8"
-	ContentFormParam   = "application/x-www-form-urlencoded;param=value"
+	ContentTypeGrpc      = "application/grpc"
+	ContentTypeGrpcWeb   = "application/grpc-web"
+	ContentTypePdf       = "application/pdf"
+	ContentTypeJsonUtf8  = "application/json;charset=utf-8"
+	ContentTypeFormParam = "application/x-www-form-urlencoded;param=value"
 
-	ContentImagePng                  = "image/png"
-	ContentImageJpeg                 = "image/jpeg"
-	ContentImageGif                  = "image/gif"
-	ContentImageBmp                  = "image/bmp"
-	ContentImageWebp                 = "image/webp"
-	ContentImageAvif                 = "image/avif"
+	ContentTypeImagePng              = "image/png"
+	ContentTypeImageJpeg             = "image/jpeg"
+	ContentTypeImageGif              = "image/gif"
+	ContentTypeImageBmp              = "image/bmp"
+	ContentTypeImageWebp             = "image/webp"
+	ContentTypeImageAvif             = "image/avif"
 	ContentTypeImageHeif             = "image/heif"
 	ContentTypeImageSvg              = "image/svg+xml"
 	ContentTypeImageTiff             = "image/tiff"
@@ -123,4 +123,5 @@ const (
 const (
 	FormDataFieldTmpl = `form-data; name="%s"`
 	FormDataFileTmpl  = `form-data; name="%s"; filename="%s"`
+	AttachmentTmpl    = `attachment; filename="%s" `
 )
