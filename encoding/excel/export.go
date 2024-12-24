@@ -20,6 +20,8 @@ func NewFile(sheet string, header []string) (*excelize.File, error) {
 	if err != nil {
 		return nil, err
 	}
+	f.NewSheet(sheet)
+	f.DeleteSheet("Sheet1")
 	f.SetColStyle(sheet, "A:"+endColumn, style)
 	headerStyle, _ := f.NewStyle(HeaderStyle)
 	f.SetCellStyle(sheet, "A1", endColumn+"1", headerStyle)
@@ -101,17 +103,7 @@ func SetHeaderRow(sw *excelize.StreamWriter, f *excelize.File, rowNum int, colWi
 //	sw, excel StreamWriter
 //	rowNum, 要设置的excel行号，行号是从1开始的，第一行行号为1
 //	cellVal, 单元格内容
-func SetBodyRow(sw *excelize.StreamWriter, f *excelize.File, rowNum int, cellVal []string) {
-	styleId, _ := f.NewStyle(bodyCellStyle)
-	cell := make([]interface{}, 0, len(cellVal))
-	for i := range cellVal {
-		cell = append(cell, excelize.Cell{StyleID: styleId, Value: cellVal[i]})
-	}
-	rowNumStr := strconv.Itoa(rowNum)
-	_ = sw.SetRow(ColumnLetter[0]+rowNumStr, cell)
-}
-
-func SetBodyRowWithRaw(sw *excelize.StreamWriter, f *excelize.File, rowNum int, cellVal []interface{}) {
+func SetBodyRow(sw *excelize.StreamWriter, f *excelize.File, rowNum int, cellVal []any) {
 	styleId, _ := f.NewStyle(bodyCellStyle)
 	cell := make([]interface{}, 0, len(cellVal))
 	for i := range cellVal {

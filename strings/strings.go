@@ -25,6 +25,7 @@ func FormatLen(s string, length int) string {
 	return s[:length]
 }
 
+// 简单添加引号，如果字符串本身带引号，请使用strconv.Quote
 func Quote(s string) string {
 	return "\"" + s + "\""
 }
@@ -44,6 +45,7 @@ func IsQuoted[T ~string | ~[]byte](s T) bool {
 	return s[0] == '"' && s[len(s)-1] == '"'
 }
 
+// 简单去除引号，如果字符串本身带引号，请使用strconv.Quote
 func Unquote[T ~string | ~[]byte](s T) T {
 	if !IsQuoted(s) {
 		return s

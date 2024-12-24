@@ -116,8 +116,13 @@ func (d *StringArray) Scan(value any) error {
 	}
 	strs := strings.Split(str[1:len(str)-1], ",")
 	var arr []string
+	var err error
 	for _, elem := range strs {
-		arr = append(arr, stringsi.Unquote(elem))
+		elem, err = strconv.Unquote(elem)
+		if err != nil {
+			return err
+		}
+		arr = append(arr)
 	}
 	*d = arr
 	return nil
@@ -196,8 +201,9 @@ func str2value[T any](str string) (T, error) {
 	if !ok {
 		isv, ok = ap.(sql.Scanner)
 	}
+	var err error
 	if ok {
-		err := isv.Scan(str)
+		err = isv.Scan(str)
 		if err != nil {
 			return t, err
 		}
@@ -208,7 +214,8 @@ func str2value[T any](str string) (T, error) {
 		itv, ok = ap.(encoding.TextUnmarshaler)
 	}
 	if ok {
-		err := itv.UnmarshalText(stringsi.UnquoteToBytes(str))
+		str, err = strconv.Unquote(str)
+		err = itv.UnmarshalText(stringsi.ToBytes(str))
 		if err != nil {
 			return t, err
 		}

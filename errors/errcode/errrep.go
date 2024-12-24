@@ -34,7 +34,7 @@ func (x *ErrRep) GRPCStatus() *status.Status {
 }
 
 func (x *ErrRep) MarshalJSON() ([]byte, error) {
-	return stringsi.ToBytes(`{"code":` + strconv.Itoa(int(x.Code)) + `,"msg":"` + x.Msg + `"}`), nil
+	return stringsi.ToBytes(`{"code":` + strconv.Itoa(int(x.Code)) + `,"msg":` + strconv.Quote(x.Msg) + `}`), nil
 }
 
 func (x *ErrRep) AppendErr(err error) *ErrRep {

@@ -39,7 +39,7 @@ func (req *Range[T]) Clause() clause.Expression {
 		if req.Include {
 			return NewWhereClause(req.RangeField, operation, req.RangeBegin, req.RangeEnd)
 		} else {
-			return clause.Where{Exprs: []clause.Expression{NewWhereClause(req.RangeField, dbi.Greater, req.RangeBegin), NewWhereClause(req.RangeField, dbi.Less, req.RangeBegin)}}
+			return clause.Where{Exprs: []clause.Expression{NewWhereClause(req.RangeField, dbi.Greater, req.RangeBegin), NewWhereClause(req.RangeField, dbi.Less, req.RangeEnd)}}
 		}
 	}
 	return nil
