@@ -7,6 +7,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/hopeio/utils/errors/errcode"
 	"github.com/hopeio/utils/net/http/binding"
@@ -46,7 +47,7 @@ type ReqResp struct {
 	*http.Request
 	http.ResponseWriter
 }
-type Service[REQ, RES any] func(ctx ReqResp, req REQ) (RES, error)
+type Service[REQ, RES any] func(ctx ReqResp, req REQ) (RES, *ResError)
 
 func HandlerWrap[REQ, RES any](service Service[*REQ, *RES]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -56,13 +57,9 @@ func HandlerWrap[REQ, RES any](service Service[*REQ, *RES]) http.Handler {
 			RespSuccessData(w, errcode.InvalidArgument.Wrap(err))
 			return
 		}
-		res, err := service(ReqResp{r, w}, req)
+		res, errRep := service(ReqResp{r, w}, req)
 		if err != nil {
-			if errcode, ok := err.(errcode.ErrCode); ok {
-				RespErrcode(w, errcode)
-				return
-			}
-			RespSuccessData(w, err)
+			errRep.Response(w, http.StatusOK)
 			return
 		}
 		anyres := any(res)
@@ -87,13 +84,9 @@ func HandlerWrapCompatibleGRPC[REQ, RES any](method types.GrpcServiceMethod[*REQ
 			RespSuccessData(w, errcode.InvalidArgument.Wrap(err))
 			return
 		}
-		res, err := method(r.Context(), req)
+		res, err := method(WarpContext(ReqResp{r, w}), req)
 		if err != nil {
-			if errcode, ok := err.(errcode.ErrCode); ok {
-				RespErrcode(w, errcode)
-				return
-			}
-			RespSuccessData(w, err)
+			ResErrorFromError(err).Response(w, http.StatusOK)
 			return
 		}
 		anyres := any(res)
@@ -109,4 +102,16 @@ func HandlerWrapCompatibleGRPC[REQ, RES any](method types.GrpcServiceMethod[*REQ
 		w.Header().Set(HeaderContentType, ContentTypeJsonUtf8)
 		json.NewEncoder(w).Encode(res)
 	})
+}
+
+type warpKey struct{}
+
+var warpContextKey = warpKey{}
+
+func WarpContext(v any) context.Context {
+	return context.WithValue(context.Background(), warpContextKey, v)
+}
+
+func UnWarpContext(ctx context.Context) any {
+	return ctx.Value(warpContextKey)
 }

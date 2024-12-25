@@ -8,7 +8,6 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/hopeio/utils/errors/errcode"
 	"io"
 	"net/http"
@@ -219,36 +218,13 @@ func (res *HttpResponse) Response(w http.ResponseWriter) (int, error) {
 	return int(i), err
 }
 
-type ResError struct {
-	Code errcode.ErrCode `json:"code"`
-	Msg  string          `json:"msg,omitempty"`
-}
+type ResError errcode.ErrRep
 
 func (res *ResError) Response(w http.ResponseWriter, statusCode int) (int, error) {
 	w.WriteHeader(statusCode)
 	w.Header().Set(HeaderContentType, ContentTypeJsonUtf8)
 	jsonBytes, _ := json.Marshal(res)
 	return w.Write(jsonBytes)
-}
-
-type ResponseFile struct {
-	Name string        `json:"name"`
-	Body io.ReadCloser `json:"body,omitempty"`
-}
-
-func (res *ResponseFile) RespHeader() map[string]string {
-	return map[string]string{HeaderContentType: ContentTypeOctetStream, HeaderContentDisposition: fmt.Sprintf(AttachmentTmpl, res.Name)}
-}
-
-func (res *ResponseFile) WriteTo(writer io.Writer) (int64, error) {
-	return io.Copy(writer, res.Body)
-}
-
-func (res *ResponseFile) Close() error {
-	return res.Body.Close()
-}
-func (res *ResponseFile) StatusCode() int {
-	return http.StatusOK
 }
 
 type StreamWriter interface {
@@ -261,27 +237,16 @@ type WriteToCloser interface {
 	io.Closer
 }
 
-type ResponseFileWriteTo struct {
-	Name string        `json:"name"`
-	Body WriteToCloser `json:"body,omitempty"`
-}
-
-func (res *ResponseFileWriteTo) RespHeader() map[string]string {
-	return map[string]string{HeaderContentType: ContentTypeOctetStream, HeaderContentDisposition: fmt.Sprintf(AttachmentTmpl, res.Name)}
-}
-
-func (res *ResponseFileWriteTo) WriteTo(writer io.Writer) (int64, error) {
-	return res.Body.WriteTo(writer)
-}
-
-func (res *ResponseFileWriteTo) Close() error {
-	return res.Body.Close()
-}
-
-func (res *ResponseFileWriteTo) StatusCode() int {
-	return http.StatusOK
-}
-
 type IHttpResponseWriteTo interface {
 	Response(w http.ResponseWriter) (int, error)
+}
+
+func ResErrorFromError(err error) *ResError {
+	if errco, ok := err.(errcode.ErrCode); ok {
+		return &ResError{Code: errco, Msg: errco.Error()}
+	}
+	if errrep, ok := err.(*errcode.ErrRep); ok {
+		return (*ResError)(errrep)
+	}
+	return &ResError{Code: errcode.ErrCode(errcode.Unknown), Msg: err.Error()}
 }

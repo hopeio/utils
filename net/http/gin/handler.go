@@ -8,7 +8,6 @@ package gin
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/hopeio/context/httpctx"
 	"github.com/hopeio/utils/errors/errcode"
 	httpi "github.com/hopeio/utils/net/http"
 	"github.com/hopeio/utils/net/http/gin/binding"
@@ -49,10 +48,9 @@ func HandlerWrapCompatibleGRPC[REQ, RES any](service types.GrpcServiceMethod[*RE
 			ctx.JSON(http.StatusOK, errcode.InvalidArgument.Wrap(err))
 			return
 		}
-		ctxi := httpctx.FromRequest(httpctx.RequestCtx{Request: ctx.Request, Response: ctx.Writer})
-		res, err := service(ctxi.Wrapper(), req)
+		res, err := service(httpi.WarpContext(ctx), req)
 		if err != nil {
-			ctx.JSON(http.StatusOK, err)
+			ctx.JSON(http.StatusOK, httpi.ResErrorFromError(err))
 			return
 		}
 		if httpres, ok := any(res).(httpi.IHttpResponse); ok {

@@ -4,17 +4,17 @@
  * @Created by jyb
  */
 
-package fasthttp
+package fiber
 
 import (
+	"github.com/gofiber/fiber/v3"
 	httpi "github.com/hopeio/utils/net/http"
 	stringsi "github.com/hopeio/utils/strings"
 	"net/url"
-
-	"github.com/valyala/fasthttp"
 )
 
-func GetToken(req *fasthttp.Request) string {
+func GetToken(ctx fiber.Ctx) string {
+	req := ctx.Request()
 	if token := stringsi.BytesToString(req.Header.Peek(httpi.HeaderAuthorization)); token != "" {
 		return token
 	}

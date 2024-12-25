@@ -23,11 +23,11 @@ import (
 	"testing"
 	"time"
 
+	"context"
 	testproto "github.com/hopeio/utils/net/http/grpc/web/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"golang.org/x/net/context"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
