@@ -6,8 +6,6 @@
 
 package param
 
-import "time"
-
 type IPageSort interface {
 	IPage
 	ISort
@@ -53,11 +51,38 @@ func (receiver *Sort) Type() SortType {
 	return receiver.SortType
 }
 
-type DateRange[T ~string | time.Time] Range[T]
-
 type Range[T Rangeable] struct {
-	RangeField string `json:"rangeField,omitempty"`
-	RangeBegin T      `json:"rangeBegin,omitempty"`
-	RangeEnd   T      `json:"rangeEnd,omitempty"`
-	Include    bool   `json:"include,omitempty"`
+	RangeField string    `json:"rangeField,omitempty"`
+	RangeBegin T         `json:"rangeBegin,omitempty"`
+	RangeEnd   T         `json:"rangeEnd,omitempty"`
+	RangeType  RangeType `json:"include,omitempty"`
 }
+
+type Id struct {
+	Id uint `json:"id"`
+}
+
+type RangeType int8
+
+func (r RangeType) HasBegin() bool {
+	return r&RangeTypeHasBegin != 0
+}
+
+func (r RangeType) HasEnd() bool {
+	return r&RangeTypeHasEnd != 0
+}
+
+func (r RangeType) ContainsBegin() bool {
+	return r&RangeTypeContainsBegin != 0
+}
+
+func (r RangeType) ContainsEnd() bool {
+	return r&RangeTypeContainsEnd != 0
+}
+
+const (
+	RangeTypeHasBegin RangeType = 1 << iota
+	RangeTypeHasEnd
+	RangeTypeContainsBegin
+	RangeTypeContainsEnd
+)

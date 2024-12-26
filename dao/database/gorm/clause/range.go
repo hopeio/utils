@@ -18,29 +18,38 @@ func (req *Range[T]) Clause() clause.Expression {
 	if req == nil || req.RangeField == "" {
 		return nil
 	}
+	if req.RangeType == 0 {
+		return NewWhereClause(req.RangeField, dbi.Between, req.RangeBegin, req.RangeEnd)
+	}
+	if req.RangeType.HasBegin() && req.RangeType.HasEnd() {
+		if req.RangeType.ContainsBegin() && req.RangeType.ContainsEnd() {
+			return NewWhereClause(req.RangeField, dbi.Between, req.RangeBegin, req.RangeEnd)
+		} else {
+			leftOp, rightOp := dbi.Greater, dbi.Less
+			if req.RangeType.ContainsBegin() {
+				leftOp = dbi.GreaterOrEqual
+			}
+			if req.RangeType.ContainsEnd() {
+				leftOp = dbi.LessOrEqual
+			}
+			return clause.Where{Exprs: []clause.Expression{NewWhereClause(req.RangeField, leftOp, req.RangeBegin), NewWhereClause(req.RangeField, rightOp, req.RangeEnd)}}
+		}
+	}
 
-	var zero T
-	operation := dbi.Between
-	if req.RangeEnd == zero && req.RangeBegin != zero {
-		operation = dbi.Greater
-		if req.Include {
+	if req.RangeType.HasBegin() {
+		operation := dbi.Greater
+		if req.RangeType.ContainsEnd() {
 			operation = dbi.GreaterOrEqual
 		}
 		return NewWhereClause(req.RangeField, operation, req.RangeBegin)
 	}
-	if req.RangeBegin == zero && req.RangeEnd != zero {
-		operation = dbi.Less
-		if req.Include {
+	if req.RangeType.HasEnd() {
+		operation := dbi.Less
+		if req.RangeType.ContainsEnd() {
 			operation = dbi.LessOrEqual
 		}
-		return NewWhereClause(req.RangeField, operation, req.RangeBegin)
+		return NewWhereClause(req.RangeField, operation, req.RangeEnd)
 	}
-	if req.RangeBegin != zero && req.RangeEnd != zero {
-		if req.Include {
-			return NewWhereClause(req.RangeField, operation, req.RangeBegin, req.RangeEnd)
-		} else {
-			return clause.Where{Exprs: []clause.Expression{NewWhereClause(req.RangeField, dbi.Greater, req.RangeBegin), NewWhereClause(req.RangeField, dbi.Less, req.RangeEnd)}}
-		}
-	}
+
 	return nil
 }

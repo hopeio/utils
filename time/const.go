@@ -42,6 +42,7 @@ const (
 	YearDay365 = Day * 365
 	YearDay366 = Day * 366
 	Year       = YearDay365
+	DaySecond  = Day / time.Second
 )
 
 const (

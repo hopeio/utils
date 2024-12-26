@@ -29,11 +29,11 @@ func (req *List[T]) WithSort(typ SortType) *List[T] {
 	return req
 }
 
-func (req *List[T]) WithRange(start, end T, include bool) *List[T] {
+func (req *List[T]) WithRange(start, end T, rangeType RangeType) *List[T] {
 	req.Range = &Range[T]{
 		RangeBegin: start,
 		RangeEnd:   end,
-		Include:    include,
+		RangeType:  rangeType,
 	}
 	return req
 }

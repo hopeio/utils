@@ -18,7 +18,6 @@ func (c *Config) New() *gin.Engine {
 		engine.RedirectFixedPath = c.RedirectFixedPath
 		engine.HandleMethodNotAllowed = c.HandleMethodNotAllowed
 		engine.ForwardedByClientIP = c.ForwardedByClientIP
-		engine.AppEngine = c.AppEngine
 		engine.UseRawPath = c.UseRawPath
 		engine.UnescapePathValues = c.UnescapePathValues
 		engine.RemoveExtraSlash = c.RemoveExtraSlash

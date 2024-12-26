@@ -4,7 +4,6 @@ go 1.23
 
 require (
 	bou.ke/monkey v1.0.2
-	github.com/99designs/gqlgen v0.17.60
 	github.com/IBM/sarama v1.43.3
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/boombuler/barcode v1.0.2
@@ -172,7 +171,6 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
-	github.com/vektah/gqlparser/v2 v2.5.20 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/xuri/efp v0.0.0-20241211021726-c4e992084aa6 // indirect
 	github.com/xuri/nfp v0.0.0-20240318013403-ab9948c2c4a7 // indirect
