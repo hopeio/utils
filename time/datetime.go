@@ -23,7 +23,7 @@ func (d Date) Time() time.Time {
 func (d *Date) Scan(value interface{}) (err error) {
 	nullTime := &sql.NullTime{}
 	err = nullTime.Scan(value)
-	*d = Date(nullTime.Time.Unix())
+	*d = Date(nullTime.Time.Unix() / int64(DaySecond))
 	return
 }
 
