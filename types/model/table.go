@@ -5,7 +5,7 @@ type TableMeta struct {
 	Name string `json:"name" gorm:"comment:名称"`
 }
 
-type TableField struct {
+type TableColumn struct {
 	ID      int    `json:"id" gorm:"primaryKey"`
 	Name    string `json:"name" gorm:"comment:名称"`
 	Type    string `json:"type" gorm:"comment:类型"`
@@ -13,7 +13,7 @@ type TableField struct {
 }
 
 type TableValue struct {
-	ID      int    `json:"id" gorm:"primaryKey"`
-	FieldID int    `json:"fieldId" gorm:"comment:字段id"`
-	Value   string `json:"value" gorm:"comment:值"`
+	ID       int    `json:"id" gorm:"primaryKey"`
+	ColumnID int    `json:"columnId" gorm:"comment:字段id"`
+	Value    string `json:"value" gorm:"comment:值"`
 }

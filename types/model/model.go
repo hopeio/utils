@@ -10,3 +10,7 @@ type Model struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 	DeletedAt time.Time `json:"deletedAt" gorm:"index"`
 }
+
+type ModelExt struct {
+	OperatorId uint `json:"operatorId"`
+}
