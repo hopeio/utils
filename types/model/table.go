@@ -1,19 +1,19 @@
 package model
 
 type TableMeta struct {
-	ID   int    `json:"id" gorm:"primaryKey"`
+	ID   uint   `json:"id" gorm:"primaryKey"`
 	Name string `json:"name" gorm:"comment:名称"`
 }
 
 type TableColumn struct {
-	ID      int    `json:"id" gorm:"primaryKey"`
+	ID      uint   `json:"id" gorm:"primaryKey"`
 	Name    string `json:"name" gorm:"comment:名称"`
 	Type    string `json:"type" gorm:"comment:类型"`
-	TableID int    `json:"tableId" gorm:"comment:表id"`
+	TableID uint   `json:"tableId" gorm:"comment:表id"`
 }
 
 type TableValue struct {
-	ID       int    `json:"id" gorm:"primaryKey"`
-	ColumnID int    `json:"columnId" gorm:"comment:字段id"`
+	ID       uint   `json:"id" gorm:"primaryKey"`
+	ColumnID uint   `json:"columnId" gorm:"comment:字段id"`
 	Value    string `json:"value" gorm:"comment:值"`
 }

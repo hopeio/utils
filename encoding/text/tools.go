@@ -8,8 +8,11 @@ package text
 
 import (
 	"encoding"
+	reflecti "github.com/hopeio/utils/reflect/converter"
+	stringsi "github.com/hopeio/utils/strings"
 	"golang.org/x/net/html/charset"
 	tencoding "golang.org/x/text/encoding"
+	"strconv"
 )
 
 func DetermineEncoding(content []byte, contentType string) (e tencoding.Encoding, name string, certain bool) {
@@ -30,4 +33,28 @@ func Unmarshal[T any](str string) error {
 		}
 	}
 	return nil
+}
+
+func StringConvertFor[T any](str string) (T, error) {
+	var t T
+	a, ap := any(t), any(&t)
+	itv, ok := a.(encoding.TextUnmarshaler)
+	if !ok {
+		itv, ok = ap.(encoding.TextUnmarshaler)
+	}
+	if ok {
+		var err error
+		str, err = strconv.Unquote(str)
+		err = itv.UnmarshalText(stringsi.ToBytes(str))
+		if err != nil {
+			return t, err
+		}
+		return t, nil
+	}
+
+	v, err := reflecti.StringConvertFor[T](str)
+	if err != nil {
+		return t, err
+	}
+	return v, nil
 }

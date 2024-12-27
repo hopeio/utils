@@ -9,21 +9,20 @@ package model
 import "github.com/hopeio/utils/dao/database/datatypes"
 
 type Enum struct {
-	ID    int    `json:"id" gorm:"primaryKey"`
+	ID    uint   `json:"id" gorm:"primaryKey"`
 	Name  string `json:"name" gorm:"index;comment:名称"`
 	Group uint32 `json:"group" gorm:"comment:枚举组"`
-	PID   int    `json:"pId" gorm:"comment:父id"`
+	Type  uint32 `json:"type" gorm:"comment:类型"`
 }
 
 type PostgresEnum struct {
-	ID    int `gorm:"primaryKey"`
+	ID    uint `gorm:"primaryKey"`
 	Enums datatypes.StringArray
 }
 
 type EnumValue struct {
-	ID     int    `json:"id" gorm:"primaryKey"`
-	EnumID int    `json:"enumId" gorm:"index;comment:枚举id"`
+	ID     uint   `json:"id" gorm:"primaryKey"`
+	EnumID uint   `json:"enumId" gorm:"index;comment:枚举id"`
 	Index  uint32 `json:"index" gorm:"comment:索引"`
 	Value  string `json:"value" gorm:"comment:值"`
-	Type   uint32 `json:"type" gorm:"comment:类型"`
 }

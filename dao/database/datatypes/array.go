@@ -8,11 +8,11 @@ package datatypes
 
 import (
 	"bytes"
-	"database/sql"
 	"database/sql/driver"
 	"encoding"
 	"errors"
 	"fmt"
+	dbi "github.com/hopeio/utils/dao/database"
 	reflecti "github.com/hopeio/utils/reflect/converter"
 	stringsi "github.com/hopeio/utils/strings"
 	"time"
@@ -169,7 +169,7 @@ func (d *Array[T]) Scan(value any) error {
 			subArray, ok := stringsi.BracketsIntervals(str[i:], '{', '}')
 			if ok {
 				i += len(subArray)
-				t, err := str2value[T](subArray)
+				t, err := dbi.StringConvertFor[T](subArray)
 				if err != nil {
 					return err
 				}
@@ -184,7 +184,7 @@ func (d *Array[T]) Scan(value any) error {
 	strs := strings.Split(str, ",")
 
 	for _, elem := range strs {
-		t, err := str2value[T](elem)
+		t, err := dbi.StringConvertFor[T](elem)
 		if err != nil {
 			return err
 		}
@@ -192,41 +192,6 @@ func (d *Array[T]) Scan(value any) error {
 	}
 	*d = arr
 	return nil
-}
-
-func str2value[T any](str string) (T, error) {
-	var t T
-	a, ap := any(t), any(&t)
-	isv, ok := a.(sql.Scanner)
-	if !ok {
-		isv, ok = ap.(sql.Scanner)
-	}
-	var err error
-	if ok {
-		err = isv.Scan(str)
-		if err != nil {
-			return t, err
-		}
-		return t, nil
-	}
-	itv, ok := a.(encoding.TextUnmarshaler)
-	if !ok {
-		itv, ok = ap.(encoding.TextUnmarshaler)
-	}
-	if ok {
-		str, err = strconv.Unquote(str)
-		err = itv.UnmarshalText(stringsi.ToBytes(str))
-		if err != nil {
-			return t, err
-		}
-		return t, nil
-	}
-
-	v, err := reflecti.StringConvertFor[T](str)
-	if err != nil {
-		return t, err
-	}
-	return v, nil
 }
 
 func (d Array[T]) Value() (driver.Value, error) {
