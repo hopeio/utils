@@ -21,8 +21,8 @@ type DateFilter struct {
 // 赋值本周期，并返回下周期日期
 func (d *DateFilter) Scope() (time.Time, time.Time) {
 	beginStr, endStr := d.scope()
-	begin, _ := time.ParseInLocation(timei.LayoutDateTime, beginStr, time.Local)
-	end, _ := time.ParseInLocation(timei.LayoutDateTime, endStr, time.Local)
+	begin, _ := time.Parse(timei.LayoutDateTime, beginStr)
+	end, _ := time.Parse(timei.LayoutDateTime, endStr)
 	return begin, end
 }
 

@@ -33,7 +33,7 @@ func FetchFile(r *http.Request) (*FileInfo, error) {
 	var file FileInfo
 	file.Binary = vbytes
 	file.name = path.Base(resp.Request.URL.Path)
-	file.modTime, _ = time.ParseInLocation(time.RFC1123, resp.Header.Get("Last-Modified"), time.Local)
+	file.modTime, _ = time.Parse(time.RFC1123, resp.Header.Get("Last-Modified"))
 	file.size, _ = strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
 	return &file, nil
 }

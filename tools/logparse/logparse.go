@@ -48,7 +48,7 @@ func main() {
 			log.Fatalf("Failed to unmarshal JSON: %v", err)
 		}
 
-		t, err := time.ParseInLocation(time.DateTime, entry.Time, time.Local)
+		t, err := time.Parse(time.DateTime, entry.Time)
 		if err != nil {
 			log.Fatalf("Failed to parse timestamp: %v", err)
 		}

@@ -48,7 +48,7 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 
 	if len(str) > 1 && str[0] == '"' && str[len(str)-1] == '"' {
 		str = str[1 : len(str)-1]
-		t, err := time.ParseInLocation(time.DateOnly, str, time.UTC)
+		t, err := time.Parse(time.DateOnly, str)
 		if err != nil {
 			return err
 		}
@@ -97,7 +97,7 @@ func (d *DateTime) UnmarshalJSON(data []byte) error {
 
 	if len(str) > 1 && str[0] == '"' && str[len(str)-1] == '"' {
 		str = str[1 : len(str)-1]
-		t, err := time.ParseInLocation(time.DateTime, str, time.Local)
+		t, err := time.Parse(time.DateTime, str)
 		if err != nil {
 			return err
 		}

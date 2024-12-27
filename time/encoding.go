@@ -92,7 +92,7 @@ func (u *Encoding) unmarshalText(t *time.Time, data []byte) error {
 			return t.UnmarshalText(data)
 		} else {
 			var err error
-			*t, err = time.ParseInLocation(u.Layout, string(data), time.Local)
+			*t, err = time.Parse(u.Layout, string(data))
 			return err
 		}
 	} else {
@@ -151,7 +151,7 @@ func (u *Encoding) unmarshalJSON(t *time.Time, data []byte) error {
 			return t.UnmarshalJSON(data)
 		} else {
 			var err error
-			*t, err = time.ParseInLocation(`"`+u.Layout+`"`, string(data), time.Local)
+			*t, err = time.Parse(`"`+u.Layout+`"`, string(data))
 			return err
 		}
 	} else {

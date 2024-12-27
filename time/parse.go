@@ -16,7 +16,7 @@ func Format(t time.Time) string {
 }
 
 func Parse(layout, value string) (time.Time, error) {
-	return time.ParseInLocation(layout, value, time.Local)
+	return time.Parse(layout, value)
 }
 
 func FormatRelativeTime(fromTime time.Time) string {
