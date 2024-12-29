@@ -14,3 +14,9 @@ type Config struct {
 	MaxIdleConns, MaxOpenConns        int
 	Port                              int32
 }
+
+const (
+	Mysql    = "mysql"
+	Postgres = "postgres"
+	Sqlite   = "sqlite"
+)

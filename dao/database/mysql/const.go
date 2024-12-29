@@ -6,7 +6,9 @@
 
 package mysql
 
-import dbi "github.com/hopeio/utils/dao/database"
+import (
+	dbi "github.com/hopeio/utils/dao/database/sql"
+)
 
 const (
 	DateTimeZero  = "0001-01-01 00:00:00"

@@ -9,7 +9,7 @@
 package clause
 
 import (
-	dbi "github.com/hopeio/utils/dao/database"
+	dbi "github.com/hopeio/utils/dao/database/sql"
 	"github.com/hopeio/utils/types/param"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

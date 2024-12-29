@@ -7,13 +7,13 @@
 package gorm
 
 import (
-	dbi "github.com/hopeio/utils/dao/database"
+	"github.com/hopeio/utils/dao/database/sql"
 	"gorm.io/gorm"
 )
 
 type Scope func(*gorm.DB) *gorm.DB
 
-func NewScope(field string, op dbi.Operation, args ...interface{}) func(*gorm.DB) *gorm.DB {
+func NewScope(field string, op sql.Operation, args ...interface{}) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where(field+op.SQL(), args...)
 	}
@@ -31,7 +31,7 @@ func (c ChainScope) ById(id int) ChainScope {
 }
 
 func (c ChainScope) ByIdNoCheck(id any) ChainScope {
-	return append(c, NewScope(dbi.ColumnId, dbi.Equal, id))
+	return append(c, NewScope(sql.ColumnId, sql.Equal, id))
 }
 
 func (c ChainScope) ByName(name string) ChainScope {
@@ -43,7 +43,7 @@ func (c ChainScope) ByName(name string) ChainScope {
 
 func (c ChainScope) ByNameNoCheck(name any) ChainScope {
 	return append(c, func(db *gorm.DB) *gorm.DB {
-		return db.Where(dbi.NameEqual, name)
+		return db.Where(sql.NameEqual, name)
 	})
 }
 

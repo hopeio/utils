@@ -7,7 +7,7 @@
 package gorm
 
 import (
-	dbi "github.com/hopeio/utils/dao/database"
+	dbi "github.com/hopeio/utils/dao/database/sql"
 	"gorm.io/gorm"
 	"strings"
 )

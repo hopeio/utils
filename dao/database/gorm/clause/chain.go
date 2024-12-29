@@ -7,7 +7,7 @@
 package clause
 
 import (
-	dbi "github.com/hopeio/utils/dao/database"
+	dbi "github.com/hopeio/utils/dao/database/sql"
 	"gorm.io/gorm/clause"
 )
 

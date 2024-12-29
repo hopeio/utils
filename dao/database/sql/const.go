@@ -4,7 +4,7 @@
  * @Created by jyb
  */
 
-package database
+package sql
 
 const (
 	TmFmtWithMS = "2006-01-02 15:04:05.999"
@@ -21,12 +21,6 @@ const (
 	ExprEqual    = " = ?"
 	ExprNotEqual = " != ?"
 	ExprGreater  = " > ?"
-)
-
-const (
-	Mysql    = "mysql"
-	Postgres = "postgres"
-	Sqlite   = "sqlite"
 )
 
 const (

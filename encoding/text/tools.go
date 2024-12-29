@@ -10,6 +10,7 @@ import (
 	"encoding"
 	reflecti "github.com/hopeio/utils/reflect/converter"
 	stringsi "github.com/hopeio/utils/strings"
+	"golang.org/x/exp/constraints"
 	"golang.org/x/net/html/charset"
 	tencoding "golang.org/x/text/encoding"
 	"strconv"
@@ -57,4 +58,38 @@ func StringConvertFor[T any](str string) (T, error) {
 		return t, err
 	}
 	return v, nil
+}
+
+func IntToString[T constraints.Integer](v T) string {
+	return strconv.FormatInt(int64(v), 10)
+}
+
+func UintToString[T constraints.Integer](v T) string {
+	return strconv.FormatUint(uint64(v), 10)
+}
+
+func AnyIntToString(value interface{}) string {
+	switch v := value.(type) {
+	case int:
+		return strconv.FormatInt(int64(v), 10)
+	case int8:
+		return strconv.FormatInt(int64(v), 10)
+	case int16:
+		return strconv.FormatInt(int64(v), 10)
+	case int32:
+		return strconv.FormatInt(int64(v), 10)
+	case int64:
+		return strconv.FormatInt(v, 10)
+	case uint:
+		return strconv.FormatUint(uint64(v), 10)
+	case uint8:
+		return strconv.FormatUint(uint64(v), 10)
+	case uint16:
+		return strconv.FormatUint(uint64(v), 10)
+	case uint32:
+		return strconv.FormatUint(uint64(v), 10)
+	case uint64:
+		return strconv.FormatUint(v, 10)
+	}
+	return ""
 }

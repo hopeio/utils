@@ -6,7 +6,9 @@
 
 package postgres
 
-import "github.com/hopeio/utils/dao/database"
+import (
+	"github.com/hopeio/utils/dao/database/sql"
+)
 
 const (
 	ZeroTimeUCT     = "0001-01-01 00:00:00"
@@ -16,8 +18,8 @@ const (
 )
 
 const (
-	NotDeletedUCT = database.ColumnDeletedAt + " = '" + ZeroTimeUCT + "'"
-	NotDeletedCST = database.ColumnDeletedAt + " = '" + ZeroTimeCST + "'"
+	NotDeletedUCT = sql.ColumnDeletedAt + " = '" + ZeroTimeUCT + "'"
+	NotDeletedCST = sql.ColumnDeletedAt + " = '" + ZeroTimeCST + "'"
 )
 
 const (

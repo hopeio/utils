@@ -4,12 +4,12 @@
  * @Created by jyb
  */
 
-package database
+package sql
 
 import (
 	"database/sql/driver"
 	"fmt"
-	"gorm.io/gorm/utils"
+	"github.com/hopeio/utils/encoding/text"
 	"reflect"
 	"strconv"
 	"strings"
@@ -179,7 +179,7 @@ func ConvertParams(v interface{}, escaper string) string {
 			return escaper + "<binary>" + escaper
 		}
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-		return utils.ToString(v)
+		return text.AnyIntToString(v)
 	case float64, float32:
 		return fmt.Sprintf("%.6f", v)
 	case string:
