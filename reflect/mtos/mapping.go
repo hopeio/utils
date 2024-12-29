@@ -5,6 +5,7 @@
 package mtos
 
 import (
+	"encoding"
 	"errors"
 	"github.com/hopeio/utils/encoding/json"
 	"reflect"
@@ -117,6 +118,14 @@ func tryToSetValue(value reflect.Value, field *reflect.StructField, setter Sette
 }
 
 func setWithProperType(val string, value reflect.Value, field *reflect.StructField) error {
+	anyV := value.Interface()
+	tuV, ok := anyV.(encoding.TextUnmarshaler)
+	if !ok {
+		tuV, ok = value.Addr().Interface().(encoding.TextUnmarshaler)
+	}
+	if ok {
+		return tuV.UnmarshalText(stringsi.ToBytes(val))
+	}
 	switch value.Kind() {
 	case reflect.Int:
 		return setIntField(val, 0, value)
@@ -127,7 +136,7 @@ func setWithProperType(val string, value reflect.Value, field *reflect.StructFie
 	case reflect.Int32:
 		return setIntField(val, 32, value)
 	case reflect.Int64:
-		switch value.Interface().(type) {
+		switch anyV.(type) {
 		case time.Duration:
 			return setTimeDuration(val, value, field)
 		}
@@ -151,7 +160,7 @@ func setWithProperType(val string, value reflect.Value, field *reflect.StructFie
 	case reflect.String:
 		value.SetString(val)
 	case reflect.Struct:
-		switch value.Interface().(type) {
+		switch anyV.(type) {
 		case time.Time:
 			return setTimeField(val, field, value)
 		}

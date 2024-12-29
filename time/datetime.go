@@ -41,7 +41,7 @@ func (d Date) MarshalJSON() ([]byte, error) {
 }
 
 func (d *Date) UnmarshalJSON(data []byte) error {
-	str := string(data)
+	str := stringsi.BytesToString(data)
 	if len(data) == 0 || str == "null" {
 		return nil
 	}
@@ -55,6 +55,23 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 		*d = Date(t.Unix() / int64(DaySecond))
 		return nil
 	}
+	return nil
+}
+
+func (d Date) MarshalText() ([]byte, error) {
+	return stringsi.ToBytes(d.Time().Format(time.DateOnly)), nil
+}
+
+func (d *Date) UnmarshalText(data []byte) error {
+	if len(data) == 0 {
+		return nil
+	}
+	str := stringsi.BytesToString(data)
+	t, err := time.Parse(time.DateOnly, str)
+	if err != nil {
+		return err
+	}
+	*d = Date(t.Unix() / int64(DaySecond))
 	return nil
 }
 
@@ -90,7 +107,7 @@ func (d DateTime) MarshalJSON() ([]byte, error) {
 }
 
 func (d *DateTime) UnmarshalJSON(data []byte) error {
-	str := string(data)
+	str := stringsi.BytesToString(data)
 	if len(data) == 0 || str == "null" {
 		return nil
 	}
@@ -104,6 +121,23 @@ func (d *DateTime) UnmarshalJSON(data []byte) error {
 		*d = DateTime(t.Unix())
 		return nil
 	}
+	return nil
+}
+
+func (d DateTime) MarshalText() ([]byte, error) {
+	return stringsi.ToBytes(d.Time().Format(time.DateTime)), nil
+}
+
+func (d *DateTime) UnmarshalText(data []byte) error {
+	if len(data) == 0 {
+		return nil
+	}
+	str := stringsi.BytesToString(data)
+	t, err := time.Parse(time.DateTime, str)
+	if err != nil {
+		return err
+	}
+	*d = DateTime(t.Unix())
 	return nil
 }
 
