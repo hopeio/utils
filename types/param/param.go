@@ -17,7 +17,7 @@ type IPage interface {
 }
 
 type ISort interface {
-	Type() SortType
+	SortType() SortType
 }
 
 type SortType int
@@ -28,34 +28,41 @@ const (
 	SortTypeDesc
 )
 
-type PageSort struct {
-	Page
-	*Sort
+type PageSortEmbed struct {
+	PageEmbed
+	*SortEmbed
 }
 
-type Page struct {
+type PageEmbed struct {
 	PageNo   int `json:"pageNo"`
 	PageSize int `json:"pageSize"`
 }
 
-type Sort struct {
+type SortEmbed struct {
 	SortField string   `json:"sortField,omitempty"`
 	SortType  SortType `json:"sortType,omitempty"`
 }
 
-func (receiver *Sort) Column() string {
-	return receiver.SortField
+type PageSort struct {
+	Page Page  `json:"page"`
+	Sort *Sort `json:"sort,omitempty"`
 }
 
-func (receiver *Sort) Type() SortType {
-	return receiver.SortType
+type Page struct {
+	No   int `json:"no"`
+	Size int `json:"size"`
+}
+
+type Sort struct {
+	Field string   `json:"field,omitempty"`
+	Type  SortType `json:"type,omitempty"`
 }
 
 type Range[T Rangeable] struct {
-	RangeField string    `json:"rangeField,omitempty"`
-	RangeBegin T         `json:"rangeBegin,omitempty"`
-	RangeEnd   T         `json:"rangeEnd,omitempty"`
-	RangeType  RangeType `json:"include,omitempty"`
+	Field string    `json:"field,omitempty"`
+	Begin T         `json:"begin,omitempty"`
+	End   T         `json:"end,omitempty"`
+	Type  RangeType `json:"type,omitempty"`
 }
 
 type Id struct {
@@ -81,8 +88,8 @@ func (r RangeType) ContainsEnd() bool {
 }
 
 const (
-	RangeTypeHasBegin RangeType = 1 << iota
-	RangeTypeHasEnd
+	RangeTypeContainsEnd RangeType = 1 << iota
 	RangeTypeContainsBegin
-	RangeTypeContainsEnd
+	RangeTypeHasEnd
+	RangeTypeHasBegin
 )

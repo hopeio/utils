@@ -14,51 +14,76 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type PageSort param.PageSort
+type PageSortEmbed param.PageSortEmbed
 
-func (req *PageSort) Clause() []clause.Expression {
+func (req *PageSortEmbed) Clause() []clause.Expression {
 	if req.PageNo == 0 && req.PageSize == 0 {
 		return nil
 	}
-	if req.Sort == nil || req.Sort.SortField == "" {
+	if req.SortEmbed == nil || req.SortEmbed.SortField == "" {
 		return []clause.Expression{PageExpr(req.PageNo, req.PageSize)}
 	}
 
 	return []clause.Expression{SortExpr(req.SortField, req.SortType), PageExpr(req.PageNo, req.PageSize)}
 }
 
-func FindByList[T any, O param.Ordered](db *gorm.DB, req *param.List[O]) ([]T, error) {
+func FindByPageSortEmbed[T any](db *gorm.DB, req *param.PageSortEmbed, clauses ...clause.Expression) ([]T, int64, error) {
 	var models []T
-	clauses := ListClause(req)
+
 	if len(clauses) > 0 {
 		db = db.Clauses(clauses...)
 	}
-	err := db.Find(&models).Error
+	var count int64
+	var t T
+	err := db.Model(&t).Count(&count).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return models, nil
+	if count == 0 {
+		return nil, 0, nil
+	}
+	pageSortClauses := (*PageSortEmbed)(req).Clause()
+	err = db.Clauses(pageSortClauses...).Find(&models).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return models, count, nil
 }
 
-func ListClause[O param.Ordered](req *param.List[O]) []clause.Expression {
-	return (*List[O])(req).Clause()
+type PageSort param.PageSort
+
+func (req *PageSort) Clause() []clause.Expression {
+	if req.Page.No == 0 && req.Page.Size == 0 {
+		return nil
+	}
+	if req.Sort == nil || req.Sort.Field == "" {
+		return []clause.Expression{PageExpr(req.Page.No, req.Page.Size)}
+	}
+
+	return []clause.Expression{SortExpr(req.Sort.Field, req.Sort.Type), PageExpr(req.Page.No, req.Page.Size)}
 }
 
-type List[T param.Ordered] param.List[T]
+func FindByPageSort[T any](db *gorm.DB, req *param.PageSort, clauses ...clause.Expression) ([]T, int64, error) {
+	var models []T
 
-func (req *List[O]) Clause() []clause.Expression {
-	pqc := (*PageSort)(&req.PageSort).Clause()
-	rqc := (*Range[O])(req.Range).Clause()
-	if pqc != nil && rqc != nil {
-		return append((*PageSort)(&req.PageSort).Clause(), (*Range[O])(req.Range).Clause())
+	if len(clauses) > 0 {
+		db = db.Clauses(clauses...)
 	}
-	if rqc == nil {
-		return pqc
+	var count int64
+	var t T
+	err := db.Model(&t).Count(&count).Error
+	if err != nil {
+		return nil, 0, err
 	}
-	if rqc != nil {
-		return []clause.Expression{rqc}
+	if count == 0 {
+		return nil, 0, nil
 	}
-	return nil
+	pageSortClauses := (*PageSort)(req).Clause()
+	err = db.Clauses(pageSortClauses...).Find(&models).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return models, count, nil
 }
 
 func PageExpr(pageNo, pageSize int) clause.Limit {
