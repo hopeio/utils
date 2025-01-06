@@ -212,3 +212,25 @@ func IPv6Addresses() ([]string, error) {
 
 	return ipv6Address, nil
 }
+
+func IPv6s() ([]net.IP, error) {
+	var ipv6s []net.IP
+
+	// 获取所有网络接口的地址
+	address, err := net.InterfaceAddrs()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, addr := range address {
+		// 检查地址族是否为IP网卡地址
+		if ipNet, ok := addr.(*net.IPNet); ok {
+			// 检查是否为IPv6地址
+			if ipNet.IP.To4() == nil && !ipNet.IP.IsPrivate() && ipNet.IP.IsGlobalUnicast() {
+				ipv6s = append(ipv6s, ipNet.IP)
+			}
+		}
+	}
+
+	return ipv6s, nil
+}

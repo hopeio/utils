@@ -57,3 +57,35 @@ func (task *Poller) RandRun(ctx context.Context, minInterval, maxInterval time.D
 		}
 	}
 }
+
+func Run(ctx context.Context, interval time.Duration, do TaskFunc) {
+	timer := time.NewTicker(interval)
+	times := 1
+	do(ctx)
+	for {
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return
+		case <-timer.C:
+			times++
+			do(ctx)
+		}
+	}
+}
+
+func RandRun(ctx context.Context, minInterval, maxInterval time.Duration, do TaskFunc) {
+	timer := time2.NewRandTicker(minInterval, maxInterval)
+	times := 1
+	do(ctx)
+	for {
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return
+		case <-timer.Channel():
+			times++
+			do(ctx)
+		}
+	}
+}
