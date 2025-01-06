@@ -93,3 +93,8 @@ const (
 	RangeTypeHasEnd
 	RangeTypeHasBegin
 )
+
+type Cursor[T any] struct {
+	Prev T   `json:"prev,omitempty"`
+	Size int `json:"size,omitempty"`
+}
