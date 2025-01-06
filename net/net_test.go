@@ -14,3 +14,13 @@ import (
 func TestIP(t *testing.T) {
 	log.Println(ExternalIP())
 }
+
+func TestIPV6(t *testing.T) {
+	log.Println(LocalIPv6Addresses())
+	log.Println(IPv6Addresses())
+}
+
+func TestCommonIP(t *testing.T) {
+	log.Println(CommonIPV4())
+	log.Println(CommonIPv6())
+}

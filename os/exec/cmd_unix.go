@@ -10,6 +10,7 @@ package exec
 
 import (
 	osi "github.com/hopeio/utils/os"
+	"os/exec"
 )
 
 func RunGetOutContainQuoted(s string) (string, error) {
