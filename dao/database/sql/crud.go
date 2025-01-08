@@ -26,7 +26,7 @@ func DeleteSQL(tableName, column string) string {
 }
 
 func DeleteByIdSQL(tableName string) string {
-	return `Update ` + tableName + ` SET deleted_at = now() WHERE id = ?` + WithNotDeleted
+	return `Update ` + tableName + ` SET deleted_at = now() WHERE id = ?`
 }
 
 func ExistsSQLByQuerySQL(qsql string) string {
