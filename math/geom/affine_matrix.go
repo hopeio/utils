@@ -16,6 +16,10 @@ func (m AffineMatrix) Transform(p Point) Point {
 	}
 }
 
+func (m AffineMatrix) RotationAngle() float64 {
+	return math.Atan2(m[1][0], m[0][0])
+}
+
 func NewRotationMat(center Point, angleDeg float64) AffineMatrix {
 	angleRad := angleDeg * math.Pi / 180.0
 	cosA := math.Cos(angleRad)
