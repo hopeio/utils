@@ -117,3 +117,10 @@ func ByValidEqual[T comparable](column string, v T) clause.Expression {
 	}
 	return nil
 }
+
+func ByPrimaryKey(v any) clause.Expression {
+	return clause.Eq{
+		Column: clause.PrimaryColumn,
+		Value:  v,
+	}
+}
