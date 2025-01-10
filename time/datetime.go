@@ -9,7 +9,11 @@ package time
 import (
 	"database/sql"
 	"database/sql/driver"
+	"errors"
+	"github.com/hopeio/utils/encoding/binary"
 	stringsi "github.com/hopeio/utils/strings"
+	"io"
+	"strconv"
 	"time"
 )
 
@@ -54,6 +58,16 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 		}
 		*d = Date(t.Unix() / int64(DaySecond))
 		return nil
+	} else {
+		v, err := strconv.ParseInt(str, 10, 64)
+		if err != nil {
+			return err
+		}
+		if len(str) == 13 {
+			*d = Date(v / 1000 / int64(DaySecond))
+		} else {
+			*d = Date(v / int64(DaySecond))
+		}
 	}
 	return nil
 }
@@ -77,6 +91,40 @@ func (d *Date) UnmarshalText(data []byte) error {
 
 func (ts Date) GormDataType() string {
 	return "time"
+}
+
+func (ts Date) MarshalBinary() ([]byte, error) {
+	return binary.ToBinary(ts), nil
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
+func (ts *Date) UnmarshalBinary(data []byte) error {
+	*ts = binary.BinaryTo[Date](data)
+	return nil
+}
+
+func (ts Date) GobEncode() ([]byte, error) {
+	return ts.MarshalBinary()
+}
+
+func (ts *Date) GobDecode(data []byte) error {
+	return ts.UnmarshalBinary(data)
+}
+
+func (x Date) MarshalGQL(w io.Writer) {
+	w.Write([]byte(x.Time().Format(time.DateOnly)))
+}
+
+func (x *Date) UnmarshalGQL(v interface{}) error {
+	if i, ok := v.(string); ok {
+		t, err := time.Parse(time.DateOnly, i)
+		if err != nil {
+			return err
+		}
+		*x = Date(t.Unix() / int64(DaySecond))
+		return nil
+	}
+	return errors.New("enum need integer type")
 }
 
 type DateTime int64
@@ -120,6 +168,16 @@ func (d *DateTime) UnmarshalJSON(data []byte) error {
 		}
 		*d = DateTime(t.Unix())
 		return nil
+	} else {
+		v, err := strconv.ParseInt(str, 10, 64)
+		if err != nil {
+			return err
+		}
+		if len(str) == 13 {
+			*d = DateTime(v / 1000)
+		} else {
+			*d = DateTime(v)
+		}
 	}
 	return nil
 }
