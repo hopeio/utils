@@ -98,3 +98,11 @@ type Cursor[T any] struct {
 	Prev T   `json:"prev,omitempty"`
 	Size int `json:"size,omitempty"`
 }
+
+type RangeInRange[T Rangeable] struct {
+	BeginField string    `json:"beginField,omitempty"`
+	EndField   string    `json:"endField,omitempty"`
+	Begin      T         `json:"begin,omitempty"`
+	End        T         `json:"end,omitempty"`
+	Type       RangeType `json:"type,omitempty"`
+}

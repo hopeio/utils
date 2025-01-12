@@ -18,6 +18,9 @@ import (
 func NewWhereClause(field string, op dbi.Operation, args ...interface{}) clause.Expression {
 	switch op {
 	case dbi.Equal:
+		if len(args) == 0 {
+			return nil
+		}
 		return clause.Eq{
 			Column: field,
 			Value:  args[0],
@@ -28,41 +31,63 @@ func NewWhereClause(field string, op dbi.Operation, args ...interface{}) clause.
 			Values: args,
 		}
 	case dbi.Between:
-		return clause.Expr{
-			SQL:  field + " BETWEEN ? AND ?",
-			Vars: args,
+		if len(args) != 2 {
+			return nil
+		}
+		return Between{
+			Column: field,
+			Begin:  args[0],
+			End:    args[1],
 		}
 	case dbi.Greater:
+		if len(args) == 0 {
+			return nil
+		}
 		return clause.Gt{
 			Column: field,
 			Value:  args[0],
 		}
 	case dbi.Less:
+		if len(args) == 0 {
+			return nil
+		}
 		return clause.Lt{
 			Column: field,
 			Value:  args[0],
 		}
 	case dbi.LIKE:
+		if len(args) == 0 {
+			return nil
+		}
 		return clause.Like{
 			Column: field,
 			Value:  args[0],
 		}
 	case dbi.GreaterOrEqual:
+		if len(args) == 0 {
+			return nil
+		}
 		return clause.Gte{
 			Column: field,
 			Value:  args[0],
 		}
 	case dbi.LessOrEqual:
+		if len(args) == 0 {
+			return nil
+		}
 		return clause.Lte{
 			Column: field,
 			Value:  args[0],
 		}
 	case dbi.NotIn:
-		return clause.NotConditions{Exprs: []clause.Expression{clause.IN{
+		return Not{Expr: clause.IN{
 			Column: field,
 			Values: args,
-		}}}
+		}}
 	case dbi.NotEqual:
+		if len(args) == 0 {
+			return nil
+		}
 		return clause.Neq{
 			Column: field,
 			Value:  args[0],
@@ -82,10 +107,6 @@ func NewWhereClause(field string, op dbi.Operation, args ...interface{}) clause.
 		SQL:  field,
 		Vars: args,
 	}
-}
-
-func DateBetween(column, dateStart, dateEnd string) clause.Expression {
-	return NewWhereClause(column, dbi.Between, dateStart, dateEnd)
 }
 
 func SortExpr(column string, typ param.SortType) clause.Expression {
@@ -123,4 +144,35 @@ func ByPrimaryKey(v any) clause.Expression {
 		Column: clause.PrimaryColumn,
 		Value:  v,
 	}
+}
+
+type Between struct {
+	Column     any
+	Begin, End any
+}
+
+func (gt Between) Build(builder clause.Builder) {
+	builder.WriteQuoted(gt.Column)
+	builder.WriteString(" BETWEEN ")
+	builder.AddVar(builder, gt.Begin)
+	builder.WriteString(" AND ")
+	builder.AddVar(builder, gt.End)
+}
+
+func (gt Between) NegationBuild(builder clause.Builder) {
+	builder.WriteQuoted(gt.Column)
+	builder.WriteString(" < ")
+	builder.AddVar(builder, gt.Begin)
+	builder.WriteString(" OR ")
+	builder.WriteQuoted(gt.Column)
+	builder.WriteString(" > ")
+	builder.AddVar(builder, gt.End)
+}
+
+type Not struct {
+	Expr clause.NegationExpressionBuilder
+}
+
+func (n Not) Build(builder clause.Builder) {
+	n.Expr.NegationBuild(builder)
 }
