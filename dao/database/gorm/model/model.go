@@ -11,6 +11,13 @@ import (
 	"time"
 )
 
+type Model struct {
+	ID        uint           `json:"id" gorm:"primarykey"`
+	CreatedAt time.Time      `json:"createdAt" gorm:"default:now()"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
 type ModelTime struct {
 	CreatedAt time.Time      `json:"created_at" gorm:"default:now()"`
 	UpdatedAt time.Time      `json:"updated_at"`

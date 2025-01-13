@@ -63,6 +63,10 @@ func (req *PageSort) Clause() []clause.Expression {
 	return []clause.Expression{SortExpr(req.Sort.Field, req.Sort.Type), PageExpr(req.Page.No, req.Page.Size)}
 }
 
+func (req *PageSort) Apply(db *gorm.DB) *gorm.DB {
+	return db.Clauses(req.Clause()...)
+}
+
 func FindByPageSort[T any](db *gorm.DB, req *param.PageSort, clauses ...clause.Expression) ([]T, int64, error) {
 	var models []T
 
@@ -94,4 +98,17 @@ func PageExpr(pageNo, pageSize int) clause.Limit {
 		return clause.Limit{Offset: (pageNo - 1) * pageSize, Limit: &pageSize}
 	}
 	return clause.Limit{Limit: &pageSize}
+}
+
+type PageEmbed param.PageEmbed
+
+func (req *PageEmbed) Clause() clause.Expression {
+	if req.PageNo == 0 && req.PageSize == 0 {
+		return nil
+	}
+	return PageExpr(req.PageNo, req.PageSize)
+}
+
+func (req *PageEmbed) Apply(db *gorm.DB) *gorm.DB {
+	return db.Clauses(req.Clause())
 }

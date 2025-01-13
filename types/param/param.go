@@ -58,6 +58,8 @@ type Sort struct {
 	Type  SortType `json:"type,omitempty"`
 }
 
+type MultiSort []Sort
+
 type Range[T Rangeable] struct {
 	Field string    `json:"field,omitempty"`
 	Begin T         `json:"begin,omitempty"`
