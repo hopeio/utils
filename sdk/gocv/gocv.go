@@ -117,7 +117,9 @@ func Sharpness(imgPath string, rect image.Rectangle) (float64, error) {
 
 func AffineMat(p1, p2, p3, q1, q2, q3 image.Point) gocv.Mat {
 	src := gocv.NewMatWithSize(3, 1, gocv.MatTypeCV32FC2)
+	defer src.Close()
 	dst := gocv.NewMatWithSize(3, 1, gocv.MatTypeCV32FC2)
+	defer dst.Close()
 	src.SetFloatAt(0, 0, float32(p1.X))
 	src.SetFloatAt(0, 1, float32(p1.Y))
 	dst.SetFloatAt(0, 0, float32(q1.X))
@@ -130,12 +132,13 @@ func AffineMat(p1, p2, p3, q1, q2, q3 image.Point) gocv.Mat {
 	src.SetFloatAt(2, 1, float32(p3.Y))
 	dst.SetFloatAt(2, 0, float32(q3.X))
 	dst.SetFloatAt(2, 1, float32(q3.Y))
-	return gocv.GetAffineTransform2f(gocv.NewPoint2fVectorFromMat(src), gocv.NewPoint2fVectorFromMat(dst))
+	srcVec, dstVec := gocv.NewPoint2fVectorFromMat(src), gocv.NewPoint2fVectorFromMat(dst)
+	defer srcVec.Close()
+	defer dstVec.Close()
+	return gocv.GetAffineTransform2f(srcVec, dstVec)
 }
 
-func AffineTransform(p1, p2, p3, q1, q2, q3 image.Point, points []image.Point) []image.Point {
-	amat := AffineMat(p1, p2, p3, q1, q2, q3)
-	defer amat.Close()
+func AffineTransform(affineMat gocv.Mat, points []image.Point) []image.Point {
 	n := len(points)
 	mat := gocv.NewMatWithSize(n, 1, gocv.MatTypeCV32FC2)
 	defer mat.Close()
@@ -145,7 +148,7 @@ func AffineTransform(p1, p2, p3, q1, q2, q3 image.Point, points []image.Point) [
 	}
 	oMat := gocv.NewMat()
 	defer oMat.Close()
-	gocv.Transform(mat, &oMat, amat)
+	gocv.Transform(mat, &oMat, affineMat)
 	ret := make([]image.Point, n)
 	for i := 0; i < n; i++ {
 		ret[i].X, ret[i].Y = int(oMat.GetFloatAt(i, 0)), int(oMat.GetFloatAt(i, 1))
