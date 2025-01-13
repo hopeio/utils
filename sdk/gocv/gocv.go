@@ -115,43 +115,43 @@ func Sharpness(imgPath string, rect image.Rectangle) (float64, error) {
 	return stddev.GetDoubleAt(0, 0), nil
 }
 
-func AffineMat(p1, p2, p3, q1, q2, q3 image.Point) gocv.Mat {
+func AffineMat(p1, p2, p3, q1, q2, q3 gocv.Point2f) gocv.Mat {
 	src := gocv.NewMatWithSize(3, 1, gocv.MatTypeCV32FC2)
 	defer src.Close()
 	dst := gocv.NewMatWithSize(3, 1, gocv.MatTypeCV32FC2)
 	defer dst.Close()
-	src.SetFloatAt(0, 0, float32(p1.X))
-	src.SetFloatAt(0, 1, float32(p1.Y))
-	dst.SetFloatAt(0, 0, float32(q1.X))
-	dst.SetFloatAt(0, 1, float32(q1.Y))
-	src.SetFloatAt(1, 0, float32(p2.X))
-	src.SetFloatAt(1, 1, float32(p2.Y))
-	dst.SetFloatAt(1, 0, float32(q2.X))
-	dst.SetFloatAt(1, 1, float32(q2.Y))
-	src.SetFloatAt(2, 0, float32(p3.X))
-	src.SetFloatAt(2, 1, float32(p3.Y))
-	dst.SetFloatAt(2, 0, float32(q3.X))
-	dst.SetFloatAt(2, 1, float32(q3.Y))
+	src.SetFloatAt(0, 0, p1.X)
+	src.SetFloatAt(0, 1, p1.Y)
+	dst.SetFloatAt(0, 0, q1.X)
+	dst.SetFloatAt(0, 1, q1.Y)
+	src.SetFloatAt(1, 0, p2.X)
+	src.SetFloatAt(1, 1, p2.Y)
+	dst.SetFloatAt(1, 0, q2.X)
+	dst.SetFloatAt(1, 1, q2.Y)
+	src.SetFloatAt(2, 0, p3.X)
+	src.SetFloatAt(2, 1, p3.Y)
+	dst.SetFloatAt(2, 0, q3.X)
+	dst.SetFloatAt(2, 1, q3.Y)
 	srcVec, dstVec := gocv.NewPoint2fVectorFromMat(src), gocv.NewPoint2fVectorFromMat(dst)
 	defer srcVec.Close()
 	defer dstVec.Close()
 	return gocv.GetAffineTransform2f(srcVec, dstVec)
 }
 
-func AffineTransform(affineMat gocv.Mat, points []image.Point) []image.Point {
+func AffineTransform(affineMat gocv.Mat, points []gocv.Point2f) []gocv.Point2f {
 	n := len(points)
 	mat := gocv.NewMatWithSize(n, 1, gocv.MatTypeCV32FC2)
 	defer mat.Close()
 	for i, p := range points {
-		mat.SetFloatAt(i, 0, float32(p.X))
-		mat.SetFloatAt(i, 1, float32(p.Y))
+		mat.SetFloatAt(i, 0, p.X)
+		mat.SetFloatAt(i, 1, p.Y)
 	}
 	oMat := gocv.NewMat()
 	defer oMat.Close()
 	gocv.Transform(mat, &oMat, affineMat)
-	ret := make([]image.Point, n)
+	ret := make([]gocv.Point2f, n)
 	for i := 0; i < n; i++ {
-		ret[i].X, ret[i].Y = int(oMat.GetFloatAt(i, 0)), int(oMat.GetFloatAt(i, 1))
+		ret[i].X, ret[i].Y = oMat.GetFloatAt(i, 0), oMat.GetFloatAt(i, 1)
 	}
 	return ret
 }
