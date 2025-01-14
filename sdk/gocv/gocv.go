@@ -115,7 +115,7 @@ func Sharpness(imgPath string, rect image.Rectangle) (float64, error) {
 	return stddev.GetDoubleAt(0, 0), nil
 }
 
-func AffineMat(p1, p2, p3, q1, q2, q3 gocv.Point2f) gocv.Mat {
+func AffineMatByPoints(p1, p2, p3, q1, q2, q3 gocv.Point2f) gocv.Mat {
 	src := gocv.NewMatWithSize(3, 1, gocv.MatTypeCV32FC2)
 	defer src.Close()
 	dst := gocv.NewMatWithSize(3, 1, gocv.MatTypeCV32FC2)
@@ -136,6 +136,16 @@ func AffineMat(p1, p2, p3, q1, q2, q3 gocv.Point2f) gocv.Mat {
 	defer srcVec.Close()
 	defer dstVec.Close()
 	return gocv.GetAffineTransform2f(srcVec, dstVec)
+}
+
+// 坑,输入是float32,输出是float64
+func AffineMat(src []gocv.Point2f, dst []gocv.Point2f) gocv.Mat {
+	pvsrc := gocv.NewPoint2fVectorFromPoints(src)
+	defer pvsrc.Close()
+
+	pvdst := gocv.NewPoint2fVectorFromPoints(dst)
+	defer pvdst.Close()
+	return gocv.GetAffineTransform2f(pvsrc, pvdst)
 }
 
 func AffineTransform(affineMat gocv.Mat, points []gocv.Point2f) []gocv.Point2f {
