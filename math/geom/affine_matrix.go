@@ -24,25 +24,35 @@ func NewRotationMat(center Point, angleDeg float64) AffineMatrix {
 	angleRad := angleDeg * math.Pi / 180.0
 	cosA := math.Cos(angleRad)
 	sinA := math.Sin(angleRad)
-	return AffineMatrix{{cosA, -sinA, center.X - cosA*center.X + sinA*center.Y}, {sinA, cosA, center.Y - sinA*center.X - cosA*center.Y}}
+	return AffineMatrix{
+		{cosA, -sinA, center.X - cosA*center.X + sinA*center.Y},
+		{sinA, cosA, center.Y - sinA*center.X - cosA*center.Y},
+	}
 }
 
-// 两个原点不重合的坐标系O1,O2。O2在O1内部,且经过顺时针旋转c度。其中的点分别用(x1,y1),(x2,y2)表示，已知某个点在两个坐标系中的坐标(x1,y1),(x2,y2),以及另一点在O2内的坐标(x2,
+func NewTranslateMat(src, dst Point) AffineMatrix {
+	return AffineMatrix{
+		{1, 0, dst.X - src.X},
+		{0, 1, dst.Y - src.Y},
+	}
+}
+
+// 两个原点不重合的坐标系O1,O2。O2相对于O1旋转c度。其中的点分别用(x1,y1),(x2,y2)表示，已知某个点在两个坐标系中的坐标(x1,y1),(x2,y2),以及另一点在O2内的坐标(x2,
 //y2)，求该点在O1内的坐标(x1,y1).
 // 图像如何转换，图像可看做第四象限，输入-y,返回-y
 
 // NewTranslateRotationMat transforms a point from coordinate system a2 to a1
 // 在数学和计算机图形学中，旋转角度的正负通常遵循右手定则。默认情况下，顺时针方向被认为是负的，而逆时针方向被认为是正的。
-// O2相对于O1旋转度数
-func NewTranslateRotationMat(pA, pB Point, angleDeg float64) AffineMatrix {
+// 实验证明,坐标系间的旋转等效于一个点先选择再平移的仿射矩阵
+func NewTranslateRotationMat(src, dst Point, angleDeg float64) AffineMatrix {
 	// Convert angle from degrees to radians
 	angleRad := angleDeg * math.Pi / 180.0
 	// Calculate cosine and sine of the angle
 	cosA := math.Cos(angleRad)
 	sinA := math.Sin(angleRad)
 	return AffineMatrix{
-		{cosA, -sinA, pB.X - cosA*pA.X + sinA*pA.Y},
-		{sinA, cosA, pB.Y - sinA*pA.X - cosA*pA.Y},
+		{cosA, -sinA, dst.X - cosA*src.X + sinA*src.Y},
+		{sinA, cosA, dst.Y - sinA*src.X - cosA*src.Y},
 	}
 }
 

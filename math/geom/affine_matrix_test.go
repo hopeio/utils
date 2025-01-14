@@ -7,17 +7,29 @@ import (
 
 func TestTransformPoint(t *testing.T) {
 	angle := -30.0 // degrees
-	point1A := Point{7.46, -6.73}
-	point1B := Point{4.0, -2.0}
-	point2B := Point{5.0, -3.0}
-	point2A := Point{X: 7.826025403784439, Y: -8.09602540378444}
+	point1A := Point{4.0, -2.0}
+	point2A := Point{5.0, -3.0}
+	point1B := Point{7.46, -6.73}
+	point2B := Point{X: 7.826025403784438, Y: -8.096025403784438}
 	// {7.826025403784439 8.09602540378444}
-	mat := NewTranslateRotationMat(point1B, point1A, angle)
-	assert.Equal(t, point2A, mat.Transform(point2B))
-	angle = NewVector(point1A, point2A).AngleWith(NewVector(point1B, point2B))
-	t.Log(angle)
-	mat = NewTranslateRotationMat(point1B, point1A, -angle)
-	t.Log(mat.Transform(point2B))
+	mat := NewTranslateRotationMat(point1A, point1B, angle)
+	assert.Equal(t, point2B, mat.Transform(point2A))
+	t.Log(NewVector(point1A, point2A).AngleWith(NewVector(point1B, point2B)))
+
+	mat = NewTranslateRotationMat(point1A, point1B, angle)
+	t.Log(mat.Transform(point2A))
+	t.Log(mat)
+	mat1 := NewRotationMat(point1A, angle)
+	tmpA1 := mat1.Transform(point1A)
+	mat2 := NewTranslateMat(tmpA1, point1B)
+	tmpA2 := mat1.Transform(point2A)
+	t.Log(mat2.Transform(tmpA2))
+
+	mat3 := NewTranslateMat(point1A, point1B)
+	tmpB1 := mat3.Transform(point1A)
+	mat4 := NewRotationMat(tmpB1, angle)
+	tmpB2 := mat3.Transform(point2A)
+	t.Log(mat4.Transform(tmpB2))
 }
 
 func TestAffineMatrix(t *testing.T) {
