@@ -71,7 +71,7 @@ func New() *runtime.ServeMux {
 		}),
 		runtime.WithOutgoingHeaderMatcher(gateway.OutgoingHeaderMatcher))
 
-	runtime.WithForwardResponseOption(gateway.CookieHook)(gwmux)
+	runtime.WithForwardResponseOption(gateway.Response)(gwmux)
 	runtime.WithRoutingErrorHandler(RoutingErrorHandler)(gwmux)
 	runtime.WithErrorHandler(CustomHttpError)(gwmux)
 
