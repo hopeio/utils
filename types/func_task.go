@@ -24,3 +24,8 @@ func (f FuncRetry) Do(times uint) (retry bool) {
 
 type Task func(context.Context)
 type TaskWithErr func(context.Context) error
+
+type Invoke func() error
+
+// Invoke calls the supplied function and returns its result.
+func (i Invoke) Invoke() error { return i() }

@@ -25,10 +25,7 @@ func RunIgnoreError(tasks []types.FuncReturnErr) error {
 			errs.Append(err)
 		}
 	}
-	if errs.HasErrors() {
-		return errs
-	}
-	return nil
+	return errs.Error()
 }
 
 func Run(tasks []types.FuncReturnErr) error {

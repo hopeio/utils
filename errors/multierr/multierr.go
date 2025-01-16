@@ -142,6 +142,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"iter"
 	"strings"
 	"sync"
 )
@@ -195,48 +196,72 @@ func Errors(err error) []error {
 		return nil
 	}
 
-	// Note that we're casting to MultiError, not errorGroup. Our contract is
-	// that returned errors MAY implement errorGroup. Errors, however, only
-	// has special behavior for multierr-specific error objects.
-	//
-	// This behavior can be expanded in the future but I think it's prudent to
-	// start with as little as possible in terms of contract and possibility
-	// of misuse.
-	eg, ok := err.(*MultiError)
+	eg, ok := err.(*multiError)
 	if !ok {
 		return []error{err}
 	}
-
-	errors := eg.Errors()
-	result := make([]error, len(errors))
-	copy(result, errors)
-	return result
+	return eg.Errors()
 }
 
-// MultiError is an error that holds one or more errors.
+func New(errs ...error) *MultiError {
+	return &MultiError{errs}
+}
+
+type MultiError struct {
+	errs []error
+}
+
+func (merr *MultiError) HasErrors() bool {
+	return merr != nil && len(merr.errs) > 0
+}
+
+func (merr *MultiError) Append(errs ...error) {
+	if errs == nil {
+		return
+	}
+	merr.errs = append(merr.errs, errs...)
+}
+
+func (merr *MultiError) Merge(errs ...*MultiError) {
+	for _, err := range errs {
+		if err != nil {
+			merr.Append(err.Errors()...)
+		}
+	}
+}
+
+func (merr *MultiError) Error() error {
+	if len(merr.errs) == 0 {
+		return nil
+	}
+	if len(merr.errs) == 1 {
+		return merr.errs[0]
+	}
+	return &multiError{errs: merr.errs}
+}
+
+func (merr *MultiError) Errors() []error {
+	return merr.errs
+}
+
+// multiError is an error that holds one or more errors.
 //
 // An instance of this is guaranteed to be non-empty and flattened. That is,
-// none of the errors inside MultiError are other multiErrors.
+// none of the errors inside multiError are other multiErrors.
 //
-// MultiError formats to a semi-colon delimited list of error messages with
+// multiError formats to a semi-colon delimited list of error messages with
 // %v and with a more readable multi-line format with %+v.
-type MultiError []error
-
-func New() *MultiError {
-	return &MultiError{}
+type multiError struct {
+	errs []error
 }
 
-var _ errorGroup = (*MultiError)(nil)
+var _ errorGroup = (*multiError)(nil)
 
 // Errors returns the list of underlying errors.
 //
 // This slice MUST NOT be modified.
-func (merr MultiError) Errors() []error {
-	return merr
-}
-
-func (merr MultiError) HasErrors() bool {
-	return merr != nil && len(merr) > 0
+func (merr *multiError) Errors() []error {
+	return merr.errs
 }
 
 // As attempts to find the first error in the error list that matches the type
@@ -244,7 +269,7 @@ func (merr MultiError) HasErrors() bool {
 //
 // This function allows errors.As to traverse the values stored on the
 // multierr error.
-func (merr MultiError) As(target interface{}) bool {
+func (merr *multiError) As(target any) bool {
 	for _, err := range merr.Errors() {
 		if errors.As(err, target) {
 			return true
@@ -257,8 +282,8 @@ func (merr MultiError) As(target interface{}) bool {
 //
 // This function allows errors.Is to traverse the values stored on the
 // multierr error.
-func (merr MultiError) Is(target error) bool {
-	for _, err := range merr.Errors() {
+func (merr *multiError) Is(target error) bool {
+	for _, err := range merr.errs {
 		if errors.Is(err, target) {
 			return true
 		}
@@ -266,9 +291,12 @@ func (merr MultiError) Is(target error) bool {
 	return false
 }
 
-func (merr MultiError) Error() string {
+func (merr *multiError) Error() string {
 	if merr == nil {
 		return ""
+	}
+	if len(merr.errs) == 1 {
+		return merr.errs[0].Error()
 	}
 
 	buff := _bufferPool.Get().(*bytes.Buffer)
@@ -281,7 +309,7 @@ func (merr MultiError) Error() string {
 	return result
 }
 
-func (merr *MultiError) Format(f fmt.State, c rune) {
+func (merr *multiError) Format(f fmt.State, c rune) {
 	if c == 'v' && f.Flag('+') {
 		merr.writeMultiline(f)
 	} else {
@@ -289,9 +317,9 @@ func (merr *MultiError) Format(f fmt.State, c rune) {
 	}
 }
 
-func (merr MultiError) writeSingleline(w io.Writer) {
+func (merr *multiError) writeSingleline(w io.Writer) {
 	first := true
-	for _, item := range merr {
+	for _, item := range merr.errs {
 		if first {
 			first = false
 		} else {
@@ -301,16 +329,12 @@ func (merr MultiError) writeSingleline(w io.Writer) {
 	}
 }
 
-func (merr MultiError) writeMultiline(w io.Writer) {
+func (merr *multiError) writeMultiline(w io.Writer) {
 	w.Write(_multilinePrefix)
-	for _, item := range merr {
+	for _, item := range merr.errs {
 		w.Write(_multilineSeparator)
 		writePrefixLine(w, _multilineIndent, fmt.Sprintf("%+v", item))
 	}
-}
-
-func (merr *MultiError) Append(err error) {
-	*merr = append(*merr, err)
 }
 
 // Writes s to the writer with the given prefix added before each line after
@@ -345,7 +369,7 @@ type inspectResult struct {
 	// Count is zero.
 	FirstErrorIdx int
 
-	// Whether the list contains at least one MultiError
+	// Whether the list contains at least one multiError
 	ContainsMultiError bool
 }
 
@@ -364,8 +388,8 @@ func inspect(errors []error) (res inspectResult) {
 			res.FirstErrorIdx = i
 		}
 
-		if merr, ok := err.(MultiError); ok {
-			res.Capacity += len(merr)
+		if merr, ok := err.(*multiError); ok {
+			res.Capacity += len(merr.errs)
 			res.ContainsMultiError = true
 		} else {
 			res.Capacity++
@@ -386,7 +410,7 @@ func fromSlice(errors []error) error {
 	case len(errors):
 		if !res.ContainsMultiError {
 			// already flat
-			return MultiError(errors)
+			return &multiError{errors}
 		}
 	}
 
@@ -396,14 +420,14 @@ func fromSlice(errors []error) error {
 			continue
 		}
 
-		if nested, ok := err.(MultiError); ok {
-			nonNilErrs = append(nonNilErrs, nested...)
+		if nested, ok := err.(*multiError); ok {
+			nonNilErrs = append(nonNilErrs, nested.errs...)
 		} else {
 			nonNilErrs = append(nonNilErrs, err)
 		}
 	}
 
-	return MultiError(nonNilErrs)
+	return &multiError{nonNilErrs}
 }
 
 // Combine combines the passed errors into a single error.
@@ -464,15 +488,15 @@ func Append(left error, right error) error {
 		return left
 	}
 
-	if _, ok := right.(MultiError); !ok {
-		if l, ok := left.(MultiError); ok {
+	if _, ok := right.(*multiError); !ok {
+		if l, ok := left.(*multiError); ok {
 			// Common case where the error on the left is constantly being
 			// appended to.
-			errs := append(l, right)
-			return MultiError(errs)
+			errs := append(l.errs, right)
+			return &multiError{errs}
 		} else if !ok {
 			// Both errors are single errors.
-			return MultiError([]error{left, right})
+			return &multiError{[]error{left, right}}
 		}
 	}
 
@@ -532,61 +556,6 @@ func AppendInto(into *error, err error) (errored bool) {
 	return true
 }
 
-// Invoker is an operation that may fail with an error. Use it with
-// AppendInvoke to append the result of calling the function into an error.
-// This allows you to conveniently defer capture of failing operations.
-//
-// See also, Close and Invoke.
-type Invoker interface {
-	Invoke() error
-}
-
-// Invoke wraps a function which may fail with an error to match the Invoker
-// interface. Use it to supply functions matching this signature to
-// AppendInvoke.
-//
-// For example,
-//
-//	func processReader(r io.Reader) (err error) {
-//		scanner := bufio.NewScanner(r)
-//		defer multierr.AppendInvoke(&err, multierr.Invoke(scanner.Err))
-//		for scanner.Scan() {
-//			// ...
-//		}
-//		// ...
-//	}
-//
-// In this example, the following line will construct the Invoker right away,
-// but defer the invocation of scanner.Err() until the function returns.
-//
-//	defer multierr.AppendInvoke(&err, multierr.Invoke(scanner.Err))
-type Invoke func() error
-
-// Invoke calls the supplied function and returns its result.
-func (i Invoke) Invoke() error { return i() }
-
-// Close builds an Invoker that closes the provided io.Closer. Use it with
-// AppendInvoke to close io.Closers and append their results into an error.
-//
-// For example,
-//
-//	func processFile(path string) (err error) {
-//		f, err := os.Open(path)
-//		if err != nil {
-//			return err
-//		}
-//		defer multierr.AppendInvoke(&err, multierr.Close(f))
-//		return processReader(f)
-//	}
-//
-// In this example, multierr.Close will construct the Invoker right away, but
-// defer the invocation of f.Close until the function returns.
-//
-//	defer multierr.AppendInvoke(&err, multierr.Close(f))
-func Close(closer io.Closer) Invoker {
-	return Invoke(closer.Close)
-}
-
 // AppendInvoke appends the result of calling the given Invoker into the
 // provided error pointer. Use it with named returns to safely defer
 // invocation of fallible operations until a function returns, and capture the
@@ -638,6 +607,19 @@ func Close(closer io.Closer) Invoker {
 //
 // multierr provides a few Invoker implementations out of the box for
 // convenience. See Invoker for more information.
-func AppendInvoke(into *error, invoker Invoker) {
-	AppendInto(into, invoker.Invoke())
+func AppendInvoke(into *error, invoker func() error) {
+	AppendInto(into, invoker())
+}
+
+func FromIter(iter iter.Seq[error]) error {
+	var errs []error
+	for err := range iter {
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) > 0 {
+		return &multiError{errs: errs}
+	}
+	return nil
 }

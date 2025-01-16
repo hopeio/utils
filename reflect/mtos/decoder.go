@@ -88,10 +88,7 @@ func (d *Decoder) Decode(dst interface{}, src map[string][]string) error {
 		}
 	}
 	errs.Append(d.checkRequired(t, src))
-	if errs.HasErrors() {
-		return &errs
-	}
-	return nil
+	return errs.Error()
 }
 
 // checkRequired checks whether required fields are empty
