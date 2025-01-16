@@ -7,9 +7,9 @@
 package aop
 
 import (
-	"log"
-
 	"bou.ke/monkey"
+	_ "github.com/agiledragon/gomonkey/v2" // todo
+	"log"
 )
 
 func init() {
