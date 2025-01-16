@@ -152,7 +152,7 @@ func All(path string) (iter.Seq[os.DirEntry], *multierr.MultiError) {
 			if dir.IsDir() {
 				it, err := All(path + PathSeparator + dir.Name())
 				if err.HasErrors() {
-					errs.Append(err)
+					errs.Merge(err)
 				}
 				errs.Append(errors.New("test"))
 				for entry := range it {
