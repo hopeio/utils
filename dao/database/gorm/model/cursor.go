@@ -7,7 +7,7 @@
 package model
 
 import (
-	model1 "github.com/hopeio/utils/dao/database/model"
+	model1 "github.com/hopeio/utils/dao/database/sql/model"
 	"github.com/hopeio/utils/types/model"
 	"gorm.io/gorm"
 )

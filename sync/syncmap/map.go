@@ -4,7 +4,7 @@
  * @Created by jyb
  */
 
-package _map
+package syncmap
 
 import "sync"
 

@@ -7,19 +7,30 @@
 package model
 
 import (
+	"github.com/hopeio/utils/types/model"
 	"gorm.io/gorm"
 	"time"
 )
 
 type Model struct {
-	ID        uint           `json:"id" gorm:"primarykey"`
+	ID        uint           `json:"id" gorm:"primaryKey"`
 	CreatedAt time.Time      `json:"createdAt" gorm:"default:now()"`
 	UpdatedAt time.Time      `json:"updatedAt"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
 type ModelTime struct {
-	CreatedAt time.Time      `json:"created_at" gorm:"default:now()"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"deleted_at" gorm:"default:null"`
+	CreatedAt time.Time      `json:"createdAt" gorm:"default:now()"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `json:"deletedAt,omitempty" gorm:"default:null"`
+}
+
+type Enum struct {
+	model.Enum
+	Model
+}
+
+type EnumValue struct {
+	model.EnumValue
+	Model
 }

@@ -1,4 +1,4 @@
-package cache
+package lockcache
 
 import (
 	"bytes"
@@ -109,11 +109,11 @@ func TestCacheTimes(t *testing.T) {
 func TestNewFrom(t *testing.T) {
 	m := map[string]Item{
 		"a": Item{
-			Object:     1,
+			Value:      1,
 			Expiration: 0,
 		},
 		"b": Item{
-			Object:     2,
+			Value:      2,
 			Expiration: 0,
 		},
 	}
@@ -1114,11 +1114,11 @@ func TestDecrementFloat64(t *testing.T) {
 
 func TestAdd(t *testing.T) {
 	tc := New(DefaultExpiration, 0)
-	err := tc.Add("foo", "bar", DefaultExpiration)
+	err := tc.SetNX("foo", "bar", DefaultExpiration)
 	if err != nil {
 		t.Error("Couldn't add foo even though it shouldn't exist")
 	}
-	err = tc.Add("foo", "baz", DefaultExpiration)
+	err = tc.SetNX("foo", "baz", DefaultExpiration)
 	if err == nil {
 		t.Error("Successfully added another foo when it should have returned an error")
 	}
@@ -1376,8 +1376,8 @@ func testFillAndSerialize(t *testing.T, tc *Cache) {
 
 func TestFileSerialization(t *testing.T) {
 	tc := New(DefaultExpiration, 0)
-	tc.Add("a", "a", DefaultExpiration)
-	tc.Add("b", "b", DefaultExpiration)
+	tc.SetNX("a", "a", DefaultExpiration)
+	tc.SetNX("b", "b", DefaultExpiration)
 	f, err := ioutil.TempFile("", "go-cache-cache.dat")
 	if err != nil {
 		t.Fatal("Couldn't create cache file:", err)
@@ -1387,7 +1387,7 @@ func TestFileSerialization(t *testing.T) {
 	tc.SaveFile(fname)
 
 	oc := New(DefaultExpiration, 0)
-	oc.Add("a", "aa", 0) // this should not be overwritten
+	oc.SetNX("a", "aa", 0) // this should not be overwritten
 	err = oc.LoadFile(fname)
 	if err != nil {
 		t.Error(err)
