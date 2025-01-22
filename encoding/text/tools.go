@@ -44,9 +44,7 @@ func StringConvertFor[T any](str string) (T, error) {
 		itv, ok = ap.(encoding.TextUnmarshaler)
 	}
 	if ok {
-		var err error
-		str, err = strconv.Unquote(str)
-		err = itv.UnmarshalText(stringsi.ToBytes(str))
+		err := itv.UnmarshalText(stringsi.ToBytes(str))
 		if err != nil {
 			return t, err
 		}

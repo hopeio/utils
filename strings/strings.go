@@ -42,7 +42,7 @@ func IsQuoted[T ~string | ~[]byte](s T) bool {
 	if len(s) < 2 {
 		return false
 	}
-	return s[0] == '"' && s[len(s)-1] == '"'
+	return (s[0] == '"' && s[len(s)-1] == '"') || (s[0] == '\'' && s[len(s)-1] == '\'')
 }
 
 // 简单去除引号，如果字符串本身带引号，请使用strconv.Quote

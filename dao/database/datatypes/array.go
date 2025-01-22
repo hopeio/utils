@@ -116,13 +116,8 @@ func (d *StringArray) Scan(value any) error {
 	}
 	strs := strings.Split(str[1:len(str)-1], ",")
 	var arr []string
-	var err error
 	for _, elem := range strs {
-		elem, err = strconv.Unquote(elem)
-		if err != nil {
-			return err
-		}
-		arr = append(arr)
+		arr = append(arr, elem)
 	}
 	*d = arr
 	return nil

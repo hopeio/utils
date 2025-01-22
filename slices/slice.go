@@ -304,3 +304,16 @@ func Copy[S ~[]T, T any](s S) S {
 	copy(c, s)
 	return c
 }
+
+func GroupBy[S ~[]T, T any, K comparable](s S, getK func(T) K) map[K][]T {
+	m := make(map[K][]T)
+	for _, s := range s {
+		k := getK(s)
+		if ms, ok := m[k]; ok {
+			m[k] = append(ms, s)
+		} else {
+			m[k] = []T{s}
+		}
+	}
+	return m
+}
