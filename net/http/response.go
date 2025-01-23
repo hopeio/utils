@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"github.com/hopeio/utils/errors/errcode"
 	"io"
+	"iter"
 	"net/http"
 )
 
@@ -89,21 +90,18 @@ func Response[T any](w http.ResponseWriter, code errcode.ErrCode, msg string, da
 	return NewResData(code, msg, data).Response(w, http.StatusOK)
 }
 
-func ResponseStreamWrite(w http.ResponseWriter, writer func(w io.Writer) bool) {
+func ResponseStreamWrite(w http.ResponseWriter, dataSource iter.Seq[[]byte]) {
 	w.Header().Set(HeaderXAccelBuffering, "no") //nginx的锅必须加
 	w.Header().Set(HeaderTransferEncoding, "chunked")
 	notifyClosed := w.(http.CloseNotifier).CloseNotify()
-	for {
+	for data := range dataSource {
 		select {
 		// response writer forced to close, exit.
 		case <-notifyClosed:
 			return
 		default:
-			shouldContinue := writer(w)
+			w.Write(data)
 			w.(http.Flusher).Flush()
-			if !shouldContinue {
-				return
-			}
 		}
 	}
 }
@@ -179,7 +177,7 @@ func (res *HttpResponseRawBody) Response(w http.ResponseWriter) (int, error) {
 type HttpResponse struct {
 	Status int               `json:"status,omitempty"`
 	Header map[string]string `json:"header,omitempty"`
-	Body   io.ReadCloser     `json:"body,omitempty"`
+	Body   WriterToCloser    `json:"body,omitempty"`
 }
 
 func (res *HttpResponse) RespHeader() map[string]string {
@@ -187,7 +185,7 @@ func (res *HttpResponse) RespHeader() map[string]string {
 }
 
 func (res *HttpResponse) WriteTo(writer io.Writer) (int64, error) {
-	return io.Copy(writer, res.Body)
+	return res.Body.WriteTo(writer)
 }
 
 func (res *HttpResponse) Close() error {
@@ -198,16 +196,12 @@ func (res *HttpResponse) StatusCode() int {
 	return res.Status
 }
 
-func (res *HttpResponse) Flush() error {
-	return nil
-}
-
 func (res *HttpResponse) Response(w http.ResponseWriter) (int, error) {
 	w.WriteHeader(res.Status)
 	for k, v := range res.Header {
 		w.Header().Set(k, v)
 	}
-	i, err := io.Copy(w, res.Body)
+	i, err := res.Body.WriteTo(w)
 	if err != nil {
 		return int(i), err
 	}
@@ -227,17 +221,12 @@ func (res *ResError) Response(w http.ResponseWriter, statusCode int) (int, error
 	return w.Write(jsonBytes)
 }
 
-type StreamWriter interface {
-	Write(io.Writer) (n int, err error)
-	Flush() error
-}
-
-type WriteToCloser interface {
+type WriterToCloser interface {
 	io.WriterTo
 	io.Closer
 }
 
-type IHttpResponseWriteTo interface {
+type IHttpResponseTo interface {
 	Response(w http.ResponseWriter) (int, error)
 }
 
@@ -248,5 +237,55 @@ func ResErrorFromError(err error) *ResError {
 	if errrep, ok := err.(*errcode.ErrRep); ok {
 		return (*ResError)(errrep)
 	}
-	return &ResError{Code: errcode.ErrCode(errcode.Unknown), Msg: err.Error()}
+	return &ResError{Code: errcode.Unknown, Msg: err.Error()}
+}
+
+type HttpResponseStream struct {
+	Status int               `json:"status,omitempty"`
+	Header map[string]string `json:"header,omitempty"`
+	Body   iter.Seq[[]byte]  `json:"body,omitempty"`
+}
+
+func (res *HttpResponseStream) RespHeader() map[string]string {
+	res.Header[HeaderTransferEncoding] = "chunked"
+	return res.Header
+}
+
+func (res *HttpResponseStream) WriteTo(writer io.Writer) (int64, error) {
+	notifyClosed := writer.(http.CloseNotifier).CloseNotify()
+	var n int64
+	for data := range res.Body {
+		select {
+		// response writer forced to close, exit.
+		case <-notifyClosed:
+			return n, nil
+		default:
+			write, err := writer.Write(data)
+			if err != nil {
+				return 0, err
+			}
+			n += int64(write)
+			writer.(http.Flusher).Flush()
+		}
+	}
+	return n, nil
+}
+
+func (res *HttpResponseStream) Close() error {
+	return nil
+}
+
+func (res *HttpResponseStream) StatusCode() int {
+	return res.Status
+}
+
+type RawBody []byte
+
+func (res RawBody) WriteTo(w io.Writer) (int64, error) {
+	n, err := w.Write(res)
+	return int64(n), err
+}
+
+func (res RawBody) Closer() error {
+	return nil
 }

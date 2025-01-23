@@ -28,8 +28,8 @@ func (res *ResponseFile) StatusCode() int {
 }
 
 type ResponseFileWriteTo struct {
-	Name string              `json:"name"`
-	Body httpi.WriteToCloser `json:"body,omitempty"`
+	Name string               `json:"name"`
+	Body httpi.WriterToCloser `json:"body,omitempty"`
 }
 
 func (res *ResponseFileWriteTo) RespHeader() map[string]string {

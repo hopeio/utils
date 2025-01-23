@@ -67,7 +67,7 @@ func HandlerWrap[REQ, RES any](service Service[*REQ, *RES]) http.Handler {
 			ResponseWrite(w, httpres)
 			return
 		}
-		if httpres, ok := anyres.(IHttpResponseWriteTo); ok {
+		if httpres, ok := anyres.(IHttpResponseTo); ok {
 			httpres.Response(w)
 			return
 		}
@@ -94,7 +94,7 @@ func HandlerWrapCompatibleGRPC[REQ, RES any](method types.GrpcServiceMethod[*REQ
 			ResponseWrite(w, httpres)
 			return
 		}
-		if httpres, ok := anyres.(IHttpResponseWriteTo); ok {
+		if httpres, ok := anyres.(IHttpResponseTo); ok {
 			httpres.Response(w)
 			return
 		}
