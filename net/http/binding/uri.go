@@ -32,6 +32,9 @@ type UriSource http.Request
 var _ mtos.Setter = (*UriSource)(nil)
 
 func (req *UriSource) Peek(key string) ([]string, bool) {
+	if req.Pattern == "" {
+		return nil, false
+	}
 	v := (*http.Request)(req).PathValue(key)
 	return []string{v}, v != ""
 }

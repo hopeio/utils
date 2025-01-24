@@ -11,11 +11,9 @@ import (
 	"fmt"
 	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/reflect/mtos"
+	"github.com/hopeio/utils/validation/validator"
 	"io"
 	"net/http"
-	"reflect"
-
-	"github.com/hopeio/utils/validation/validator"
 )
 
 const (
@@ -109,7 +107,7 @@ func Bind(r *http.Request, obj interface{}) error {
 	}
 
 	var args mtos.PeekVsSource
-	if !reflect.ValueOf(r).Elem().FieldByName("pat").IsNil() {
+	if r.Pattern != "" {
 		args = append(args, (*UriSource)(r))
 	}
 	if len(r.URL.RawQuery) > 0 {
