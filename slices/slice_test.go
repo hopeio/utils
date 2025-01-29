@@ -65,21 +65,21 @@ func TestCast(t *testing.T) {
 	fmt.Println("AssignableTo:", reflect.TypeOf(x).AssignableTo(reflect.TypeOf(y)))
 	fmt.Println("ConvertibleTo:", reflect.TypeOf(x).ConvertibleTo(reflect.TypeOf(y)))
 	val1 := []Int{1, 2, 3}
-	val2 := Cast[Int, int](val1)
+	val2 := Convert[Int, int](val1)
 	t.Log(val2)
 	val3 := []Int8{1, 2, 3}
-	val4 := Cast[Int8, int](val3)
+	val4 := Convert[Int8, int](val3)
 	t.Log(val4)
 
 	val5 := []Int8{1, 2, 3}
-	val6 := Cast[Int8, Interface](val5)
+	val6 := Convert[Int8, Interface](val5)
 	t.Log(val6)
 
 	val7 := []Interface{Int8(1), Int8(2), Int8(3)}
-	val8 := Cast[Interface, Int8](val7)
+	val8 := Convert[Interface, Int8](val7)
 	t.Log(val8)
 
-	val9 := Cast[Interface, Interface2](val7)
+	val9 := Convert[Interface, Interface2](val7)
 	t.Log(val9)
 
 	//v1 := Int8(2)
