@@ -102,41 +102,48 @@ type FilterExpr struct {
 	Value     []interface{} `json:"value"`
 }
 
+func (filter *FilterExpr) Build() string {
+	filter.Field = strings.TrimSpace(filter.Field)
+
+	if filter.Field == "" {
+		return ""
+	}
+	switch filter.Operation {
+	case Greater, Less, Equal, NotEqual, GreaterOrEqual, LessOrEqual:
+		return filter.Field + filter.Operation.String() + ConvertParams(filter.Value[0], "'")
+	case In, NotIn:
+		var vars = make([]string, len(filter.Value))
+		for idx, v := range filter.Value {
+			vars[idx] = ConvertParams(v, "'")
+		}
+		return filter.Field + filter.Operation.String() + "(" + strings.Join(vars, ",") + ")"
+	case Between:
+		if len(filter.Value) < 2 {
+			return ""
+		}
+		var vars = make([]string, len(filter.Value))
+		for idx, v := range filter.Value {
+			vars[idx] = ConvertParams(v, "'")
+		}
+		return filter.Field + filter.Operation.String() + vars[0] + " AND " + vars[1]
+	case LIKE:
+		return filter.Field + filter.Operation.String() + ConvertParams(filter.Value[0], "'")
+	case IsNull, IsNotNull:
+		return filter.Field + filter.Operation.String()
+	}
+	return filter.Field
+}
+
 type FilterExprs []FilterExpr
 
 func (f FilterExprs) Build() string {
 	var conditions []string
 	for _, filter := range f {
 		filter.Field = strings.TrimSpace(filter.Field)
-
-		if filter.Field == "" || filter.Operation == 0 || len(filter.Value) == 0 {
-			continue
+		condition := filter.Build()
+		if condition != "" {
+			conditions = append(conditions, condition)
 		}
-
-		switch filter.Operation {
-		case Greater, Less, Equal, NotEqual, GreaterOrEqual, LessOrEqual:
-			conditions = append(conditions, filter.Field+filter.Operation.String()+ConvertParams(filter.Value[0], "'"))
-		case In, NotIn:
-			var vars = make([]string, len(filter.Value))
-			for idx, v := range filter.Value {
-				vars[idx] = ConvertParams(v, "'")
-			}
-			conditions = append(conditions, filter.Field+filter.Operation.String()+"("+strings.Join(vars, ",")+")")
-		case Between:
-			if len(filter.Value) < 2 {
-				continue
-			}
-			var vars = make([]string, len(filter.Value))
-			for idx, v := range filter.Value {
-				vars[idx] = ConvertParams(v, "'")
-			}
-			conditions = append(conditions, filter.Field+filter.Operation.String()+vars[0]+" AND "+vars[1])
-		case LIKE:
-			conditions = append(conditions, filter.Field+filter.Operation.String()+ConvertParams(filter.Value[0], "'"))
-		case IsNull, IsNotNull:
-			conditions = append(conditions, filter.Field+filter.Operation.String())
-		}
-
 	}
 
 	if len(conditions) == 0 {

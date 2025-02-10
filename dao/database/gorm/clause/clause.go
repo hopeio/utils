@@ -15,7 +15,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func NewWhereClause(field string, op dbi.Operation, args ...interface{}) clause.Expression {
+func NewWhereClause(field string, op dbi.Operation, args ...any) clause.Expression {
+	if field == "" {
+		return nil
+	}
 	switch op {
 	case dbi.Equal:
 		if len(args) == 0 {

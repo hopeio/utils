@@ -4,7 +4,7 @@
  * @Created by jyb
  */
 
-package gorm
+package scope
 
 import (
 	dbi "github.com/hopeio/utils/dao/database/sql"
@@ -14,18 +14,15 @@ import (
 
 type FilterExprs dbi.FilterExprs
 
-func (f FilterExprs) Build(odb *gorm.DB) *gorm.DB {
-	var scopes []func(db *gorm.DB) *gorm.DB
+func (f FilterExprs) Build(db *gorm.DB) *gorm.DB {
 	for _, filter := range f {
 		filter.Field = strings.TrimSpace(filter.Field)
 
-		if filter.Field == "" || filter.Operation == 0 || len(filter.Value) == 0 {
+		if filter.Field == "" {
 			continue
 		}
 
-		scopes = append(scopes, func(db *gorm.DB) *gorm.DB {
-			return db.Where(filter.Field+" "+filter.Operation.SQL(), filter.Value...)
-		})
+		db = db.Where(filter.Field+" "+filter.Operation.SQL(), filter.Value...)
 	}
-	return odb.Scopes(scopes...)
+	return db
 }

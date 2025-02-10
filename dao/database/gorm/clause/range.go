@@ -53,9 +53,9 @@ func (req *Range[T]) Clause() clause.Expression {
 	return nil
 }
 
-type RangeInRange[T param.Ordered] param.RangeInRange[T]
+type RangeInTwoField[T param.Ordered] param.RangeInTwoField[T]
 
-func (req *RangeInRange[T]) Clause() clause.Expression {
+func (req *RangeInTwoField[T]) Clause() clause.Expression {
 	if req == nil || req.BeginField == "" || req.EndField == "" {
 		return nil
 	}

@@ -7,25 +7,24 @@
 package dbtoentity
 
 import (
+	"database/sql"
 	"fmt"
 	dbi "github.com/hopeio/utils/dao/database/toentity"
 	"go/ast"
 	"go/format"
 	"go/parser"
 	"go/token"
-	"gorm.io/gorm"
 	"strings"
 	"testing"
 )
 
-var db *gorm.DB
+var db *sql.DB
 
 func TestDBToEntity(t *testing.T) {
 	MysqlConvert(db, "entity.go")
 }
 
 func TestTableToEntity(t *testing.T) {
-
 	MysqlConvertByTable(db, "sku_competition")
 }
 

@@ -7,6 +7,7 @@
 package gorm
 
 import (
+	"github.com/hopeio/utils/dao/database/gorm/scope"
 	"gorm.io/gorm"
 )
 
@@ -41,7 +42,7 @@ func (r *Repository[T]) Delete(id any) error {
 }
 
 type ChainRepository[T any] struct {
-	ChainScope
+	scope.ChainScope
 	*gorm.DB
 }
 
