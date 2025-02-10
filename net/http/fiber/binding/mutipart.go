@@ -28,5 +28,5 @@ func (r *MultipartRequest) TrySet(value reflect.Value, field *reflect.StructFiel
 		return binding.SetByMultipartFormFile(value, field, files)
 	}
 
-	return mtos.SetByKVs(value, field, mtos.KVsSource(form.Value), key, opt)
+	return mtos.SetValueByKVsWithStructField(value, field, mtos.KVsSource(form.Value), key, opt)
 }

@@ -17,10 +17,10 @@ import (
 	"unicode"
 )
 
-type Operation int
+type ConditionOperation int
 
 const (
-	OperationPlace Operation = iota
+	OperationPlace ConditionOperation = iota
 	Equal
 	NotEqual
 	Greater
@@ -32,10 +32,39 @@ const (
 	IsNull
 	In
 	NotIn
-	LIKE
+	Like
 )
 
-func (m Operation) SQL() string {
+func ParseConditionOperation(op string) ConditionOperation {
+	op = strings.ToUpper(op)
+	switch op {
+	case "=", " = ", "EQUAL", "1":
+		return Equal
+	case ">", " > ", "GREATER", "3":
+		return Greater
+	case "<", " < ", "LESS", "4":
+		return Less
+	case ">=", " >= ", "GREATEROREQUAL", "6":
+		return GreaterOrEqual
+	case "<=", " <= ", "LESSOREQUAL", "7":
+		return LessOrEqual
+	case "!=", " != ", "NOTEQUAL", "2":
+		return NotEqual
+	case "IN", " IN ", "10":
+		return In
+	case "NOT IN", "NOTIN", "11":
+		return NotIn
+	case "Like", "LIKE", "12":
+		return Like
+	case "IS NULL", "ISNULL", "9":
+		return IsNull
+	case "IS NOT NULL", "ISNOTNULL", "8":
+		return IsNotNull
+	}
+	return OperationPlace
+}
+
+func (m ConditionOperation) SQL() string {
 	switch m {
 	case Equal:
 		return "= ?"
@@ -59,14 +88,14 @@ func (m Operation) SQL() string {
 		return "IN (?)"
 	case NotIn:
 		return "NOT IN (?)"
-	case LIKE:
+	case Like:
 		return "LIKE ?"
 	default:
 		return ""
 	}
 }
 
-func (m Operation) String() string {
+func (m ConditionOperation) String() string {
 	switch m {
 	case Equal:
 		return " = "
@@ -97,9 +126,9 @@ func (m Operation) String() string {
 }
 
 type FilterExpr struct {
-	Field     string        `json:"field"`
-	Operation Operation     `json:"method"`
-	Value     []interface{} `json:"value"`
+	Field     string             `json:"field"`
+	Operation ConditionOperation `json:"op"`
+	Value     []any              `json:"value"`
 }
 
 func (filter *FilterExpr) Build() string {
@@ -126,7 +155,7 @@ func (filter *FilterExpr) Build() string {
 			vars[idx] = ConvertParams(v, "'")
 		}
 		return filter.Field + filter.Operation.String() + vars[0] + " AND " + vars[1]
-	case LIKE:
+	case Like:
 		return filter.Field + filter.Operation.String() + ConvertParams(filter.Value[0], "'")
 	case IsNull, IsNotNull:
 		return filter.Field + filter.Operation.String()

@@ -15,7 +15,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func NewWhereClause(field string, op dbi.Operation, args ...any) clause.Expression {
+func NewCondition(field any, op dbi.ConditionOperation, args ...any) clause.Expression {
 	if field == "" {
 		return nil
 	}
@@ -58,7 +58,7 @@ func NewWhereClause(field string, op dbi.Operation, args ...any) clause.Expressi
 			Column: field,
 			Value:  args[0],
 		}
-	case dbi.LIKE:
+	case dbi.Like:
 		if len(args) == 0 {
 			return nil
 		}
@@ -120,26 +120,12 @@ func SortExpr(column string, typ param.SortType) clause.Expression {
 	return clause.OrderBy{Columns: []clause.OrderByColumn{{Column: clause.Column{Name: column, Raw: true}, Desc: desc}}}
 }
 
-func TableName(tx *gorm.DB, name string) *gorm.DB {
-	tx.Statement.TableExpr = &clause.Expr{SQL: tx.Statement.Quote(name)}
-	tx.Statement.Table = name
-	return tx
-}
-
 type Expression dbi.FilterExpr
 
 func (e *Expression) Clause() func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where(e.Field+(*dbi.FilterExpr)(e).Operation.SQL(), e.Value...)
 	}
-}
-
-func ByValidEqual[T comparable](column string, v T) clause.Expression {
-	var zero T
-	if v != zero {
-		return clause.Eq{Column: column, Value: v}
-	}
-	return nil
 }
 
 func ByPrimaryKey(v any) clause.Expression {

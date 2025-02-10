@@ -10,18 +10,20 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"iter"
 	"strconv"
 	"strings"
 )
 
 var (
-	errTagSyntax      = errors.New("bad syntax for struct tag pair")
-	errTagKeySyntax   = errors.New("bad syntax for struct tag key")
-	errTagValueSyntax = errors.New("bad syntax for struct tag value")
+	ErrTagSyntax      = errors.New("bad syntax for struct tag pair")
+	ErrTagKeySyntax   = errors.New("bad syntax for struct tag key")
+	ErrTagValueSyntax = errors.New("bad syntax for struct tag value")
 
-	errKeyNotSet      = errors.New("tag key does not exist")
-	errTagNotExist    = errors.New("tag does not exist")
-	errTagKeyMismatch = errors.New("mismatch between key and tag.key")
+	ErrKeyNotSet      = errors.New("tag key does not exist")
+	ErrTagNotExist    = errors.New("tag does not exist")
+	ErrTagIgnore      = errors.New("tag ignore")
+	ErrTagKeyMismatch = errors.New("mismatch between key and tag.key")
 )
 
 // Tags represent a set of tags from a single struct field
@@ -37,11 +39,7 @@ type Tag struct {
 
 	// Name is a part of the value
 	// i.e: `json:"foo,omitempty". Here name is: "foo"
-	Name string
-
-	// Options is a part of the value. It contains a Slice of tag options i.e:
-	// `json:"foo,omitempty". Here options is: ["omitempty"]
-	Options []string
+	Value string
 }
 
 // Parse parses a single struct field tag and returns the set of tags.
@@ -75,13 +73,13 @@ func Parse(tag string) (*Tags, error) {
 		}
 
 		if i == 0 {
-			return nil, errTagKeySyntax
+			return nil, ErrTagKeySyntax
 		}
 		if i+1 >= len(tag) || tag[i] != ':' {
-			return nil, errTagSyntax
+			return nil, ErrTagSyntax
 		}
 		if tag[i+1] != '"' {
-			return nil, errTagValueSyntax
+			return nil, ErrTagValueSyntax
 		}
 
 		key := string(tag[:i])
@@ -96,7 +94,7 @@ func Parse(tag string) (*Tags, error) {
 			i++
 		}
 		if i >= len(tag) {
-			return nil, errTagValueSyntax
+			return nil, ErrTagValueSyntax
 		}
 
 		qvalue := string(tag[:i+1])
@@ -104,20 +102,12 @@ func Parse(tag string) (*Tags, error) {
 
 		value, err := strconv.Unquote(qvalue)
 		if err != nil {
-			return nil, errTagValueSyntax
-		}
-
-		res := strings.Split(value, ",")
-		name := res[0]
-		options := res[1:]
-		if len(options) == 0 {
-			options = nil
+			return nil, ErrTagValueSyntax
 		}
 
 		tags = append(tags, &Tag{
-			Key:     key,
-			Name:    name,
-			Options: options,
+			Key:   key,
+			Value: value,
 		})
 	}
 
@@ -141,13 +131,21 @@ func (t *Tags) Get(key string) (*Tag, error) {
 		}
 	}
 
-	return nil, errTagNotExist
+	return nil, ErrTagNotExist
+}
+func (t *Tags) MustGet(key string) *Tag {
+	for _, tag := range t.tags {
+		if tag.Key == key {
+			return tag
+		}
+	}
+	return nil
 }
 
 // Set sets the given tag. If the tag key already exists it'll override it
 func (t *Tags) Set(tag *Tag) error {
 	if tag.Key == "" {
-		return errKeyNotSet
+		return ErrKeyNotSet
 	}
 
 	added := false
@@ -166,49 +164,13 @@ func (t *Tags) Set(tag *Tag) error {
 	return nil
 }
 
-// AddOptions adds the given option for the given key. If the option already
-// exists it doesn't add it again.
-func (t *Tags) AddOptions(key string, options ...string) {
-	for i, tag := range t.tags {
-		if tag.Key != key {
-			continue
-		}
-
-		for _, opt := range options {
-			if !tag.HasOption(opt) {
-				tag.Options = append(tag.Options, opt)
+func (t *Tags) Iter() iter.Seq[*Tag] {
+	return func(yield func(*Tag) bool) {
+		for _, tag := range t.tags {
+			if !yield(tag) {
+				return
 			}
 		}
-
-		t.tags[i] = tag
-	}
-}
-
-// DeleteOptions deletes the given options for the given key
-func (t *Tags) DeleteOptions(key string, options ...string) {
-	hasOption := func(option string) bool {
-		for _, opt := range options {
-			if opt == option {
-				return true
-			}
-		}
-		return false
-	}
-
-	for i, tag := range t.tags {
-		if tag.Key != key {
-			continue
-		}
-
-		var updated []string
-		for _, opt := range tag.Options {
-			if !hasOption(opt) {
-				updated = append(updated, opt)
-			}
-		}
-
-		tag.Options = updated
-		t.tags[i] = tag
 	}
 }
 
@@ -266,9 +228,19 @@ func (t *Tags) String() string {
 	return buf.String()
 }
 
+func (t *Tag) Options() []string {
+	res := strings.Split(t.Value, ",")
+	//name := res[0]
+	options := res[1:]
+	if len(options) == 0 {
+		options = nil
+	}
+	return options
+}
+
 // HasOption returns true if the given option is available in options
 func (t *Tag) HasOption(opt string) bool {
-	for _, tagOpt := range t.Options {
+	for _, tagOpt := range t.Options() {
 		if tagOpt == opt {
 			return true
 		}
@@ -277,35 +249,56 @@ func (t *Tag) HasOption(opt string) bool {
 	return false
 }
 
+// AddOptions adds the given option for the given key. If the option already
+// exists it doesn't add it again.
+func (tag *Tag) AddOptions(options ...string) {
+	for _, opt := range options {
+		if !tag.HasOption(opt) {
+			tag.Value += "," + strings.Join(options, ",")
+		}
+	}
+
+}
+
+// DeleteOptions deletes the given options for the given key
+func (tag *Tag) DeleteOptions(options ...string) {
+	hasOption := func(option string) bool {
+		for _, opt := range options {
+			if opt == option {
+				return true
+			}
+		}
+		return false
+	}
+
+	var updated []string
+	for _, opt := range tag.Options() {
+		if !hasOption(opt) {
+			updated = append(updated, opt)
+		}
+	}
+	tag.Value = tag.Name() + "," + strings.Join(updated, ",")
+}
+
 // Value returns the raw value of the tag, i.e. if the tag is
 // `json:"foo,omitempty", the Value is "foo,omitempty"
-func (t *Tag) Value() string {
-	options := strings.Join(t.Options, ",")
-	if options != "" {
-		return fmt.Sprintf(`%s,%s`, t.Name, options)
-	}
-	return t.Name
+func (t *Tag) Name() string {
+	return t.Value[:strings.Index(t.Value, ",")]
 }
 
 // String reassembles the tag into a valid tag field representation
 func (t *Tag) String() string {
-	return fmt.Sprintf(`%s:%q`, t.Key, t.Value())
+	return fmt.Sprintf(`%s:%q`, t.Key, t.Value)
 }
 
 // GoString implements the fmt.GoStringer interface
 func (t *Tag) GoString() string {
 	template := `{
 		Key:    '%s',
-		Name:   '%s',
-		Option: '%s',
+		Value:   '%s',
 	}`
 
-	if t.Options == nil {
-		return fmt.Sprintf(template, t.Key, t.Name, "nil")
-	}
-
-	options := strings.Join(t.Options, ",")
-	return fmt.Sprintf(template, t.Key, t.Name, options)
+	return fmt.Sprintf(template, t.Key, t.Value)
 }
 
 func (t *Tags) Len() int {

@@ -5,15 +5,11 @@
 package mtos
 
 import (
-	"encoding"
 	"errors"
-	"github.com/hopeio/utils/encoding/json"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
-
-	stringsi "github.com/hopeio/utils/strings"
 )
 
 var errUnknownType = errors.New("unknown type")
@@ -117,62 +113,6 @@ func tryToSetValue(value reflect.Value, field *reflect.StructField, setter Sette
 	return setter.TrySet(value, field, tagValue, setOpt)
 }
 
-func setWithProperType(val string, value reflect.Value, field *reflect.StructField) error {
-	anyV := value.Interface()
-	tuV, ok := anyV.(encoding.TextUnmarshaler)
-	if !ok {
-		tuV, ok = value.Addr().Interface().(encoding.TextUnmarshaler)
-	}
-	if ok {
-		return tuV.UnmarshalText(stringsi.ToBytes(val))
-	}
-	switch value.Kind() {
-	case reflect.Int:
-		return setIntField(val, 0, value)
-	case reflect.Int8:
-		return setIntField(val, 8, value)
-	case reflect.Int16:
-		return setIntField(val, 16, value)
-	case reflect.Int32:
-		return setIntField(val, 32, value)
-	case reflect.Int64:
-		switch anyV.(type) {
-		case time.Duration:
-			return setTimeDuration(val, value, field)
-		}
-		return setIntField(val, 64, value)
-	case reflect.Uint:
-		return setUintField(val, 0, value)
-	case reflect.Uint8:
-		return setUintField(val, 8, value)
-	case reflect.Uint16:
-		return setUintField(val, 16, value)
-	case reflect.Uint32:
-		return setUintField(val, 32, value)
-	case reflect.Uint64:
-		return setUintField(val, 64, value)
-	case reflect.Bool:
-		return setBoolField(val, value)
-	case reflect.Float32:
-		return setFloatField(val, 32, value)
-	case reflect.Float64:
-		return setFloatField(val, 64, value)
-	case reflect.String:
-		value.SetString(val)
-	case reflect.Struct:
-		switch anyV.(type) {
-		case time.Time:
-			return setTimeField(val, field, value)
-		}
-		return json.Unmarshal(stringsi.ToBytes(val), value.Addr().Interface())
-	case reflect.Map:
-		return json.Unmarshal(stringsi.ToBytes(val), value.Addr().Interface())
-	default:
-		return errUnknownType
-	}
-	return nil
-}
-
 func setIntField(val string, bitSize int, field reflect.Value) error {
 	if val == "" {
 		val = "0"
@@ -218,45 +158,44 @@ func setFloatField(val string, bitSize int, field reflect.Value) error {
 }
 
 func setTimeField(val string, structField *reflect.StructField, value reflect.Value) error {
-	timeFormat := structField.Tag.Get("time_format")
-	if timeFormat == "" {
-		timeFormat = time.RFC3339
-	}
-
-	switch tf := strings.ToLower(timeFormat); tf {
-	case "unix", "unixnano":
-		tv, err := strconv.ParseInt(val, 10, 0)
-		if err != nil {
-			return err
-		}
-
-		d := time.Duration(1)
-		if tf == "unixnano" {
-			d = time.Second
-		}
-
-		t := time.Unix(tv/int64(d), tv%int64(d))
-		value.Set(reflect.ValueOf(t))
-		return nil
-
-	}
-
-	if val == "" {
-		value.Set(reflect.ValueOf(time.Time{}))
-		return nil
-	}
-
+	timeFormat := time.RFC3339
 	l := time.Local
-	if isUTC, _ := strconv.ParseBool(structField.Tag.Get("time_utc")); isUTC {
-		l = time.UTC
-	}
+	if structField != nil {
+		timeFormat = structField.Tag.Get("time_format")
+		switch tf := strings.ToLower(timeFormat); tf {
+		case "unix", "unixnano":
+			tv, err := strconv.ParseInt(val, 10, 0)
+			if err != nil {
+				return err
+			}
 
-	if locTag := structField.Tag.Get("time_location"); locTag != "" {
-		loc, err := time.LoadLocation(locTag)
-		if err != nil {
-			return err
+			d := time.Duration(1)
+			if tf == "unixnano" {
+				d = time.Second
+			}
+
+			t := time.Unix(tv/int64(d), tv%int64(d))
+			value.Set(reflect.ValueOf(t))
+			return nil
+
 		}
-		l = loc
+
+		if val == "" {
+			value.Set(reflect.ValueOf(time.Time{}))
+			return nil
+		}
+		
+		if isUTC, _ := strconv.ParseBool(structField.Tag.Get("time_utc")); isUTC {
+			l = time.UTC
+		}
+
+		if locTag := structField.Tag.Get("time_location"); locTag != "" {
+			loc, err := time.LoadLocation(locTag)
+			if err != nil {
+				return err
+			}
+			l = loc
+		}
 	}
 
 	t, err := time.ParseInLocation(timeFormat, val, l)
@@ -270,7 +209,7 @@ func setTimeField(val string, structField *reflect.StructField, value reflect.Va
 
 func setArray(vals []string, value reflect.Value, field *reflect.StructField) error {
 	for i, s := range vals {
-		err := setWithProperType(s, value.Index(i), field)
+		err := SetValueByStringWithStructField(value.Index(i), field, s)
 		if err != nil {
 			return err
 		}
@@ -288,7 +227,7 @@ func setSlice(vals []string, value reflect.Value, field *reflect.StructField) er
 	return nil
 }
 
-func setTimeDuration(val string, value reflect.Value, field *reflect.StructField) error {
+func setTimeDuration(val string, value reflect.Value) error {
 	d, err := time.ParseDuration(val)
 	if err != nil {
 		return err

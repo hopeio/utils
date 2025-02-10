@@ -13,7 +13,7 @@ import (
 
 type Scope func(*gorm.DB) *gorm.DB
 
-func NewScope(field string, op sql.Operation, args ...interface{}) func(*gorm.DB) *gorm.DB {
+func NewScope(field string, op sql.ConditionOperation, args ...interface{}) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where(field+op.SQL(), args...)
 	}

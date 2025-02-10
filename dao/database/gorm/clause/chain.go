@@ -13,7 +13,7 @@ import (
 
 type ChainClause []clause.Interface
 
-func (c ChainClause) ByI(id any) ChainClause {
+func (c ChainClause) ById(id any) ChainClause {
 	return append(c, clause.Where{Exprs: []clause.Expression{clause.Eq{Column: clause.PrimaryColumn, Value: id}}})
 }
 

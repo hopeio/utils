@@ -11,7 +11,7 @@ import (
 	sql2 "github.com/hopeio/utils/dao/database/sql"
 )
 
-func ExistsByFilterExpressions(db *sql.DB, tableName string, filters sql2.FilterExprs) (bool, error) {
+func ExistsByFilterExprs(db *sql.DB, tableName string, filters sql2.FilterExprs) (bool, error) {
 	result := db.QueryRow(`SELECT EXISTS(SELECT * FROM ` + tableName + `WHERE ` + filters.Build() + ` LIMIT 1)`)
 	if err := result.Err(); err != nil {
 		return false, err

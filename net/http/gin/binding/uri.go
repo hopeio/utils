@@ -42,5 +42,5 @@ func (param uriSource) Peek(key string) ([]string, bool) {
 
 // TrySet tries to set a value by request's form source (like map[string][]string)
 func (param uriSource) TrySet(value reflect.Value, field *reflect.StructField, tagValue string, opt mtos.SetOptions) (isSet bool, err error) {
-	return mtos.SetByKVs(value, field, param, tagValue, opt)
+	return mtos.SetValueByKVsWithStructField(value, field, param, tagValue, opt)
 }

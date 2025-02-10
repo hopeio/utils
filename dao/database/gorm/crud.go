@@ -39,9 +39,9 @@ func ExistsBySQL(db *gorm.DB, sql string, value ...any) (bool, error) {
 }
 
 // 根据查询语句查询数据是否存在
-func ExistsByQuerySQL(db *gorm.DB, qsql string, value ...any) (bool, error) {
+func ExistsByQuery(db *gorm.DB, qsql string, value ...any) (bool, error) {
 	var exists bool
-	err := db.Raw(sql2.ExistsSQLByQuerySQL(qsql), value...).Scan(&exists).Error
+	err := db.Raw(sql2.ExistsByQuerySQL(qsql), value...).Scan(&exists).Error
 	if err != nil {
 		return false, err
 	}
@@ -54,7 +54,7 @@ func Exists(db *gorm.DB, tableName, column string, value interface{}, withDelete
 
 func ExistsByFilterExprs(db *gorm.DB, tableName string, filters sql2.FilterExprs) (bool, error) {
 	var exists bool
-	err := db.Raw(sql2.ExistsSQLByFilterExprs(tableName, filters)).Scan(&exists).Error
+	err := db.Raw(sql2.ExistsByFilterExprsSQL(tableName, filters)).Scan(&exists).Error
 	if err != nil {
 		return false, err
 	}

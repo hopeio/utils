@@ -6,18 +6,14 @@
 
 package structtag
 
-import (
-	"strconv"
-)
+// CustomTag 适用于子tag形式等同于struct tag,区别是struct tag使用"而CustomTag使用'
+type CustomTag string
 
-type StructTag string
-
-func GetCustomTag(customize, key string) string {
-	v, _ := StructTag(customize).Lookup(key)
-	return v
+func CustomTagLookup(customTag, key string) (value string, ok bool) {
+	return CustomTag(customTag).Lookup(key)
 }
 
-func (tag StructTag) Lookup(key string) (value string, ok bool) {
+func (tag CustomTag) Lookup(key string) (value string, ok bool) {
 
 	for tag != "" {
 		i := 0
@@ -54,11 +50,7 @@ func (tag StructTag) Lookup(key string) (value string, ok bool) {
 		tag = tag[i+1:]
 
 		if key == name {
-			value, err := strconv.Unquote(qvalue)
-			if err != nil {
-				break
-			}
-			return value, true
+			return qvalue[1 : len(qvalue)-1], true
 		}
 	}
 	return "", false

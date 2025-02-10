@@ -29,10 +29,10 @@ func DeleteByIdSQL(tableName string) string {
 	return `Update ` + tableName + ` SET deleted_at = now() WHERE id = ?`
 }
 
-func ExistsSQLByQuerySQL(qsql string) string {
+func ExistsByQuerySQL(qsql string) string {
 	return `SELECT EXISTS(` + qsql + ` LIMIT 1)`
 }
 
-func ExistsSQLByFilterExprs(tableName string, filters FilterExprs) string {
+func ExistsByFilterExprsSQL(tableName string, filters FilterExprs) string {
 	return `SELECT EXISTS(SELECT * FROM ` + tableName + ` WHERE ` + filters.Build() + ` LIMIT 1)`
 }

@@ -2,10 +2,12 @@ package mtos
 
 import (
 	"encoding"
+	"encoding/json"
 	"fmt"
-	"github.com/hopeio/utils/reflect/converter"
+	stringsi "github.com/hopeio/utils/strings"
 	"reflect"
 	"strings"
+	"time"
 )
 
 type PeekV interface {
@@ -31,7 +33,7 @@ func SetByKV(value reflect.Value, field *reflect.StructField, kv PeekV, tagValue
 	if !ok {
 		return false, nil
 	}
-	err = SetValueByString(value, vs)
+	err = SetValueByStringWithStructField(value, field, vs)
 	if err != nil {
 		return false, err
 	}
@@ -61,7 +63,7 @@ func (form KVsSource) Peek(key string) ([]string, bool) {
 
 // TrySet tries to set a value by request's form source (like map[string][]string)
 func (form KVsSource) TrySet(value reflect.Value, field *reflect.StructField, tagValue string, opt SetOptions) (isSet bool, err error) {
-	return SetByKVs(value, field, form, tagValue, opt)
+	return SetValueByKVsWithStructField(value, field, form, tagValue, opt)
 }
 
 type PeekVs interface {
@@ -80,7 +82,7 @@ func (args Args2) Peek(key string) (v []string, ok bool) {
 }
 
 func (args Args2) TrySet(value reflect.Value, field *reflect.StructField, key string, opt SetOptions) (isSet bool, err error) {
-	return SetByKVs(value, field, args, key, opt)
+	return SetValueByKVsWithStructField(value, field, args, key, opt)
 }
 
 type PeekVsSource []PeekVs
@@ -95,11 +97,11 @@ func (args PeekVsSource) Peek(key string) (v []string, ok bool) {
 }
 
 func (args PeekVsSource) TrySet(value reflect.Value, field *reflect.StructField, key string, opt SetOptions) (isSet bool, err error) {
-	return SetByKVs(value, field, args, key, opt)
+	return SetValueByKVsWithStructField(value, field, args, key, opt)
 }
 
-func SetByKVs(value reflect.Value, field *reflect.StructField, kv PeekVs, tagValue string, opt SetOptions) (isSet bool, err error) {
-	vs, ok := kv.Peek(tagValue)
+func SetValueByKVsWithStructField(value reflect.Value, field *reflect.StructField, kv PeekVs, key string, opt SetOptions) (isSet bool, err error) {
+	vs, ok := kv.Peek(key)
 	if !ok && !opt.isDefaultExists {
 		return false, nil
 	}
@@ -127,8 +129,83 @@ func SetByKVs(value reflect.Value, field *reflect.StructField, kv PeekVs, tagVal
 		if len(vs) > 0 {
 			val = vs[0]
 		}
-		return true, setWithProperType(val, value, field)
+		return true, SetValueByStringWithStructField(value, field, val)
 	}
+}
+
+func SetValueByStringWithStructField(value reflect.Value, field *reflect.StructField, val string) error {
+	if val == "" {
+		return nil
+	}
+	anyV := value.Interface()
+	tuV, ok := anyV.(encoding.TextUnmarshaler)
+	if !ok {
+		tuV, ok = value.Addr().Interface().(encoding.TextUnmarshaler)
+	}
+	if ok {
+		return tuV.UnmarshalText(stringsi.ToBytes(val))
+	}
+	switch kind := value.Kind(); kind {
+	case reflect.Int:
+		return setIntField(val, 0, value)
+	case reflect.Int8:
+		return setIntField(val, 8, value)
+	case reflect.Int16:
+		return setIntField(val, 16, value)
+	case reflect.Int32:
+		return setIntField(val, 32, value)
+	case reflect.Int64:
+		switch anyV.(type) {
+		case time.Duration:
+			return setTimeDuration(val, value)
+		}
+		return setIntField(val, 64, value)
+	case reflect.Uint:
+		return setUintField(val, 0, value)
+	case reflect.Uint8:
+		return setUintField(val, 8, value)
+	case reflect.Uint16:
+		return setUintField(val, 16, value)
+	case reflect.Uint32:
+		return setUintField(val, 32, value)
+	case reflect.Uint64:
+		return setUintField(val, 64, value)
+	case reflect.Bool:
+		return setBoolField(val, value)
+	case reflect.Float32:
+		return setFloatField(val, 32, value)
+	case reflect.Float64:
+		return setFloatField(val, 64, value)
+	case reflect.String:
+		value.SetString(val)
+	case reflect.Array, reflect.Slice:
+		subType := value.Type().Elem()
+		eKind := subType.Kind()
+		if eKind == reflect.Array || eKind == reflect.Slice || eKind == reflect.Map {
+			return fmt.Errorf("unsupported sub type %v", subType)
+		}
+		strs := strings.Split(val, ",")
+		if kind == reflect.Slice {
+			value.Set(reflect.MakeSlice(subType, len(strs), len(strs)))
+		}
+		for i := 0; i < value.Len(); i++ {
+			if err := SetValueByString(value.Index(i), strs[i]); err != nil {
+				return err
+			}
+		}
+		return nil
+	case reflect.Struct:
+		switch anyV.(type) {
+		case time.Time:
+			return setTimeField(val, field, value)
+		}
+		return json.Unmarshal(stringsi.ToBytes(val), value.Addr().Interface())
+	case reflect.Map:
+		return json.Unmarshal(stringsi.ToBytes(val), value.Addr().Interface())
+	default:
+		return errUnknownType
+	}
+	return nil
 }
 
 func SetFieldByString(dst any, field, value string) error {
@@ -140,68 +217,6 @@ func SetFieldByString(dst any, field, value string) error {
 	return SetValueByString(fieldValue, value)
 }
 
-func SetValueByString(field reflect.Value, value string) error {
-	if value == "" {
-		return nil
-	}
-
-	v := field.Interface()
-	if t, ok := v.(encoding.TextUnmarshaler); ok {
-		return t.UnmarshalText([]byte(value))
-	}
-	kind := field.Kind()
-	switch kind {
-	case reflect.String:
-		field.Set(reflect.ValueOf(value))
-	case reflect.Ptr:
-		if field.IsNil() {
-			field.Set(reflect.New(field.Type().Elem()))
-		}
-		return SetValueByString(field.Elem(), value)
-	case reflect.Array, reflect.Slice:
-		subType := field.Type().Elem()
-		eKind := subType.Kind()
-		if eKind == reflect.Array || eKind == reflect.Slice || eKind == reflect.Map {
-			return fmt.Errorf("unsupported sub type %v", subType)
-		}
-		strs := strings.Split(value, ",")
-		if kind == reflect.Slice {
-			field.Set(reflect.MakeSlice(field.Type(), len(strs), len(strs)))
-		}
-		for i := 0; i < field.Len(); i++ {
-			if err := SetValueByString(field.Index(i), strs[i]); err != nil {
-				return err
-			}
-		}
-		return nil
-	case reflect.Map:
-		subType := field.Type().Elem()
-		eKind := subType.Kind()
-		if eKind == reflect.Array || eKind == reflect.Slice || eKind == reflect.Map {
-			return fmt.Errorf("unsupported sub type %v", subType)
-		}
-		strs := strings.Split(value, ",")
-		field.Set(reflect.MakeMapWithSize(field.Type(), len(strs)/2))
-		for i := 0; i < len(strs)/2; i += 2 {
-			key := reflect.New(field.Type().Key())
-			err := SetValueByString(key, strs[i])
-			if err != nil {
-				return err
-			}
-			v := reflect.New(field.Type().Elem())
-			err = SetValueByString(v, strs[i+1])
-			if err != nil {
-				return err
-			}
-			field.SetMapIndex(key, v)
-		}
-		return nil
-	}
-
-	cv, err := converter.StringConvert(kind, value)
-	if err == nil {
-		field.Set(reflect.ValueOf(cv))
-		return nil
-	}
-	return err
+func SetValueByString(value reflect.Value, val string) error {
+	return SetValueByStringWithStructField(value, nil, val)
 }

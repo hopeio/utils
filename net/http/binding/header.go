@@ -42,5 +42,5 @@ func (hs HeaderSource) Peek(key string) ([]string, bool) {
 }
 
 func (hs HeaderSource) TrySet(value reflect.Value, field *reflect.StructField, tagValue string, opt mtos.SetOptions) (isSet bool, err error) {
-	return mtos.SetByKVs(value, field, hs, tagValue, opt)
+	return mtos.SetValueByKVsWithStructField(value, field, hs, tagValue, opt)
 }

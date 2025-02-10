@@ -44,8 +44,8 @@ func TestParse(t *testing.T) {
 			tag:  `json:"-"`,
 			exp: []*Tag{
 				{
-					Key:  "json",
-					Name: "-",
+					Key:   "json",
+					Value: "-",
 				},
 			},
 		},
@@ -54,8 +54,8 @@ func TestParse(t *testing.T) {
 			tag:  `json:"foo"`,
 			exp: []*Tag{
 				{
-					Key:  "json",
-					Name: "foo",
+					Key:   "json",
+					Value: "foo",
 				},
 			},
 		},
@@ -64,9 +64,8 @@ func TestParse(t *testing.T) {
 			tag:  `json:"foo,omitempty"`,
 			exp: []*Tag{
 				{
-					Key:     "json",
-					Name:    "foo",
-					Options: []string{"omitempty"},
+					Key:   "json",
+					Value: "foo,omitempty",
 				},
 			},
 		},
@@ -87,12 +86,12 @@ func TestParse(t *testing.T) {
 			tag:  `json:"foo" hcl:"foo"`,
 			exp: []*Tag{
 				{
-					Key:  "json",
-					Name: "foo",
+					Key:   "json",
+					Value: "foo",
 				},
 				{
-					Key:  "hcl",
-					Name: "foo",
+					Key:   "hcl",
+					Value: "foo",
 				},
 			},
 		},
@@ -101,12 +100,12 @@ func TestParse(t *testing.T) {
 			tag:  `json:"foo" hcl:"foo"`,
 			exp: []*Tag{
 				{
-					Key:  "json",
-					Name: "foo",
+					Key:   "json",
+					Value: "foo",
 				},
 				{
-					Key:  "hcl",
-					Name: "foo",
+					Key:   "hcl",
+					Value: "foo",
 				},
 			},
 		},
@@ -115,12 +114,12 @@ func TestParse(t *testing.T) {
 			tag:  `json:"foo" hcl:"bar"`,
 			exp: []*Tag{
 				{
-					Key:  "json",
-					Name: "foo",
+					Key:   "json",
+					Value: "foo",
 				},
 				{
-					Key:  "hcl",
-					Name: "bar",
+					Key:   "hcl",
+					Value: "bar",
 				},
 			},
 		},
@@ -129,14 +128,12 @@ func TestParse(t *testing.T) {
 			tag:  `json:"foo,omitempty" structs:"bar,omitnested"`,
 			exp: []*Tag{
 				{
-					Key:     "json",
-					Name:    "foo",
-					Options: []string{"omitempty"},
+					Key:   "json",
+					Value: "foo,omitempty",
 				},
 				{
-					Key:     "structs",
-					Name:    "bar",
-					Options: []string{"omitnested"},
+					Key:   "structs",
+					Value: "bar,omitnested",
 				},
 			},
 		},
@@ -145,17 +142,16 @@ func TestParse(t *testing.T) {
 			tag:  `json:"foo" structs:"bar,omitnested" hcl:"-"`,
 			exp: []*Tag{
 				{
-					Key:  "json",
-					Name: "foo",
+					Key:   "json",
+					Value: "foo",
 				},
 				{
-					Key:     "structs",
-					Name:    "bar",
-					Options: []string{"omitnested"},
+					Key:   "structs",
+					Value: "bar,omitnested",
 				},
 				{
-					Key:  "hcl",
-					Name: "-",
+					Key:   "hcl",
+					Value: "-",
 				},
 			},
 		},
@@ -164,9 +160,8 @@ func TestParse(t *testing.T) {
 			tag:  `json:"foo,bar:\"baz\""`,
 			exp: []*Tag{
 				{
-					Key:     "json",
-					Name:    "foo",
-					Options: []string{`bar:"baz"`},
+					Key:   "json",
+					Value: "foo,bar:\"baz\"",
 				},
 			},
 		},
@@ -175,8 +170,8 @@ func TestParse(t *testing.T) {
 			tag:  `json:"foo" `,
 			exp: []*Tag{
 				{
-					Key:  "json",
-					Name: "foo",
+					Key:   "json",
+					Value: "foo",
 				},
 			},
 		},
@@ -229,8 +224,8 @@ func TestTags_Get(t *testing.T) {
 	})
 	t.Run("Value", func(t *testing.T) {
 		want := `foo,omitempty`
-		if found.Value() != want {
-			t.Errorf("get\n\twant: %#v\n\tgot : %#v", want, found.Value())
+		if found.Value != want {
+			t.Errorf("get\n\twant: %#v\n\tgot : %#v", want, found.Value)
 		}
 	})
 }
@@ -244,9 +239,8 @@ func TestTags_Set(t *testing.T) {
 	}
 
 	err = tags.Set(&Tag{
-		Key:     "json",
-		Name:    "bar",
-		Options: []string{},
+		Key:   "json",
+		Value: "bar",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -272,9 +266,8 @@ func TestTags_Set_Append(t *testing.T) {
 	}
 
 	err = tags.Set(&Tag{
-		Key:     "structs",
-		Name:    "bar",
-		Options: []string{"omitnested"},
+		Key:   "structs",
+		Value: "bar,omitnested",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -305,16 +298,15 @@ func TestTags_Set_KeyDoesNotExist(t *testing.T) {
 	}
 
 	err = tags.Set(&Tag{
-		Key:     "",
-		Name:    "bar",
-		Options: []string{},
+		Key:   "",
+		Value: "bar",
 	})
 	if err == nil {
 		t.Fatal("setting tag with a nonexisting key should error")
 	}
 
-	if err != errKeyNotSet {
-		t.Errorf("set\n\twant: %#v\n\tgot : %#v", errTagKeyMismatch, err)
+	if err != ErrKeyNotSet {
+		t.Errorf("set\n\twant: %#v\n\tgot : %#v", ErrTagKeyMismatch, err)
 	}
 }
 
@@ -355,14 +347,14 @@ func TestTags_DeleteOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tags.DeleteOptions("json", "omitempty")
+	tags.MustGet("json").DeleteOptions("omitempty")
 
 	want := `json:"foo" structs:"bar,omitnested,omitempty" hcl:"-"`
 	if tags.String() != want {
 		t.Errorf("delete option\n\twant: %#v\n\tgot : %#v", want, tags.String())
 	}
 
-	tags.DeleteOptions("structs", "omitnested")
+	tags.MustGet("structs").DeleteOptions("omitnested")
 	want = `json:"foo" structs:"bar,omitempty" hcl:"-"`
 	if tags.String() != want {
 		t.Errorf("delete option\n\twant: %#v\n\tgot : %#v", want, tags.String())
@@ -377,7 +369,7 @@ func TestTags_AddOption(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tags.AddOptions("json", "omitempty")
+	tags.MustGet("json").AddOptions("omitempty")
 
 	want := `json:"foo,omitempty" structs:"bar,omitempty" hcl:"-"`
 	if tags.String() != want {
@@ -385,7 +377,7 @@ func TestTags_AddOption(t *testing.T) {
 	}
 
 	// this shouldn't change anything
-	tags.AddOptions("structs", "omitempty")
+	tags.MustGet("structs").AddOptions("omitempty")
 
 	want = `json:"foo,omitempty" structs:"bar,omitempty" hcl:"-"`
 	if tags.String() != want {
@@ -393,7 +385,7 @@ func TestTags_AddOption(t *testing.T) {
 	}
 
 	// this should append to the existing
-	tags.AddOptions("structs", "omitnested", "flatten")
+	tags.MustGet("structs").AddOptions("omitnested", "flatten")
 	want = `json:"foo,omitempty" structs:"bar,omitempty,omitnested,flatten" hcl:"-"`
 	if tags.String() != want {
 		t.Errorf("add options\n\twant: %#v\n\tgot : %#v", want, tags.String())

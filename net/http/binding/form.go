@@ -59,7 +59,7 @@ func (r *MultipartSource) TrySet(value reflect.Value, field *reflect.StructField
 		return SetByMultipartFormFile(value, field, files)
 	}
 
-	return mtos.SetByKVs(value, field, mtos.KVsSource(r.MultipartForm.Value), key, opt)
+	return mtos.SetValueByKVsWithStructField(value, field, mtos.KVsSource(r.MultipartForm.Value), key, opt)
 }
 
 func SetByMultipartFormFile(value reflect.Value, field *reflect.StructField, files []*multipart.FileHeader) (isSet bool, err error) {

@@ -8,7 +8,6 @@ import (
 	"encoding"
 	"errors"
 	constraintsi "github.com/hopeio/utils/types/constraints"
-	"github.com/spf13/cast"
 	"golang.org/x/exp/constraints"
 	"reflect"
 	"strconv"
@@ -51,8 +50,8 @@ var (
 	reflect.Uint64:  stringConvertUint64,
 }*/
 
-// Deprecated: unsupported string slices array map
-var stringConverterArrays = []StringConverterE{
+// Deprecated: unsupported string slices array map, use mtos.SetValueByString instead
+var stringConverterArrays = [...]StringConverterE{
 	reflect.Invalid: nil,
 	reflect.Bool:    stringConvertBool,
 	reflect.Int:     stringConvertInt,
@@ -65,62 +64,36 @@ var stringConverterArrays = []StringConverterE{
 	reflect.Uint16:  stringConvertUint16,
 	reflect.Uint32:  stringConvertUint32,
 	reflect.Uint64:  stringConvertUint64,
-	reflect.Uintptr: nil,
+	reflect.Uintptr: stringConvertUint,
 	reflect.Float32: stringConvertFloat32,
 	reflect.Float64: stringConvertFloat64,
 }
 
-func GetStringConverter(kind reflect.Kind) StringConverter {
-	if kind == reflect.String {
-		return func(value string) any {
-			return value
-		}
-	}
-	return GetStringConverterE(kind).IgnoreError()
+func GetStringConverter(typ reflect.Type) StringConverter {
+	return GetStringConverterE(typ).IgnoreError()
 }
 
-func GetStringConverterE(kind reflect.Kind) StringConverterE {
+func GetStringConverterE(typ reflect.Type) StringConverterE {
+	kind := typ.Kind()
+	if kind == reflect.Slice || kind == reflect.Array {
+		return getStringConvertArray(typ.Elem())
+	}
+	return GetStringConverterEByKind(kind)
+}
+
+func GetStringConverterByKind(kind reflect.Kind) StringConverter {
+	return GetStringConverterEByKind(kind).IgnoreError()
+}
+
+func GetStringConverterEByKind(kind reflect.Kind) StringConverterE {
 	if kind == reflect.String {
 		return stringConvertString
 	}
+	if kind > reflect.Uint64 {
+		return nil
+	}
 	return stringConverterArrays[kind]
 }
-
-const (
-	array        = 100
-	ArrayBool    = reflect.Bool + array
-	ArrayInt     = reflect.Int + array
-	ArrayInt8    = reflect.Int8 + array
-	ArrayInt16   = reflect.Int16 + array
-	ArrayInt32   = reflect.Int32 + array
-	ArrayInt64   = reflect.Int64 + array
-	ArrayUint    = reflect.Uint + array
-	ArrayUint8   = reflect.Uint8 + array
-	ArrayUint16  = reflect.Uint16 + array
-	ArrayUint32  = reflect.Uint32 + array
-	ArrayUint64  = reflect.Uint64 + array
-	ArrayFloat32 = reflect.Float32 + array
-	ArrayFloat64 = reflect.Float64 + array
-	ArrayString  = reflect.String + array
-)
-
-const (
-	slice        = 200
-	SliceBool    = reflect.Bool + slice
-	SliceInt     = reflect.Int + slice
-	SliceInt8    = reflect.Int8 + slice
-	SliceInt16   = reflect.Int16 + slice
-	SliceInt32   = reflect.Int32 + slice
-	SliceInt64   = reflect.Int64 + slice
-	SliceUint    = reflect.Uint + slice
-	SliceUint8   = reflect.Uint8 + slice
-	SliceUint16  = reflect.Uint16 + slice
-	SliceUint32  = reflect.Uint32 + slice
-	SliceUint64  = reflect.Uint64 + slice
-	SliceFloat32 = reflect.Float32 + slice
-	SliceFloat64 = reflect.Float64 + slice
-	SliceString  = reflect.String + slice
-)
 
 func stringConvertBool(value string) (any, error) {
 	if value == "on" {
@@ -201,16 +174,53 @@ func stringConvertString(value string) (any, error) {
 }
 
 func StringConvertIntFor[T constraints.Signed](value string) (T, error) {
-	i, err := strconv.ParseInt(value, 10, 16)
+	i, err := strconv.ParseInt(value, 10, int(unsafe.Sizeof(T(0))*8))
 	if err != nil {
 		return 0, err
 	}
 	return T(i), nil
 }
 
-// TODO
-func stringConvertArray(value string) (any, error) {
-	return value, nil
+func stringConvertArrayFor[T CanConverter](value string) (any, error) {
+	strs := strings.Split(value, ",")
+	var rets []any
+	kind := reflect.TypeFor[T]().Kind()
+	if kind == reflect.String {
+		return strs, nil
+	}
+	converter := stringConverterArrays[kind]
+	if converter != nil {
+		for i := range strs {
+			v, err := converter(strs[i])
+			if err != nil {
+				return nil, err
+			}
+			rets = append(rets, v)
+		}
+	}
+	return rets, nil
+}
+
+func getStringConvertArray(elemTyp reflect.Type) func(value string) (any, error) {
+	return func(value string) (any, error) {
+		strs := strings.Split(value, ",")
+		rets := make([]any, 0, len(strs))
+		kind := elemTyp.Kind()
+		if kind == reflect.String {
+			return strs, nil
+		}
+		converter := stringConverterArrays[kind]
+		if converter != nil {
+			for i := range strs {
+				v, err := converter(strs[i])
+				if err != nil {
+					return nil, err
+				}
+				rets = append(rets, reflect.ValueOf(v).Convert(elemTyp).Interface())
+			}
+		}
+		return rets, nil
+	}
 }
 
 func stringConvertUint(value string) (any, error) {
@@ -250,15 +260,11 @@ func stringConvertUint64(value string) (any, error) {
 }
 
 func StringConvertUintFor[T constraints.Unsigned](value string) (T, error) {
-	i, err := strconv.ParseInt(value, 10, 16)
+	i, err := strconv.ParseInt(value, 10, int(unsafe.Sizeof(T(0))*8))
 	if err != nil {
 		return 0, err
 	}
 	return T(i), nil
-}
-
-func CastInt64(v any) int64 {
-	return cast.ToInt64(v)
 }
 
 func StringConvert(kind reflect.Kind, value string) (any, error) {
@@ -272,7 +278,11 @@ func StringConvert(kind reflect.Kind, value string) (any, error) {
 	return nil, errors.New("unsupported kind")
 }
 
-func StringConvertFor[T any](value string) (T, error) {
+type CanConverter interface {
+	constraintsi.Number | ~bool | ~uintptr | ~string
+}
+
+func StringConvertFor[T CanConverter](value string) (T, error) {
 	kind := reflect.TypeFor[T]().Kind()
 	if kind == reflect.String {
 		return any(value).(T), nil
@@ -284,61 +294,16 @@ func StringConvertFor[T any](value string) (T, error) {
 		} else {
 			return v.(T), nil
 		}
-	} else {
-		var v T
-		a, ap := any(v), any(&v)
-		vv, ok := a.(encoding.TextUnmarshaler)
-		if !ok {
-			vv, ok = ap.(encoding.TextUnmarshaler)
-		}
-		if ok {
-			err := vv.UnmarshalText([]byte(value))
-			if err != nil {
-				return v, err
-			}
-		}
 	}
 	return *new(T), errors.New("unsupported kind")
 }
 
-func StringConvertNumberFor[T constraintsi.Number](value string) (T, error) {
-	var v T
-	a, ap := any(v), any(&v)
-	switch vv := a.(type) {
-	case encoding.TextUnmarshaler:
-		err := vv.UnmarshalText([]byte(value))
-		if err != nil {
-			return v, err
-		}
-		return v, nil
-	case int, int8, int16, int32, int64:
-		i, err := strconv.ParseInt(value, 10, int(unsafe.Sizeof(v))*8)
-		if err != nil {
-			return v, err
-		}
-		return T(i), nil
-	case uint, uint8, uint16, uint32, uint64:
-		i, err := strconv.ParseUint(value, 10, int(unsafe.Sizeof(v))*8)
-		if err != nil {
-			return v, err
-		}
-		return T(i), nil
-	case float64, float32:
-		f, err := strconv.ParseFloat(value, int(unsafe.Sizeof(v))*8)
-		if err != nil {
-			return v, err
-		}
-		return T(f), nil
+func StringConvertFloatFor[T constraints.Float](value string) (T, error) {
+	f, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return 0, err
 	}
-	switch vv := ap.(type) {
-	case encoding.TextUnmarshaler:
-		err := vv.UnmarshalText([]byte(value))
-		if err != nil {
-			return v, err
-		}
-		return v, nil
-	}
-	return *new(T), errors.New("unsupported type")
+	return T(f), nil
 }
 
 func String(value reflect.Value) string {

@@ -30,7 +30,7 @@ type uriSource fiber.DefaultCtx
 
 // TrySet tries to set a value by request's form source (like map[string][]string)
 func (form *uriSource) TrySet(value reflect.Value, field *reflect.StructField, tagValue string, opt mtos.SetOptions) (isSet bool, err error) {
-	return mtos.SetByKVs(value, field, form, tagValue, opt)
+	return mtos.SetValueByKVsWithStructField(value, field, form, tagValue, opt)
 }
 
 func (form *uriSource) Peek(key string) ([]string, bool) {
