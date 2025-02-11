@@ -12,9 +12,10 @@ const (
 )
 
 type ConditionTag struct {
-	Column string `meta:"column"`
-	Expr   string `meta:"expr"`
-	Op     string `meta:"op"`
+	Column     string `meta:"column"`
+	Expr       string `meta:"expr"`
+	Op         string `meta:"op"`
+	EmptyValid bool   `meta:"emptyvalid"`
 }
 
 func GetSQLCondition(tag reflect.StructTag) (*ConditionTag, error) {

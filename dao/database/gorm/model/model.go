@@ -16,13 +16,13 @@ type Model struct {
 	ID        uint           `json:"id" gorm:"primaryKey"`
 	CreatedAt time.Time      `json:"createdAt" gorm:"default:now()"`
 	UpdatedAt time.Time      `json:"updatedAt"`
-	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+	DeletedAt gorm.DeletedAt `json:"deletedAt,omitzero" gorm:"index"`
 }
 
 type ModelTime struct {
 	CreatedAt time.Time      `json:"createdAt" gorm:"default:now()"`
 	UpdatedAt time.Time      `json:"updatedAt"`
-	DeletedAt gorm.DeletedAt `json:"deletedAt,omitempty" gorm:"default:null"`
+	DeletedAt gorm.DeletedAt `json:"deletedAt,omitzero" gorm:"index"`
 }
 
 type Enum struct {

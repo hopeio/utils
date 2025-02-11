@@ -20,8 +20,8 @@ var (
 	ErrTagKeySyntax   = errors.New("bad syntax for struct tag key")
 	ErrTagValueSyntax = errors.New("bad syntax for struct tag value")
 
-	ErrKeyNotSet      = errors.New("tag key does not exist")
-	ErrTagNotExist    = errors.New("tag does not exist")
+	ErrKeyNotSet      = errors.New("tag key not exist")
+	ErrTagNotExist    = errors.New("tag not exist")
 	ErrTagIgnore      = errors.New("tag ignore")
 	ErrTagKeyMismatch = errors.New("mismatch between key and tag.key")
 )

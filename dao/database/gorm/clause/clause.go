@@ -11,11 +11,17 @@ package clause
 import (
 	dbi "github.com/hopeio/utils/dao/database/sql"
 	"github.com/hopeio/utils/types/param"
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"reflect"
 )
 
-func NewCondition(field any, op dbi.ConditionOperation, args ...any) clause.Expression {
+type ConditionExpr interface {
+	Condition() clause.Expression
+}
+
+var ConditionExprType = reflect.TypeOf((*ConditionExpr)(nil)).Elem()
+
+func NewCondition(field string, op dbi.ConditionOperation, args ...any) clause.Expression {
 	if field == "" {
 		return nil
 	}
@@ -96,14 +102,12 @@ func NewCondition(field any, op dbi.ConditionOperation, args ...any) clause.Expr
 			Value:  args[0],
 		}
 	case dbi.IsNull:
-		return clause.Expr{
-			SQL:  field + " IS NULL",
-			Vars: nil,
+		return IsNull{
+			Column: field,
 		}
 	case dbi.IsNotNull:
-		return clause.Expr{
-			SQL:  field + " IS NOT NULL",
-			Vars: nil,
+		return IsNotNull{
+			Column: field,
 		}
 	}
 	return clause.Expr{
@@ -118,14 +122,6 @@ func SortExpr(column string, typ param.SortType) clause.Expression {
 		desc = true
 	}
 	return clause.OrderBy{Columns: []clause.OrderByColumn{{Column: clause.Column{Name: column, Raw: true}, Desc: desc}}}
-}
-
-type Expression dbi.FilterExpr
-
-func (e *Expression) Clause() func(*gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Where(e.Field+(*dbi.FilterExpr)(e).Operation.SQL(), e.Value...)
-	}
 }
 
 func ByPrimaryKey(v any) clause.Expression {
@@ -164,4 +160,28 @@ type Not struct {
 
 func (n Not) Build(builder clause.Builder) {
 	n.Expr.NegationBuild(builder)
+}
+
+type IsNull struct {
+	Column any
+}
+
+func (in IsNull) Build(builder clause.Builder) {
+	builder.WriteQuoted(in.Column)
+	builder.WriteString(" IS NULL")
+}
+
+func (in IsNull) NegationBuild(builder clause.Builder) {
+	IsNotNull(in).Build(builder)
+}
+
+type IsNotNull IsNull
+
+func (inn IsNotNull) Build(builder clause.Builder) {
+	builder.WriteQuoted(inn.Column)
+	builder.WriteString(" IS NOT NULL")
+}
+
+func (inn IsNotNull) NegationBuild(builder clause.Builder) {
+	IsNull(inn).Build(builder)
 }

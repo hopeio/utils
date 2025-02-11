@@ -7,7 +7,6 @@ package converter
 import (
 	"encoding"
 	"errors"
-	constraintsi "github.com/hopeio/utils/types/constraints"
 	"golang.org/x/exp/constraints"
 	"reflect"
 	"strconv"
@@ -181,7 +180,7 @@ func StringConvertIntFor[T constraints.Signed](value string) (T, error) {
 	return T(i), nil
 }
 
-func stringConvertArrayFor[T CanConverter](value string) (any, error) {
+func stringConvertArrayFor[T any](value string) (any, error) {
 	strs := strings.Split(value, ",")
 	var rets []any
 	kind := reflect.TypeFor[T]().Kind()
@@ -278,11 +277,7 @@ func StringConvert(kind reflect.Kind, value string) (any, error) {
 	return nil, errors.New("unsupported kind")
 }
 
-type CanConverter interface {
-	constraintsi.Number | ~bool | ~uintptr | ~string
-}
-
-func StringConvertFor[T CanConverter](value string) (T, error) {
+func StringConvertFor[T any](value string) (T, error) {
 	kind := reflect.TypeFor[T]().Kind()
 	if kind == reflect.String {
 		return any(value).(T), nil

@@ -7,14 +7,13 @@
 package fiber
 
 import (
-	"github.com/gofiber/fiber/v3"
 	httpi "github.com/hopeio/utils/net/http"
 	stringsi "github.com/hopeio/utils/strings"
+	"github.com/valyala/fasthttp"
 	"net/url"
 )
 
-func GetToken(ctx fiber.Ctx) string {
-	req := ctx.Request()
+func GetToken(req *fasthttp.Request) string {
 	if token := stringsi.BytesToString(req.Header.Peek(httpi.HeaderAuthorization)); token != "" {
 		return token
 	}

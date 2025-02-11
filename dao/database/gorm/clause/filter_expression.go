@@ -8,7 +8,7 @@ import (
 
 type FilterExpr dbi.FilterExpr
 
-func (f *FilterExpr) Clause() clause.Expression {
+func (f *FilterExpr) Condition() clause.Expression {
 	f.Field = strings.TrimSpace(f.Field)
 
 	return NewCondition(f.Field, f.Operation, f.Value...)
@@ -16,13 +16,13 @@ func (f *FilterExpr) Clause() clause.Expression {
 
 type FilterExprs dbi.FilterExprs
 
-func (f FilterExprs) Clause() clause.Expression {
+func (f FilterExprs) Condition() clause.Expression {
 	var exprs []clause.Expression
 	for _, filter := range f {
 		filter.Field = strings.TrimSpace(filter.Field)
 
 		filterExpr := (FilterExpr)(filter)
-		expr := filterExpr.Clause()
+		expr := filterExpr.Condition()
 		if expr != nil {
 			exprs = append(exprs, expr)
 		}

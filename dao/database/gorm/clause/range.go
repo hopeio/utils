@@ -14,7 +14,7 @@ import (
 
 type Range[T param.Ordered] param.Range[T]
 
-func (req *Range[T]) Clause() clause.Expression {
+func (req *Range[T]) Condition() clause.Expression {
 	if req == nil || req.Field == "" {
 		return nil
 	}
@@ -32,7 +32,7 @@ func (req *Range[T]) Clause() clause.Expression {
 			if req.Type.ContainsEnd() {
 				leftOp = dbi.LessOrEqual
 			}
-			return clause.Where{Exprs: []clause.Expression{NewCondition(req.Field, leftOp, req.Begin), NewCondition(req.Field, rightOp, req.End)}}
+			return clause.AndConditions{Exprs: []clause.Expression{NewCondition(req.Field, leftOp, req.Begin), NewCondition(req.Field, rightOp, req.End)}}
 		}
 	}
 
@@ -55,22 +55,22 @@ func (req *Range[T]) Clause() clause.Expression {
 
 type RangeInTwoField[T param.Ordered] param.RangeInTwoField[T]
 
-func (req *RangeInTwoField[T]) Clause() clause.Expression {
+func (req *RangeInTwoField[T]) Condition() clause.Expression {
 	if req == nil || req.BeginField == "" || req.EndField == "" {
 		return nil
 	}
 	if req.Type == 0 {
-		return clause.Where{Exprs: []clause.Expression{clause.Or(Between{Column: req.BeginField, Begin: req.Begin, End: req.End}, Between{Column: req.EndField, Begin: req.Begin, End: req.End})}}
+		return clause.AndConditions{Exprs: []clause.Expression{clause.Or(Between{Column: req.BeginField, Begin: req.Begin, End: req.End}, Between{Column: req.EndField, Begin: req.Begin, End: req.End})}}
 	}
 	if req.Type.HasBegin() && req.Type.HasEnd() {
 		if req.Type.ContainsBegin() && req.Type.ContainsEnd() {
-			return clause.Where{Exprs: []clause.Expression{clause.Or(Between{Column: req.BeginField, Begin: req.Begin, End: req.End}, Between{Column: req.EndField, Begin: req.Begin, End: req.End})}}
+			return clause.AndConditions{Exprs: []clause.Expression{clause.Or(Between{Column: req.BeginField, Begin: req.Begin, End: req.End}, Between{Column: req.EndField, Begin: req.Begin, End: req.End})}}
 		} else {
 			if req.Type.ContainsBegin() {
-				return clause.Where{Exprs: []clause.Expression{clause.Or(Between{Column: req.BeginField, Begin: req.Begin, End: req.End}, clause.And(clause.Gte{Column: req.EndField, Value: req.Begin}, clause.Lt{Column: req.EndField, Value: req.End}))}}
+				return clause.AndConditions{Exprs: []clause.Expression{clause.Or(Between{Column: req.BeginField, Begin: req.Begin, End: req.End}, clause.And(clause.Gte{Column: req.EndField, Value: req.Begin}, clause.Lt{Column: req.EndField, Value: req.End}))}}
 			}
 			if req.Type.ContainsEnd() {
-				return clause.Where{Exprs: []clause.Expression{clause.And(clause.Gt{Column: req.BeginField, Value: req.Begin}, clause.Lte{Column: req.EndField, Value: req.End}), Between{Column: req.EndField, Begin: req.Begin, End: req.End}}}
+				return clause.AndConditions{Exprs: []clause.Expression{clause.And(clause.Gt{Column: req.BeginField, Value: req.Begin}, clause.Lte{Column: req.EndField, Value: req.End}), Between{Column: req.EndField, Begin: req.Begin, End: req.End}}}
 			}
 
 		}

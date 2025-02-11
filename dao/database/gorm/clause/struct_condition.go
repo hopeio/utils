@@ -2,6 +2,8 @@ package clause
 
 import (
 	sql2 "github.com/hopeio/utils/dao/database/sql"
+	"github.com/hopeio/utils/reflect/structtag"
+	stringsi "github.com/hopeio/utils/strings"
 	"gorm.io/gorm/clause"
 	"reflect"
 )
@@ -34,25 +36,50 @@ func ConditionByStruct(param any) (clause.Expression, error) {
 	for i := range v.NumField() {
 		field := v.Field(i)
 		fieldKind := field.Kind()
-		if fieldKind == reflect.Interface || fieldKind == reflect.Ptr || fieldKind == reflect.Struct {
-			if t.Field(i).Anonymous {
-				subCondition, err := ConditionByStruct(field.Interface())
-				if err != nil {
-					return nil, err
-				}
-				conds = append(conds, subCondition)
-			}
-		} else {
-			condition, err := sql2.GetSQLCondition(t.Field(i).Tag)
+		structField := t.Field(i)
+		empty := field.IsZero()
+		tag, ok := structField.Tag.Lookup(sql2.CondiTagName)
+		if tag == "-" {
+			continue
+		}
+		if !ok && structField.Anonymous && (fieldKind == reflect.Interface || fieldKind == reflect.Ptr || fieldKind == reflect.Struct) {
+			subCondition, err := ConditionByStruct(field.Interface())
 			if err != nil {
 				return nil, err
+			}
+			conds = append(conds, subCondition)
+		} else {
+			if tag == "" && empty {
+				continue
+			}
+			if structField.Type.Implements(ConditionExprType) {
+				if (fieldKind == reflect.Interface || fieldKind == reflect.Ptr) && field.Elem().IsZero() {
+					continue
+				}
+				conds = append(conds, field.Interface().(ConditionExpr).Condition())
+				continue
+			}
+			if fieldKind == reflect.Struct && field.Addr().Type().Implements(ConditionExprType) {
+				conds = append(conds, field.Addr().Interface().(ConditionExpr).Condition())
+				continue
+			}
+			if tag == "" {
+				conds = append(conds, clause.Eq{Column: stringsi.CamelToSnake(structField.Name), Value: v.Field(i).Interface()})
+				continue
+			}
+			condition, err := structtag.ParseSettingTagToStruct[sql2.ConditionTag](tag, ';')
+			if err != nil {
+				return nil, err
+			}
+			if !condition.EmptyValid && empty {
+				continue
 			}
 			if condition.Expr != "" {
 				conds = append(conds, clause.Expr{SQL: condition.Expr, Vars: []any{v.Field(i).Interface()}})
 			} else {
-				var column any = condition.Column
+				column := condition.Column
 				if column == "" {
-					column = clause.Column{Table: clause.CurrentTable, Name: t.Field(i).Name}
+					column = stringsi.CamelToSnake(structField.Name)
 				}
 				if condition.Op == "" {
 					condition.Op = "Equal"
@@ -61,6 +88,9 @@ func ConditionByStruct(param any) (clause.Expression, error) {
 				conds = append(conds, NewCondition(column, op, v.Field(i).Interface()))
 			}
 		}
+	}
+	if len(conds) == 0 {
+		return nil, nil
 	}
 	return clause.AndConditions{Exprs: conds}, nil
 }
