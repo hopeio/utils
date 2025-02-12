@@ -144,13 +144,13 @@ func ResponseWrite(w http.ResponseWriter, httpres IHttpResponse) (int, error) {
 }
 
 type HttpResponseRawBody struct {
-	Status int               `json:"status,omitempty"`
-	Header map[string]string `json:"header,omitempty"`
-	Body   []byte            `json:"body,omitempty"`
+	Status  int               `json:"status,omitempty"`
+	Headers map[string]string `json:"header,omitempty"`
+	Body    []byte            `json:"body,omitempty"`
 }
 
 func (res *HttpResponseRawBody) RespHeader() map[string]string {
-	return res.Header
+	return res.Headers
 }
 
 func (res *HttpResponseRawBody) WriteTo(writer io.Writer) (int64, error) {
@@ -168,20 +168,21 @@ func (res *HttpResponseRawBody) StatusCode() int {
 
 func (res *HttpResponseRawBody) Response(w http.ResponseWriter) (int, error) {
 	w.WriteHeader(res.Status)
-	for k, v := range res.Header {
-		w.Header().Set(k, v)
+	header := w.Header()
+	for k, v := range res.Headers {
+		header.Set(k, v)
 	}
 	return w.Write(res.Body)
 }
 
 type HttpResponse struct {
-	Status int               `json:"status,omitempty"`
-	Header map[string]string `json:"header,omitempty"`
-	Body   WriterToCloser    `json:"body,omitempty"`
+	Status  int               `json:"status,omitempty"`
+	Headers map[string]string `json:"header,omitempty"`
+	Body    WriterToCloser    `json:"body,omitempty"`
 }
 
 func (res *HttpResponse) RespHeader() map[string]string {
-	return res.Header
+	return res.Headers
 }
 
 func (res *HttpResponse) WriteTo(writer io.Writer) (int64, error) {
@@ -198,7 +199,7 @@ func (res *HttpResponse) StatusCode() int {
 
 func (res *HttpResponse) Response(w http.ResponseWriter) (int, error) {
 	w.WriteHeader(res.Status)
-	for k, v := range res.Header {
+	for k, v := range res.Headers {
 		w.Header().Set(k, v)
 	}
 	i, err := res.Body.WriteTo(w)
@@ -241,14 +242,14 @@ func ResErrorFromError(err error) *ResError {
 }
 
 type HttpResponseStream struct {
-	Status int               `json:"status,omitempty"`
-	Header map[string]string `json:"header,omitempty"`
-	Body   iter.Seq[[]byte]  `json:"body,omitempty"`
+	Status  int               `json:"status,omitempty"`
+	Headers map[string]string `json:"header,omitempty"`
+	Body    iter.Seq[[]byte]  `json:"body,omitempty"`
 }
 
 func (res *HttpResponseStream) RespHeader() map[string]string {
-	res.Header[HeaderTransferEncoding] = "chunked"
-	return res.Header
+	res.Headers[HeaderTransferEncoding] = "chunked"
+	return res.Headers
 }
 
 func (res *HttpResponseStream) WriteTo(writer io.Writer) (int64, error) {

@@ -29,7 +29,7 @@ type ResponseRecorder struct {
 	// method.
 	Code int
 
-	HeaderMap http.Header
+	Headers http.Header
 
 	// Body is the buffer to which the Handler's Write calls are sent.
 	// If nil, the Writes are silently discarded.
@@ -45,9 +45,9 @@ type ResponseRecorder struct {
 // NewRecorder returns an initialized ResponseRecorder.
 func NewRecorder(header http.Header) *ResponseRecorder {
 	return &ResponseRecorder{
-		HeaderMap: header,
-		Body:      new(bytes.Buffer),
-		Code:      200,
+		Headers: header,
+		Body:    new(bytes.Buffer),
+		Code:    200,
 	}
 }
 
@@ -60,10 +60,10 @@ const DefaultRemoteAddr = "1.2.3.4"
 // written after a handler completes, use the Result method and see
 // the returned Response value's Header.
 func (rw *ResponseRecorder) Header() http.Header {
-	m := rw.HeaderMap
+	m := rw.Headers
 	if m == nil {
 		m = make(http.Header)
-		rw.HeaderMap = m
+		rw.Headers = m
 	}
 	return m
 }
@@ -119,8 +119,8 @@ func (rw *ResponseRecorder) WriteString(str string) (int, error) {
 // WriteHeader implements http.ResponseWriter.
 func (rw *ResponseRecorder) WriteHeader(code int) {
 	rw.Code = code
-	if rw.HeaderMap == nil {
-		rw.HeaderMap = make(http.Header)
+	if rw.Headers == nil {
+		rw.Headers = make(http.Header)
 	}
 }
 
@@ -158,7 +158,7 @@ func (rw *ResponseRecorder) Result() *http.Response {
 		ProtoMajor: 1,
 		ProtoMinor: 1,
 		StatusCode: rw.Code,
-		Header:     rw.HeaderMap,
+		Header:     rw.Headers,
 	}
 	rw.result = res
 	if res.StatusCode == 0 {
@@ -172,7 +172,7 @@ func (rw *ResponseRecorder) Result() *http.Response {
 	}
 	res.ContentLength = parseContentLength(res.Header.Get("Content-Length"))
 
-	if trailers, ok := rw.HeaderMap["Trailer"]; ok {
+	if trailers, ok := rw.Headers["Trailer"]; ok {
 		res.Trailer = make(http.Header, len(trailers))
 		for _, k := range trailers {
 			k = http.CanonicalHeaderKey(k)
@@ -180,7 +180,7 @@ func (rw *ResponseRecorder) Result() *http.Response {
 				// Ignore since forbidden by RFC 7230, section 4.1.2.
 				continue
 			}
-			vv, ok := rw.HeaderMap[k]
+			vv, ok := rw.Headers[k]
 			if !ok {
 				continue
 			}
@@ -189,7 +189,7 @@ func (rw *ResponseRecorder) Result() *http.Response {
 			res.Trailer[k] = vv2
 		}
 	}
-	for k, vv := range rw.HeaderMap {
+	for k, vv := range rw.Headers {
 		if !strings.HasPrefix(k, http.TrailerPrefix) {
 			continue
 		}
@@ -224,5 +224,5 @@ func (rw *ResponseRecorder) Reset() {
 	rw.wroteHeader = false
 	rw.Code = http.StatusOK
 	rw.Body.Reset()
-	delete(rw.HeaderMap, "Content-Type")
+	delete(rw.Headers, "Content-Type")
 }
