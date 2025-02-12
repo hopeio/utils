@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/hopeio/utils/validation/validator"
+	"github.com/hopeio/utils/validate/validator"
 	"google.golang.org/grpc"
 )
 
@@ -22,7 +22,7 @@ func validate(
 ) (resp interface{}, err error) {
 
 	if err := validator.Validator.Struct(req); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, validator.Trans(err))
+		return nil, status.Errorf(codes.InvalidArgument, validator.TransError(err))
 	}
 
 	return handler(ctx, req)

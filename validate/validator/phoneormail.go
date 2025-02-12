@@ -4,7 +4,7 @@
  * @Created by jyb
  */
 
-package validation
+package validator
 
 import "regexp"
 

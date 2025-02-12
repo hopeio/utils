@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/reflect/mtos"
-	"github.com/hopeio/utils/validation/validator"
+	"github.com/hopeio/utils/validate/validator"
 	"io"
 	"net/http"
 )

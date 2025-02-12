@@ -45,7 +45,7 @@ var _ StructValidator = &defaultValidator{}
 func (v *defaultValidator) ValidateStruct(obj interface{}) error {
 	v.lazyinit()
 	if err := v.validate.Struct(obj); err != nil {
-		return errors.New(Trans(err))
+		return errors.New(TransError(err))
 	}
 	return nil
 }

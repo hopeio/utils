@@ -7,6 +7,7 @@
 package validator
 
 import (
+	"errors"
 	"reflect"
 	"regexp"
 	"strings"
@@ -25,7 +26,7 @@ var (
 
 func init() {
 	zhcn := zh.New()
-	uni := ut.New(zhcn, zhcn)
+	uni := ut.New(zhcn)
 
 	// this is usually know or extracted from http 'Accept-Language' header
 	// also see uni.FindTranslator(...)
@@ -43,7 +44,7 @@ func init() {
 		return sf.Name
 	})
 	Validator.RegisterValidation("phone", func(fl validator.FieldLevel) bool {
-		match, _ := regexp.MatchString(`^1[0-9]{10}$`, fl.Field().String())
+		match, _ := regexp.MatchString(phonePattern, fl.Field().String())
 		return match
 	})
 	Validator.RegisterTranslation("phone", trans, func(ut ut.Translator) error {
@@ -51,12 +52,13 @@ func init() {
 	}, translateFunc)
 }
 
-func Trans(err error) string {
+func TransError(err error) string {
 	if err == nil {
 		return ""
 	}
 	var msg []string
-	ve, ok := err.(validator.ValidationErrors)
+	var ve validator.ValidationErrors
+	ok := errors.As(err, &ve)
 	if !ok {
 		return err.Error()
 	}
@@ -69,7 +71,7 @@ func Trans(err error) string {
 func translateFunc(ut ut.Translator, fe validator.FieldError) string {
 	t, err := ut.T(fe.Tag(), fe.Field())
 	if err != nil {
-		log.Errorf("警告: 翻译字段错误: %#v", fe)
+		log.Error("translate err:", fe)
 		return fe.(error).Error()
 	}
 

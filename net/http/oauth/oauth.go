@@ -164,7 +164,7 @@ func (s *Server) redirect(req *param.OauthReq, data map[string]interface{}, w ht
 	w.WriteHeader(http.StatusFound)
 	if req.LoginURI != "" {
 		w.Header().Set(httpi.HeaderLocation, req.LoginURI)
-		w.Write([]byte("未登录"))
+		w.Write([]byte("not logged in"))
 		return
 	}
 	uri, err := s.GetRedirectURI(req, data)
