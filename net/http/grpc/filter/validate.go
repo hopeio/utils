@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/hopeio/utils/validate/validator"
+	"github.com/hopeio/utils/validation/validator"
 	"google.golang.org/grpc"
 )
 
