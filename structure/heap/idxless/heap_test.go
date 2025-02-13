@@ -26,7 +26,7 @@ func TestNewHeap(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		arr = append(arr, rand.Intn(10000))
 	}
-	heap := NewFromArr(arr)
+	heap := NewFromArray(arr)
 	fmt.Println(heap)
 	for i := 0; i < 10; i++ {
 		heap.Push(rand.Intn(10000))
@@ -54,7 +54,7 @@ func (f Foos) Less(i, j int) bool {
 
 func TestPushHeap(t *testing.T) {
 	var arr Foos
-	heap := NewFromArr(arr)
+	heap := NewFromArray(arr)
 	heap.Push(Foo{10, 10})
 	heap.Push(Foo{5, 5})
 	heap.Push(Foo{8, 8})
@@ -111,7 +111,7 @@ func TestMaintainsPriorityTinyQueue(t *testing.T) {
 }
 
 func TestAcceptsDataInConstructor(t *testing.T) {
-	q := NewFromArr(data)
+	q := NewFromArray(data)
 	var result []float64
 	for len(q) > 0 {
 		v, _ := q.Pop()

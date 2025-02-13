@@ -6,8 +6,38 @@
 
 package types
 
-import "golang.org/x/exp/constraints"
+import (
+	constraintsi "github.com/hopeio/utils/types/constraints"
+)
 
-type Enum[T constraints.Unsigned | ~string] struct {
-	Value T
+type Enum[T constraintsi.Enum] int32
+
+func (t Enum[T]) MarshalText() ([]byte, error) {
+	return T(t).MarshalText()
+}
+func (t *Enum[T]) UnmarshalText(data []byte) error {
+	var tt T
+	err := tt.UnmarshalText(data)
+	if err != nil {
+		return err
+	}
+	*t = Enum[T](tt)
+	return nil
+}
+
+func (t *Enum[T]) UnmarshalJSON(data []byte) error {
+	data = data[1 : len(data)-1]
+	return t.UnmarshalText(data)
+}
+
+func (t Enum[T]) MarshalJSON() ([]byte, error) {
+	text, err := t.MarshalText()
+	if err != nil {
+		return nil, err
+	}
+	buf := make([]byte, 0, len(text)+2)
+	buf[0] = '"'
+	buf = append(buf, text...)
+	buf[len(buf)-1] = '"'
+	return buf, nil
 }

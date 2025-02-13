@@ -14,7 +14,7 @@ import (
 
 func TestList(t *testing.T) {
 	// 打印链表信息
-	var l LinkedList[int]
+	var l BaseLinkedList[int]
 	fmt.Println("###############################################")
 	fmt.Println("链表长度为：", l.Len())
 	fmt.Println("链表是否为空:", l.IsEmpty())

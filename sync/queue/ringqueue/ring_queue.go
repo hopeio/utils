@@ -1,4 +1,4 @@
-package esqueue
+package ringqueue
 
 import (
 	"fmt"
@@ -8,29 +8,29 @@ import (
 
 // esQueue
 
-type esCache[T any] struct {
+type cache[T any] struct {
 	putNo uint32
 	getNo uint32
 	value T
 }
 
 // lock free queue
-type EsQueue[T any] struct {
+type RingQueue[T any] struct {
 	capacity uint32
 	capMod   uint32
 	putPos   uint32
 	getPos   uint32
-	cache    []esCache[T]
+	cache    []cache[T]
 	zero     T
 }
 
-func NewEsQueue[T any](capacity uint32) *EsQueue[T] {
-	q := new(EsQueue[T])
+func New[T any](capacity uint32) *RingQueue[T] {
+	q := new(RingQueue[T])
 	q.capacity = minQuantity(capacity)
 	q.capMod = q.capacity - 1
 	q.putPos = 0
 	q.getPos = 0
-	q.cache = make([]esCache[T], q.capacity)
+	q.cache = make([]cache[T], q.capacity)
 	for i := range q.cache {
 		cache := &q.cache[i]
 		cache.getNo = uint32(i)
@@ -42,18 +42,18 @@ func NewEsQueue[T any](capacity uint32) *EsQueue[T] {
 	return q
 }
 
-func (q *EsQueue[T]) String() string {
+func (q *RingQueue[T]) String() string {
 	getPos := atomic.LoadUint32(&q.getPos)
 	putPos := atomic.LoadUint32(&q.putPos)
 	return fmt.Sprintf("ListQueue{capacity: %v, capMod: %v, putPos: %v, getPos: %v}",
 		q.capacity, q.capMod, putPos, getPos)
 }
 
-func (q *EsQueue[T]) Capaciity() uint32 {
+func (q *RingQueue[T]) Capaciity() uint32 {
 	return q.capacity
 }
 
-func (q *EsQueue[T]) Quantity() uint32 {
+func (q *RingQueue[T]) Quantity() uint32 {
 	var putPos, getPos uint32
 	var quantity uint32
 	getPos = atomic.LoadUint32(&q.getPos)
@@ -69,9 +69,9 @@ func (q *EsQueue[T]) Quantity() uint32 {
 }
 
 // put queue functions
-func (q *EsQueue[T]) Put(val T) (ok bool, quantity uint32) {
+func (q *RingQueue[T]) Put(val T) (ok bool, quantity uint32) {
 	var putPos, putPosNew, getPos, posCnt uint32
-	var cache *esCache[T]
+	var cache *cache[T]
 	capMod := q.capMod
 
 	getPos = atomic.LoadUint32(&q.getPos)
@@ -110,7 +110,7 @@ func (q *EsQueue[T]) Put(val T) (ok bool, quantity uint32) {
 }
 
 // puts queue functions
-func (q *EsQueue[T]) Puts(values []T) (puts, quantity uint32) {
+func (q *RingQueue[T]) Puts(values []T) (puts, quantity uint32) {
 	var putPos, putPosNew, getPos, posCnt, putCnt uint32
 	capMod := q.capMod
 
@@ -158,9 +158,9 @@ func (q *EsQueue[T]) Puts(values []T) (puts, quantity uint32) {
 }
 
 // get queue functions
-func (q *EsQueue[T]) Get() (val T, ok bool, quantity uint32) {
+func (q *RingQueue[T]) Get() (val T, ok bool, quantity uint32) {
 	var putPos, getPos, getPosNew, posCnt uint32
-	var cache *esCache[T]
+	var cache *cache[T]
 	capMod := q.capMod
 
 	putPos = atomic.LoadUint32(&q.putPos)
@@ -200,7 +200,7 @@ func (q *EsQueue[T]) Get() (val T, ok bool, quantity uint32) {
 }
 
 // gets queue functions
-func (q *EsQueue[T]) Gets(values []T) (gets, quantity uint32) {
+func (q *RingQueue[T]) Gets(values []T) (gets, quantity uint32) {
 	var putPos, getPos, getPosNew, posCnt, getCnt uint32
 	capMod := q.capMod
 

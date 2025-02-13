@@ -10,15 +10,15 @@ import (
 	"github.com/hopeio/utils/cmp"
 )
 
-func HeapInit[T any](heap []T, less cmp.LessFunc[T]) {
+func Init[T any](heap []T, cmp cmp.CompareFunc[T]) {
 	// heapify
 	n := len(heap)
 	for i := n/2 - 1; i >= 0; i-- {
-		Down(heap, i, n, less)
+		Down(heap, i, n, cmp)
 	}
 }
 
-func Down[T any](heap []T, i0, n int, less cmp.LessFunc[T]) bool {
+func Down[T any](heap []T, i0, n int, cmp cmp.CompareFunc[T]) bool {
 	i := i0
 	for {
 		j1 := 2*i + 1
@@ -26,10 +26,10 @@ func Down[T any](heap []T, i0, n int, less cmp.LessFunc[T]) bool {
 			break
 		}
 		j := j1 // left child
-		if j2 := j1 + 1; j2 < n && less(heap[j2], heap[j1]) {
+		if j2 := j1 + 1; j2 < n && cmp(heap[j2], heap[j1]) < 0 {
 			j = j2 // = 2*i + 2  // right child
 		}
-		if !less(heap[j], heap[i]) {
+		if cmp(heap[j], heap[i]) >= 0 {
 			break
 		}
 		heap[i], heap[j] = heap[j], heap[i]
@@ -38,11 +38,11 @@ func Down[T any](heap []T, i0, n int, less cmp.LessFunc[T]) bool {
 	return i > i0
 }
 
-func Up[T any](heap []T, j int, less cmp.LessFunc[T]) {
+func Up[T any](heap []T, j int, cmp cmp.CompareFunc[T]) {
 
 	for {
 		i := (j - 1) / 2 // parent
-		if i == j || !less(heap[j], heap[i]) {
+		if i == j || cmp(heap[j], heap[i]) >= 0 {
 			break
 		}
 		heap[i], heap[j] = heap[j], heap[i]
@@ -50,20 +50,20 @@ func Up[T any](heap []T, j int, less cmp.LessFunc[T]) {
 	}
 }
 
-func Fix[T any](heap []T, i int, less cmp.LessFunc[T]) {
-	if !Down(heap, i, len(heap), less) {
-		Up(heap, i, less)
+func Fix[T any](heap []T, i int, cmp cmp.CompareFunc[T]) {
+	if !Down(heap, i, len(heap), cmp) {
+		Up(heap, i, cmp)
 	}
 }
 
 // 与Down一致，不同的写法
-func AdjustDown[T any](heap []T, i int, less cmp.LessFunc[T]) {
+func AdjustDown[T any](heap []T, i int, cmp cmp.CompareFunc[T]) {
 	child := leftChild(i)
 	for child < len(heap) {
-		if child+1 < len(heap) && less(heap[child+1], heap[child]) {
+		if child+1 < len(heap) && cmp(heap[child+1], heap[child]) < 0 {
 			child++
 		}
-		if !less(heap[child], heap[i]) {
+		if cmp(heap[child], heap[i]) >= 0 {
 			break
 		}
 		heap[i], heap[child] = heap[child], heap[i]
@@ -73,9 +73,9 @@ func AdjustDown[T any](heap []T, i int, less cmp.LessFunc[T]) {
 }
 
 // 与Up一致，不同的写法
-func AdjustUp[T any](heap []T, i int, less cmp.LessFunc[T]) {
+func AdjustUp[T any](heap []T, i int, cmp cmp.CompareFunc[T]) {
 	p := parent(i)
-	for p >= 0 && less(heap[i], heap[p]) {
+	for p >= 0 && cmp(heap[i], heap[p]) < 0 {
 		heap[i], heap[p] = heap[p], heap[i]
 		i = p
 		p = parent(i)

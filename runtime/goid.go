@@ -12,8 +12,8 @@ import (
 	"strings"
 )
 
-// GoID returns the ID of current goroutine.
-func GoID() (id uint64) {
+// GetGoID returns the ID of current goroutine.
+func GetGoID() (id uint64) {
 	var buf [30]byte
 	runtime.Stack(buf[:], false)
 	for i := 10; buf[i] != ' '; i++ {

@@ -4,9 +4,9 @@ import (
 	"testing"
 )
 
-func newSkipList() *SkipList {
-	return New(func(a, b interface{}) bool {
-		if a.(int) < b.(int) {
+func newSkipList() *SkipList[int, any] {
+	return New[int, any](func(a, b int) bool {
+		if a < b {
 			return true
 		}
 		return false

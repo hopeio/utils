@@ -73,7 +73,7 @@ func (f *Field) Generate() *ast.Field {
 	}
 }
 
-func GetDecl() *ast.GenDecl {
+func NewDecl() *ast.GenDecl {
 	fset := token.NewFileSet()
 	f, _ := parser.ParseFile(fset, "tmpl.go", Tmpl, parser.ParseComments)
 	decl := f.Decls[1].(*ast.GenDecl)
@@ -107,7 +107,7 @@ type ConvertInterface interface {
 
 func Convert(c ConvertInterface, filename string) {
 	tables := c.Tables()
-	decl := GetDecl()
+	decl := NewDecl()
 	var buf bytes.Buffer
 	buf.WriteString(FileTmpl)
 	for i := range tables {
@@ -118,7 +118,7 @@ func Convert(c ConvertInterface, filename string) {
 }
 
 func ConvertByTable(c ConvertInterface, tableName string) {
-	decl := GetDecl()
+	decl := NewDecl()
 	var buf bytes.Buffer
 	buf.WriteString(FileTmpl)
 	buf.Write(genTable(c, tableName, decl))

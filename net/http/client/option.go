@@ -15,6 +15,13 @@ type Option func(req *Client) *Client
 
 type HttpRequestOption func(req *http.Request)
 
+func (o HttpRequestOption) ToOption() Option {
+	return func(c *Client) *Client {
+		c.HttpRequestOptions(o)
+		return c
+	}
+}
+
 func AddHeader(k, v string) HttpRequestOption {
 	return func(req *http.Request) {
 		req.Header.Set(k, v)

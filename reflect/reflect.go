@@ -176,7 +176,7 @@ func InitStruct(v reflect.Value) {
 	}
 }
 
-func GetSubField[T any](v any) *T {
+func GetSubFieldByType[T any](v any) *T {
 	value := reflect.ValueOf(v).Elem()
 	for i := range value.NumField() {
 		if dao, ok := value.Field(i).Interface().(T); ok {

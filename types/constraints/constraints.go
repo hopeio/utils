@@ -7,6 +7,7 @@
 package constraints
 
 import (
+	"encoding"
 	"golang.org/x/exp/constraints"
 )
 
@@ -31,3 +32,9 @@ type Basic interface {
 }
 
 type Ordered constraints.Ordered
+
+type Enum interface {
+	constraints.Integer
+	encoding.TextMarshaler
+	encoding.TextUnmarshaler
+}

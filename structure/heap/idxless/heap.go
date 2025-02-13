@@ -17,7 +17,7 @@ func New[E any, I Interface[E]](capacity int) Heap[E, I] {
 	return make([]E, 0, capacity)
 }
 
-func NewFromArr[E any, I Interface[E]](arr I) Heap[E, I] {
+func NewFromArray[E any, I Interface[E]](arr I) Heap[E, I] {
 	heap := Heap[E, I](arr)
 	for i := 1; i < len(arr); i++ {
 		heap.up(i)

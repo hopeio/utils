@@ -46,7 +46,7 @@ func GetSubData[RES ResponseInterface[T], T any](url string, param any) (T, erro
 	return NewSubDataRequest[RES, T](client.GetRequest(url)).SubData(param)
 }
 
-func GetWithOption[RES ResponseInterface[T], T any](url string, param any, options ...client.Option) (T, error) {
+func GetWithOptions[RES ResponseInterface[T], T any](url string, param any, options ...client.Option) (T, error) {
 	var response RES
 	req := new(client.Client)
 	for _, opt := range options {

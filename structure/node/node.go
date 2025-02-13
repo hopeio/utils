@@ -9,39 +9,35 @@ package node
 import "golang.org/x/exp/constraints"
 
 type Node[T any] struct {
+	Next  *Node[T]
 	Value T
 }
 
-type ListNode[T any] struct {
-	Next  *ListNode[T]
-	Value T
-}
-
-type LinkNode[T any] struct {
-	Prev, Next *LinkNode[T]
+type LinkedNode[T any] struct {
+	Prev, Next *LinkedNode[T]
 	Value      T
 }
 
-type ListKNode[K comparable, T any] struct {
-	Next  *ListKNode[K, T]
+type KNode[K comparable, T any] struct {
+	Next  *KNode[K, T]
 	Key   K
 	Value T
 }
 
-type LinkKNode[K comparable, T any] struct {
-	Prev, Next *LinkKNode[K, T]
+type LinkedKNode[K comparable, T any] struct {
+	Prev, Next *LinkedKNode[K, T]
 	Key        K
 	Value      T
 }
 
-type ListOrdKNode[K constraints.Ordered, T any] struct {
-	Next  *LinkKNode[K, T]
+type OrdKNode[K constraints.Ordered, T any] struct {
+	Next  *OrdKNode[K, T]
 	Key   K
 	Value T
 }
 
-type LinkOrdKNode[K comparable, T any] struct {
-	Prev, Next *LinkOrdKNode[K, T]
+type LinkedOrdKNode[K constraints.Ordered, T any] struct {
+	Prev, Next *LinkedOrdKNode[K, T]
 	Key        K
 	Value      T
 }

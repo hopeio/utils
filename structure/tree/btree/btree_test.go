@@ -8,7 +8,7 @@ package btree
 
 import (
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"os"
 	"sort"
 	"strconv"
@@ -26,7 +26,6 @@ func init() {
 		seed = time.Now().UnixNano()
 	}
 	fmt.Printf("seed: %d\n", seed)
-	rand.Seed(seed)
 }
 
 func randKeys(N int) (keys []string) {
@@ -39,11 +38,11 @@ func randKeys(N int) (keys []string) {
 
 var flatLeaf = true
 
-func (tr *BTree) print() {
+func (tr *BTree[T]) print() {
 	tr.root.print(0, tr.Height())
 }
 
-func (n *node) print(level, height int) {
+func (n *node[T]) print(level, height int) {
 	if n == nil {
 		println("NIL")
 		return
@@ -72,12 +71,12 @@ func (n *node) print(level, height int) {
 	}
 }
 
-func (tr *BTree) deepPrint() {
+func (tr *BTree[T]) deepPrint() {
 	fmt.Printf("%#v\n", tr)
 	tr.root.deepPrint(0)
 }
 
-func (n *node) deepPrint(level int) {
+func (n *node[T]) deepPrint(level int) {
 	if n == nil {
 		fmt.Printf("%v %#v\n", strings.Repeat("  ", level), n)
 		return
@@ -112,14 +111,19 @@ type pair struct {
 	value interface{}
 }
 
-func pairLess(a, b interface{}) bool {
-	return a.(pair).key < b.(pair).key
+func pairLess(a, b pair) int {
+	if a.key < b.key {
+		return -1
+	} else if a.key > b.key {
+		return 1
+	}
+	return 0
 }
 
 func TestDescend(t *testing.T) {
-	tr := New(pairLess)
+	tr := New[pair](pairLess)
 	var count int
-	tr.Descend(pair{"1", nil}, func(item interface{}) bool {
+	tr.Descend(&pair{"1", nil}, func(item pair) bool {
 		count++
 		return true
 	})
@@ -132,23 +136,23 @@ func TestDescend(t *testing.T) {
 		tr.Set(pair{keys[len(keys)-1], nil})
 	}
 	var exp []string
-	tr.Descend(nil, func(item interface{}) bool {
-		exp = append(exp, item.(pair).key)
+	tr.Descend(nil, func(item pair) bool {
+		exp = append(exp, item.key)
 		return true
 	})
 	for i := 999; i >= 0; i-- {
 		var key string
 		key = fmt.Sprintf("%03d", i)
 		var all []string
-		tr.Descend(pair{key, nil}, func(item interface{}) bool {
-			all = append(all, item.(pair).key)
+		tr.Descend(&pair{key, nil}, func(item pair) bool {
+			all = append(all, item.key)
 			return true
 		})
 		for len(exp) > 0 && key < exp[0] {
 			exp = exp[1:]
 		}
 		var count int
-		tr.Descend(pair{key, nil}, func(item interface{}) bool {
+		tr.Descend(&pair{key, nil}, func(item pair) bool {
 			if count == (i+1)%maxItems {
 				return false
 			}
@@ -169,7 +173,7 @@ func TestDescend(t *testing.T) {
 func TestAscend(t *testing.T) {
 	tr := New(pairLess)
 	var count int
-	tr.Ascend(pair{"1", nil}, func(item interface{}) bool {
+	tr.Ascend(&pair{"1", nil}, func(item pair) bool {
 		count++
 		return true
 	})
@@ -190,8 +194,8 @@ func TestAscend(t *testing.T) {
 			key = fmt.Sprintf("%03d", i)
 		}
 		var all []string
-		tr.Ascend(pair{key, nil}, func(item interface{}) bool {
-			all = append(all, item.(pair).key)
+		tr.Ascend(&pair{key, nil}, func(item pair) bool {
+			all = append(all, item.key)
 			return true
 		})
 
@@ -199,7 +203,7 @@ func TestAscend(t *testing.T) {
 			exp = exp[1:]
 		}
 		var count int
-		tr.Ascend(pair{key, nil}, func(item interface{}) bool {
+		tr.Ascend(&pair{key, nil}, func(item pair) bool {
 			if count == (i+1)%maxItems {
 				return false
 			}
@@ -224,10 +228,10 @@ func TestBTree(t *testing.T) {
 
 	// insert all items
 	for _, key := range keys {
-		item := tr.Set(pair{key, key})
+		_, ok := tr.Set(pair{key, key})
 		tr.sane()
-		if item != nil {
-			t.Fatal("expected nil")
+		if ok {
+			t.Fatal("expected not ok")
 		}
 	}
 
@@ -238,18 +242,18 @@ func TestBTree(t *testing.T) {
 
 	// get each value
 	for _, key := range keys {
-		item := tr.Get(pair{key, nil})
-		if item == nil || item.(pair).value != key {
-			t.Fatalf("expected '%v', got '%v'", key, item.(pair).value)
+		item, ok := tr.Get(pair{key, nil})
+		if !ok || item.value != key {
+			t.Fatalf("expected '%v', got '%v'", key, item.value)
 		}
 	}
 
 	// scan all items
 	var last string
-	all := make(map[string]interface{})
-	tr.Ascend(nil, func(item interface{}) bool {
-		key := item.(pair).key
-		value := item.(pair).value
+	all := make(map[string]any)
+	tr.Ascend(nil, func(item pair) bool {
+		key := item.key
+		value := item.value
 		if key <= last {
 			t.Fatal("out of order")
 		}
@@ -267,9 +271,9 @@ func TestBTree(t *testing.T) {
 	// reverse all items
 	var prev string
 	all = make(map[string]interface{})
-	tr.Descend(nil, func(item interface{}) bool {
-		key := item.(pair).key
-		value := item.(pair).value
+	tr.Descend(nil, func(item pair) bool {
+		key := item.key
+		value := item.value
 		if prev != "" && key >= prev {
 			t.Fatal("out of order")
 		}
@@ -285,15 +289,15 @@ func TestBTree(t *testing.T) {
 	}
 
 	// try to get an invalid item
-	item := tr.Get(pair{"invalid", nil})
-	if item != nil {
-		t.Fatal("expected nil")
+	_, ok := tr.Get(pair{"invalid", nil})
+	if ok {
+		t.Fatal("expected not ok")
 	}
 
 	// scan and quit at various steps
 	for i := 0; i < 100; i++ {
 		var j int
-		tr.Ascend(nil, func(item interface{}) bool {
+		tr.Ascend(nil, func(item pair) bool {
 			if j == i {
 				return false
 			}
@@ -305,7 +309,7 @@ func TestBTree(t *testing.T) {
 	// reverse and quit at various steps
 	for i := 0; i < 100; i++ {
 		var j int
-		tr.Descend(nil, func(item interface{}) bool {
+		tr.Descend(nil, func(item pair) bool {
 			if j == i {
 				return false
 			}
@@ -316,11 +320,11 @@ func TestBTree(t *testing.T) {
 
 	// delete half the items
 	for _, key := range keys[:len(keys)/2] {
-		item := tr.Delete(pair{key, nil})
-		if item == nil {
-			t.Fatal("expected true")
+		item, ok := tr.Delete(pair{key, nil})
+		if !ok {
+			t.Fatal("expected ok")
 		}
-		value := item.(pair).value
+		value := item.value
 		if value == nil || value.(string) != key {
 			t.Fatalf("expected '%v', got '%v'", key, value)
 		}
@@ -333,19 +337,19 @@ func TestBTree(t *testing.T) {
 
 	// try delete half again
 	for _, key := range keys[:len(keys)/2] {
-		item := tr.Delete(pair{key, nil})
+		_, ok := tr.Delete(pair{key, nil})
 		tr.sane()
-		if item != nil {
-			t.Fatal("expected false")
+		if ok {
+			t.Fatal("expected not ok")
 		}
 	}
 
 	// try delete half again
 	for _, key := range keys[:len(keys)/2] {
-		item := tr.Delete(pair{key, nil})
+		_, ok := tr.Delete(pair{key, nil})
 		tr.sane()
-		if item != nil {
-			t.Fatal("expected false")
+		if ok {
+			t.Fatal("expected not ok")
 		}
 	}
 
@@ -357,9 +361,9 @@ func TestBTree(t *testing.T) {
 	// scan items
 	last = ""
 	all = make(map[string]interface{})
-	tr.Ascend(nil, func(item interface{}) bool {
-		key := item.(pair).key
-		value := item.(pair).value
+	tr.Ascend(nil, func(item pair) bool {
+		key := item.key
+		value := item.value
 		if key <= last {
 			t.Fatal("out of order")
 		}
@@ -376,12 +380,12 @@ func TestBTree(t *testing.T) {
 
 	// replace second half
 	for _, key := range keys[len(keys)/2:] {
-		item := tr.Set(pair{key, key})
+		item, ok := tr.Set(pair{key, key})
 		tr.sane()
-		if item == nil {
-			t.Fatal("expected not nil")
+		if !ok {
+			t.Fatal("expected ok")
 		}
-		value := item.(pair).value
+		value := item.value
 		if value == nil || value.(string) != key {
 			t.Fatalf("expected '%v', got '%v'", key, value)
 		}
@@ -389,12 +393,12 @@ func TestBTree(t *testing.T) {
 
 	// delete next half the items
 	for _, key := range keys[len(keys)/2:] {
-		item := tr.Delete(pair{key, nil})
+		item, ok := tr.Delete(pair{key, nil})
 		tr.sane()
-		if item == nil {
-			t.Fatal("expected not nil")
+		if !ok {
+			t.Fatal("expected ok")
 		}
-		value := item.(pair).value
+		value := item.value
 		if value == nil || value.(string) != key {
 			t.Fatalf("expected '%v', got '%v'", key, value)
 		}
@@ -406,28 +410,28 @@ func TestBTree(t *testing.T) {
 	}
 
 	// do some stuff on an empty tree
-	item = tr.Get(pair{keys[0], nil})
-	if item != nil {
-		t.Fatal("expected nil")
+	_, ok = tr.Get(pair{keys[0], nil})
+	if ok {
+		t.Fatal("expected not ok")
 	}
-	tr.Ascend(nil, func(item interface{}) bool {
+	tr.Ascend(nil, func(item pair) bool {
 		t.Fatal("should not be reached")
 		return true
 	})
-	tr.Descend(nil, func(item interface{}) bool {
+	tr.Descend(nil, func(item pair) bool {
 		t.Fatal("should not be reached")
 		return true
 	})
 
-	item = tr.Delete(pair{"invalid", nil})
+	_, ok = tr.Delete(pair{"invalid", nil})
 	tr.sane()
-	if item != nil {
-		t.Fatal("expected nil")
+	if ok {
+		t.Fatal("expected not ok")
 	}
 }
 
 func BenchmarkTidwallSequentialSet(b *testing.B) {
-	tr := New(intLess)
+	tr := New[int](intLess)
 	keys := rand.Perm(b.N)
 	sort.Ints(keys)
 	b.ResetTimer()
@@ -437,7 +441,7 @@ func BenchmarkTidwallSequentialSet(b *testing.B) {
 }
 
 func BenchmarkTidwallSequentialGet(b *testing.B) {
-	tr := New(intLess)
+	tr := New[int](intLess)
 	keys := rand.Perm(b.N)
 	sort.Ints(keys)
 	for i := 0; i < b.N; i++ {
@@ -529,12 +533,12 @@ func TestBTree256(t *testing.T) {
 			}
 		}
 		for _, i := range rand.Perm(256) {
-			item := tr.Get(pair{fmt.Sprintf("%d", i), nil})
-			if item == nil {
-				t.Fatal("expected true")
+			item, ok := tr.Get(pair{fmt.Sprintf("%d", i), nil})
+			if !ok {
+				t.Fatal("expected ok")
 			}
-			if item.(pair).value.(int) != i {
-				t.Fatalf("expected %d, got %d", i, item.(pair).value.(int))
+			if item.value.(int) != i {
+				t.Fatalf("expected %d, got %d", i, item.value.(int))
 			}
 		}
 		for _, i := range rand.Perm(256) {
@@ -545,36 +549,35 @@ func TestBTree256(t *testing.T) {
 			}
 		}
 		for _, i := range rand.Perm(256) {
-			item := tr.Get(pair{fmt.Sprintf("%d", i), nil})
-			if item != nil {
-				t.Fatal("expected nil")
+			_, ok := tr.Get(pair{fmt.Sprintf("%d", i), nil})
+			if ok {
+				t.Fatal("expected not ok")
 			}
 		}
 	}
 }
-func shuffle(r *rand.Rand, keys []int) {
+func shuffle(keys []int) {
 	for i := range keys {
-		j := r.Intn(i + 1)
+		j := rand.IntN(i + 1)
 		keys[i], keys[j] = keys[j], keys[i]
 	}
 }
 
-func intLess(a, b interface{}) bool {
-	return a.(int) < b.(int)
+func intLess(a, b int) int {
+	return a - b
 }
 
 func TestRandom(t *testing.T) {
-	r := rand.New(rand.NewSource(seed))
 	N := 200000
 	keys := rand.Perm(N)
 	func() {
 		defer func() {
 			msg := fmt.Sprint(recover())
-			if msg != "nil less" {
-				t.Fatal("expected 'nil less' panic")
+			if msg != "nil cmp func" {
+				t.Fatal("expected 'nil cmp func' panic")
 			}
 		}()
-		New(nil)
+		New[int](nil)
 		t.Fatalf("reached invalid code")
 	}()
 	tr := New(intLess)
@@ -582,39 +585,29 @@ func TestRandom(t *testing.T) {
 		// tr.sane()
 	}
 	checkSane()
-	if tr.Min() != nil {
+	if _, ok := tr.Min(); ok {
 		t.Fatalf("expected nil")
 	}
-	if tr.Max() != nil {
+	if _, ok := tr.Max(); ok {
 		t.Fatalf("expected nil")
 	}
-	if tr.PopMin() != nil {
+	if _, ok := tr.PopMin(); ok {
 		t.Fatalf("expected nil")
 	}
-	if tr.PopMax() != nil {
+	if _, ok := tr.PopMax(); ok {
 		t.Fatalf("expected nil")
 	}
 	if tr.Height() != 0 {
 		t.Fatalf("expected 0, got %d", tr.Height())
 	}
 	checkSane()
-	func() {
-		defer func() {
-			msg := fmt.Sprint(recover())
-			if msg != "nil item" {
-				t.Fatal("expected 'nil item' panic")
-			}
-		}()
-		tr.Set(nil)
-		t.Fatalf("reached invalid code")
-	}()
 	// keys = keys[:rand.Intn(len(keys))]
-	shuffle(r, keys)
+	shuffle(keys)
 	for i := 0; i < len(keys); i++ {
-		prev := tr.Set(keys[i])
+		_, ok := tr.Set(keys[i])
 		checkSane()
-		if prev != nil {
-			t.Fatalf("expected nil")
+		if ok {
+			t.Fatalf("expected not ok")
 		}
 		if i%12345 == 0 {
 			tr.sane()
@@ -623,7 +616,7 @@ func TestRandom(t *testing.T) {
 	tr.sane()
 	sort.Ints(keys)
 	var n int
-	tr.Ascend(nil, func(item interface{}) bool {
+	tr.Ascend(nil, func(item int) bool {
 		n++
 		return false
 	})
@@ -632,7 +625,7 @@ func TestRandom(t *testing.T) {
 	}
 
 	n = 0
-	tr.Ascend(nil, func(item interface{}) bool {
+	tr.Ascend(nil, func(item int) bool {
 		if item != keys[n] {
 			t.Fatalf("expected %d, got %d", keys[n], item)
 		}
@@ -647,7 +640,7 @@ func TestRandom(t *testing.T) {
 	}
 
 	n = 0
-	tr.Descend(nil, func(item interface{}) bool {
+	tr.Descend(nil, func(item int) bool {
 		n++
 		return false
 	})
@@ -655,7 +648,7 @@ func TestRandom(t *testing.T) {
 		t.Fatalf("expected 1, got %d", n)
 	}
 	n = 0
-	tr.Descend(nil, func(item interface{}) bool {
+	tr.Descend(nil, func(item int) bool {
 		if item != keys[len(keys)-n-1] {
 			t.Fatalf("expected %d, got %d", keys[len(keys)-n-1], item)
 		}
@@ -676,7 +669,7 @@ func TestRandom(t *testing.T) {
 	n = 0
 	for i := 0; i < 1000; i++ {
 		n := 0
-		tr.Ascend(nil, func(item interface{}) bool {
+		tr.Ascend(nil, func(item int) bool {
 			if n == i {
 				return false
 			}
@@ -691,7 +684,7 @@ func TestRandom(t *testing.T) {
 	n = 0
 	for i := 0; i < 1000; i++ {
 		n = 0
-		tr.Descend(nil, func(item interface{}) bool {
+		tr.Descend(nil, func(item int) bool {
 			if n == i {
 				return false
 			}
@@ -705,9 +698,9 @@ func TestRandom(t *testing.T) {
 
 	sort.Ints(keys)
 	for i := 0; i < len(keys); i++ {
-		var res interface{}
+		var res int
 		var j int
-		tr.Ascend(keys[i], func(item interface{}) bool {
+		tr.Ascend(&keys[i], func(item int) bool {
 			if j == 0 {
 				res = item
 			}
@@ -719,9 +712,9 @@ func TestRandom(t *testing.T) {
 		}
 	}
 	for i := len(keys) - 1; i >= 0; i-- {
-		var res interface{}
+		var res int
 		var j int
-		tr.Descend(keys[i], func(item interface{}) bool {
+		tr.Descend(&keys[i], func(item int) bool {
 			if j == 0 {
 				res = item
 			}
@@ -736,94 +729,90 @@ func TestRandom(t *testing.T) {
 	if tr.Height() == 0 {
 		t.Fatalf("expected non-zero")
 	}
-	if tr.Min() != keys[0] {
-		t.Fatalf("expected '%v', got '%v'", keys[0], tr.Min())
+	if v, ok := tr.Min(); !ok || v != keys[0] {
+		t.Fatalf("expected '%v', got '%v'", keys[0], v)
 	}
-	if tr.Max() != keys[len(keys)-1] {
-		t.Fatalf("expected '%v', got '%v'", keys[len(keys)-1], tr.Max())
+	if v, ok := tr.Max(); !ok || v != keys[len(keys)-1] {
+		t.Fatalf("expected '%v', got '%v'", keys[len(keys)-1], v)
 	}
-	min := tr.PopMin()
+	min, ok := tr.PopMin()
 	checkSane()
-	if min != keys[0] {
+	if !ok || min != keys[0] {
 		t.Fatalf("expected '%v', got '%v'", keys[0], min)
 	}
-	max := tr.PopMax()
+	max, ok := tr.PopMax()
 	checkSane()
-	if max != keys[len(keys)-1] {
+	if !ok || max != keys[len(keys)-1] {
 		t.Fatalf("expected '%v', got '%v'", keys[len(keys)-1], max)
 	}
 	tr.Set(min)
 	tr.Set(max)
-	shuffle(r, keys)
+	shuffle(keys)
 	var hint PathHint
 	for i := 0; i < len(keys); i++ {
-		prev := tr.Get(keys[i])
-		if prev == nil || prev.(int) != keys[i] {
+		prev, ok := tr.Get(keys[i])
+		if !ok || prev != keys[i] {
 			t.Fatalf("expected '%v', got '%v'", keys[i], prev)
 		}
-		prev = tr.GetHint(keys[i], &hint)
-		if prev == nil || prev.(int) != keys[i] {
+		prev, ok = tr.GetHint(keys[i], &hint)
+		if !ok || prev != keys[i] {
 			t.Fatalf("expected '%v', got '%v'", keys[i], prev)
 		}
 	}
 	sort.Ints(keys)
 	for i := 0; i < len(keys); i++ {
-		item := tr.PopMin()
-		if item != keys[i] {
+		item, ok := tr.PopMin()
+		if !ok || item != keys[i] {
 			t.Fatalf("expected '%v', got '%v'", keys[i], item)
 		}
 	}
 	for i := 0; i < len(keys); i++ {
-		prev := tr.Set(keys[i])
-		if prev != nil {
-			t.Fatalf("expected nil")
+		_, ok := tr.Set(keys[i])
+		if ok {
+			t.Fatalf("expected not ok")
 		}
 	}
 	for i := len(keys) - 1; i >= 0; i-- {
-		item := tr.PopMax()
-		if item != keys[i] {
+		item, ok := tr.PopMax()
+		if !ok || item != keys[i] {
 			t.Fatalf("expected '%v', got '%v'", keys[i], item)
 		}
 	}
 	for i := 0; i < len(keys); i++ {
-		prev := tr.Set(keys[i])
-		if prev != nil {
-			t.Fatalf("expected nil")
+		_, ok := tr.Set(keys[i])
+		if ok {
+			t.Fatalf("expected not ok")
 		}
-	}
-
-	if tr.Delete(nil) != nil {
-		t.Fatal("expected nil")
 	}
 	checkSane()
 
-	shuffle(r, keys)
-	item := tr.Delete(keys[len(keys)/2])
+	shuffle(keys)
+	item, ok := tr.Delete(keys[len(keys)/2])
 	checkSane()
 	if item != keys[len(keys)/2] {
 		t.Fatalf("expected '%v', got '%v'", keys[len(keys)/2], item)
 	}
-	item2 := tr.Delete(keys[len(keys)/2])
+	item2, ok := tr.Delete(keys[len(keys)/2])
 	checkSane()
-	if item2 != nil {
-		t.Fatalf("expected '%v', got '%v'", nil, item2)
+	if ok {
+		t.Fatalf("expected not ok, got '%v'", item2)
 	}
 
 	tr.Set(item)
 	checkSane()
 	for i := 0; i < len(keys); i++ {
-		prev := tr.Delete(keys[i])
+		prev, ok := tr.Delete(keys[i])
 		checkSane()
-		if prev == nil || prev.(int) != keys[i] {
+		if !ok || prev != keys[i] {
 			t.Fatalf("expected '%v', got '%v'", keys[i], prev)
 		}
-		prev = tr.Get(keys[i])
-		if prev != nil {
-			t.Fatalf("expected nil")
+		prev, ok = tr.Get(keys[i])
+		if ok {
+			t.Fatalf("expected not ok")
 		}
-		prev = tr.GetHint(keys[i], &hint)
-		if prev != nil {
-			t.Fatalf("expected nil")
+		prev, ok = tr.GetHint(keys[i], &hint)
+		if ok {
+			t.Fatalf("expected not ok")
 		}
 		if i%12345 == 0 {
 			tr.sane()
@@ -832,57 +821,46 @@ func TestRandom(t *testing.T) {
 	if tr.Height() != 0 {
 		t.Fatalf("expected 0, got %d", tr.Height())
 	}
-	shuffle(r, keys)
+	shuffle(keys)
 	for i := 0; i < len(keys); i++ {
-		prev := tr.Load(keys[i])
+		_, ok := tr.Load(keys[i])
 		checkSane()
-		if prev != nil {
-			t.Fatalf("expected nil")
+		if ok {
+			t.Fatalf("expected not ok")
 		}
 	}
 	for i := 0; i < len(keys); i++ {
-		prev := tr.Get(keys[i])
-		if prev == nil || prev.(int) != keys[i] {
+		prev, ok := tr.Get(keys[i])
+		if !ok || prev != keys[i] {
 			t.Fatalf("expected '%v', got '%v'", keys[i], prev)
 		}
 	}
-	shuffle(r, keys)
+	shuffle(keys)
 	for i := 0; i < len(keys); i++ {
-		prev := tr.Delete(keys[i])
+		prev, ok := tr.Delete(keys[i])
 		checkSane()
-		if prev == nil || prev.(int) != keys[i] {
+		if !ok || prev != keys[i] {
 			t.Fatalf("expected '%v', got '%v'", keys[i], prev)
 		}
-		prev = tr.Get(keys[i])
-		if prev != nil {
-			t.Fatalf("expected nil")
+		prev, ok = tr.Get(keys[i])
+		if ok {
+			t.Fatalf("expected not ok")
 		}
 	}
 	sort.Ints(keys)
 	for i := 0; i < len(keys); i++ {
-		prev := tr.Load(keys[i])
+		_, ok := tr.Load(keys[i])
 		checkSane()
-		if prev != nil {
-			t.Fatalf("expected nil")
+		if ok {
+			t.Fatalf("expected not ok")
 		}
 	}
-	shuffle(r, keys)
-	item = tr.Load(keys[0])
+	shuffle(keys)
+	item, ok = tr.Load(keys[0])
 	checkSane()
-	if item != keys[0] {
+	if !ok || item != keys[0] {
 		t.Fatalf("expected '%v', got '%v'", keys[0], item)
 	}
-	func() {
-		defer func() {
-			msg := fmt.Sprint(recover())
-			if msg != "nil item" {
-				t.Fatal("expected 'nil item' panic")
-			}
-		}()
-		tr.Load(nil)
-		checkSane()
-		t.Fatalf("reached invalid code")
-	}()
 }
 
 // type intT struct {
@@ -975,7 +953,7 @@ func TestRandom(t *testing.T) {
 // 	})
 // }
 
-func (n *node) saneheight(height, maxheight int) bool {
+func (n *node[T]) saneheight(height, maxheight int) bool {
 	if n.leaf {
 		if height != maxheight {
 			return false
@@ -996,7 +974,7 @@ func (n *node) saneheight(height, maxheight int) bool {
 
 // btree_saneheight returns true if the height of all leaves match the height
 // of the btree.
-func (tr *BTree) saneheight() bool {
+func (tr *BTree[T]) saneheight() bool {
 	height := tr.Height()
 	if tr.root != nil {
 		if height == 0 {
@@ -1007,7 +985,7 @@ func (tr *BTree) saneheight() bool {
 	return height == 0
 }
 
-func (n *node) deepcount() int {
+func (n *node[T]) deepcount() int {
 	count := int(n.numItems)
 	if !n.leaf {
 		for i := int16(0); i <= n.numItems; i++ {
@@ -1018,14 +996,14 @@ func (n *node) deepcount() int {
 }
 
 // btree_deepcount returns the number of items in the btree.
-func (tr *BTree) deepcount() int {
+func (tr *BTree[T]) deepcount() int {
 	if tr.root != nil {
 		return tr.root.deepcount()
 	}
 	return 0
 }
 
-func (tr *BTree) nodesaneprops(n *node, height int) bool {
+func (tr *BTree[T]) nodesaneprops(n *node[T], height int) bool {
 	if height == 1 {
 		if n.numItems < 1 || n.numItems > maxItems {
 			return false
@@ -1048,28 +1026,29 @@ func (tr *BTree) nodesaneprops(n *node, height int) bool {
 	return true
 }
 
-func (tr *BTree) saneprops() bool {
+func (tr *BTree[T]) saneprops() bool {
 	if tr.root != nil {
 		return tr.nodesaneprops(tr.root, 1)
 	}
 	return true
 }
 
-func (tr *BTree) saneorder() bool {
-	var last interface{}
+func (tr *BTree[T]) saneorder() bool {
+	var last T
 	var count int
 	var bad bool
-	tr.Walk(func(items []interface{}) {
+	tr.Walk(func(items []T) {
 		for _, item := range items {
 			if bad {
 				return
 			}
-			if last != nil {
-				if !tr.less(last, item) {
+			if count != 0 {
+				if tr.cmp(last, item) >= 0 {
 					bad = true
 					return
 				}
 			}
+
 			last = item
 			count++
 		}
@@ -1082,7 +1061,7 @@ func (tr *BTree) saneorder() bool {
 // - deep count matches the btree count.
 // - all nodes have the correct number of items and counts.
 // - all items are in order.
-func (tr *BTree) sane() {
+func (tr *BTree[T]) sane() {
 	if tr == nil {
 		panic("nil tree")
 	}

@@ -13,14 +13,14 @@ import (
 )
 
 func TestQueueDequeueEmpty(t *testing.T) {
-	q := NewLockFreeQueue()
-	if q.Dequeue() != nil {
+	q := NewLockFreeQueue[any]()
+	if _, ok := q.Dequeue(); ok {
 		t.Fatalf("dequeue empty queue returns non-nil")
 	}
 }
 
 func TestQueue_Length(t *testing.T) {
-	q := NewLockFreeQueue()
+	q := NewLockFreeQueue[any]()
 	if q.Length() != 0 {
 		t.Fatalf("empty queue has non-zero length")
 	}
@@ -37,7 +37,7 @@ func TestQueue_Length(t *testing.T) {
 }
 
 func ExampleQueue() {
-	q := NewLockFreeQueue()
+	q := NewLockFreeQueue[string]()
 
 	q.Enqueue("1st item")
 	q.Enqueue("2nd item")
@@ -53,36 +53,36 @@ func ExampleQueue() {
 	// 3rd item
 }
 
-type queueInterface interface {
-	Enqueue(interface{})
-	Dequeue() interface{}
+type queueInterface[T any] interface {
+	Enqueue(T)
+	Dequeue() (T, bool)
 }
 
 type mutexQueue struct {
-	v  []interface{}
+	v  []int
 	mu sync.Mutex
 }
 
 func newMutexQueue() *mutexQueue {
-	return &mutexQueue{v: make([]interface{}, 0)}
+	return &mutexQueue{v: make([]int, 0)}
 }
 
-func (q *mutexQueue) Enqueue(v interface{}) {
+func (q *mutexQueue) Enqueue(v int) {
 	q.mu.Lock()
 	q.v = append(q.v, v)
 	q.mu.Unlock()
 }
 
-func (q *mutexQueue) Dequeue() interface{} {
+func (q *mutexQueue) Dequeue() (int, bool) {
 	q.mu.Lock()
 	if len(q.v) == 0 {
 		q.mu.Unlock()
-		return nil
+		return 0, false
 	}
 	v := q.v[0]
 	q.v = q.v[1:]
 	q.mu.Unlock()
-	return v
+	return v, true
 }
 
 func BenchmarkQueue(b *testing.B) {
@@ -91,10 +91,10 @@ func BenchmarkQueue(b *testing.B) {
 	for range length {
 		inputs = append(inputs, rand.Int())
 	}
-	q, mq := NewLockFreeQueue(), newMutexQueue()
+	q, mq := NewLockFreeQueue[int](), newMutexQueue()
 	b.ResetTimer()
 
-	for _, q := range [...]queueInterface{q, mq} {
+	for _, q := range [...]queueInterface[int]{q, mq} {
 		b.Run(fmt.Sprintf("%T", q), func(b *testing.B) {
 			var c int64
 			b.RunParallel(func(pb *testing.PB) {

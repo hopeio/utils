@@ -28,7 +28,7 @@ func AddElementFunc(hWnd win.HWND, hWndList *[]win.HWND) uintptr {
 }
 
 // 获取桌面下的所有窗口句柄，包括没有Windows标题的或者是窗口的。
-func GetDesktopWindowHWND() []win.HWND {
+func DesktopWindowHWND() []win.HWND {
 	var hWndList []win.HWND
 	hL := &hWndList
 	_, _, err := syscall.Syscall(procEnumWindows.Addr(), 2, syscall.NewCallback(AddElementFunc), uintptr(unsafe.Pointer(hL)), 0)

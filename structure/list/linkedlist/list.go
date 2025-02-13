@@ -8,40 +8,32 @@ package linkedlist
 
 import (
 	"errors"
-	"github.com/hopeio/utils/cmp"
-	"golang.org/x/exp/constraints"
 )
 
-// 链表结点
-type Node[T cmp.CompareKey[V], V constraints.Ordered] struct {
-	data       T
-	next, prev *Node[T, V]
-}
-
 // 链表
-type LinkedList[T cmp.CompareKey[V], V constraints.Ordered] struct {
-	head, tail *Node[T, V]
+type LinkedList[T comparable] struct {
+	head, tail *Node[T]
 	size       int
 }
 
 // 新建空链表，即创建Node指针head，用来指向链表第一个结点，初始为空
-func New[T cmp.CompareKey[V], V constraints.Ordered]() *LinkedList[T, V] {
-	l := LinkedList[T, V]{}
+func New[T comparable]() *LinkedList[T] {
+	l := LinkedList[T]{}
 	return &l
 }
 
 // 是否为空链表
-func (l *LinkedList[T, V]) IsEmpty() bool {
+func (l *LinkedList[T]) IsEmpty() bool {
 	return l.size == 0
 }
 
 // 获取链表长度
-func (l *LinkedList[T, V]) Len() int {
+func (l *LinkedList[T]) Len() int {
 	return l.size
 }
 
 // 是否含有指定结点
-func (l *LinkedList[T, V]) Exist(node *Node[T, V]) bool {
+func (l *LinkedList[T]) Exist(node *Node[T]) bool {
 	var p = l.head
 	for p != nil {
 		if p == node {
@@ -54,11 +46,11 @@ func (l *LinkedList[T, V]) Exist(node *Node[T, V]) bool {
 }
 
 // 获取含有指定数据的第一个结点
-func (l *LinkedList[T, V]) GetNode(e T) *Node[T, V] {
+func (l *LinkedList[T]) GetNode(e T) *Node[T] {
 	var p = l.head
 	for p != nil {
 		//找到该数据所在结点
-		if e.CompareKey() == p.data.CompareKey() {
+		if e == p.data {
 			return p
 		} else {
 			p = p.next
@@ -68,9 +60,9 @@ func (l *LinkedList[T, V]) GetNode(e T) *Node[T, V] {
 }
 
 // 在链表尾部添加数据
-func (l *LinkedList[T, V]) Append(e T) {
+func (l *LinkedList[T]) Append(e T) {
 	//为数据创建新结点
-	newNode := Node[T, V]{}
+	newNode := Node[T]{}
 	newNode.data = e
 	newNode.next = nil
 
@@ -85,8 +77,8 @@ func (l *LinkedList[T, V]) Append(e T) {
 }
 
 // 在链表头部插入数据
-func (l *LinkedList[T, V]) InsertHead(e T) {
-	newNode := Node[T, V]{}
+func (l *LinkedList[T]) InsertHead(e T) {
+	newNode := Node[T]{}
 	newNode.data = e
 	newNode.next = l.head
 	l.head = &newNode
@@ -97,10 +89,10 @@ func (l *LinkedList[T, V]) InsertHead(e T) {
 }
 
 // 在指定结点后面插入数据
-func (l *LinkedList[T, V]) InsertAfterNode(pre *Node[T, V], e T) error {
+func (l *LinkedList[T]) InsertAfterNode(pre *Node[T], e T) error {
 	//如果链表中存在该结点，才进行插入
 	if l.Exist(pre) {
-		newNode := Node[T, V]{}
+		newNode := Node[T]{}
 		newNode.data = e
 		if pre.next == nil {
 			l.Append(e)
@@ -115,11 +107,11 @@ func (l *LinkedList[T, V]) InsertAfterNode(pre *Node[T, V], e T) error {
 }
 
 // 在第一次出现指定数据的结点后插入数据,若链表中无该数据，返回false
-func (l *LinkedList[T, V]) InsertAfterData(preData T, e T) error {
+func (l *LinkedList[T]) InsertAfterData(preData T, e T) error {
 	var p = l.head
 	for p != nil {
 		//找到该数据所在结点
-		if p.data.CompareKey() == preData.CompareKey() {
+		if p.data == preData {
 			l.InsertAfterNode(p, e)
 			return nil
 		} else {
@@ -131,7 +123,7 @@ func (l *LinkedList[T, V]) InsertAfterData(preData T, e T) error {
 }
 
 // 在指定下标处插入数据
-func (l *LinkedList[T, V]) Insert(position int, e T) error {
+func (l *LinkedList[T]) Insert(position int, e T) error {
 	if position < 0 {
 		return errors.New("下标不能为负数")
 	} else if position == 0 {
@@ -161,7 +153,7 @@ func (l *LinkedList[T, V]) Insert(position int, e T) error {
 }
 
 // 删除指定结点
-func (l *LinkedList[T, V]) DeleteNode(node *Node[T, V]) {
+func (l *LinkedList[T]) DeleteNode(node *Node[T]) {
 	//存在该结点
 	if l.Exist(node) {
 		//如果是头部结点
@@ -189,7 +181,7 @@ func (l *LinkedList[T, V]) DeleteNode(node *Node[T, V]) {
 }
 
 // 删除第一个含指定数据的结点
-func (l *LinkedList[T, V]) Delete(e T) {
+func (l *LinkedList[T]) Delete(e T) {
 	p := l.GetNode(e)
 	if p == nil {
 		return
@@ -198,7 +190,7 @@ func (l *LinkedList[T, V]) Delete(e T) {
 }
 
 // 遍历链表
-func (l *LinkedList[T, V]) traverse(f func(T)) {
+func (l *LinkedList[T]) traverse(f func(T)) {
 	var p = l.head
 	if l.IsEmpty() {
 		return

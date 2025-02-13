@@ -2,7 +2,6 @@ package skiplist
 
 import (
 	"github.com/hopeio/utils/cmp"
-	"golang.org/x/exp/constraints"
 	"math/rand"
 )
 
@@ -10,7 +9,7 @@ import (
 // It support insertion, lookup, and deletion operations with O(log n) time complexity
 // Paper: Pugh, William (June 1990). "Skip lists: a probabilistic alternative to balanced
 // trees". Communications of the ACM 33 (6): 668–676
-type SkipList[K constraints.Ordered, V any] struct {
+type SkipList[K any, V any] struct {
 	header   *skiplistitem[K, V]
 	len      int
 	MaxLevel int
@@ -19,7 +18,7 @@ type SkipList[K constraints.Ordered, V any] struct {
 }
 
 // New returns a skiplist.
-func New[K constraints.Ordered, V any](compare cmp.LessFunc[K]) *SkipList[K, V] {
+func New[K any, V any](compare cmp.LessFunc[K]) *SkipList[K, V] {
 	return &SkipList[K, V]{
 		header:   &skiplistitem[K, V]{forward: []*skiplistitem[K, V]{nil}},
 		MaxLevel: 32,
@@ -146,7 +145,7 @@ func (s *SkipList[K, V]) effectiveMaxLevel() int {
 	return s.level()
 }
 
-type skiplistitem[K constraints.Ordered, V any] struct {
+type skiplistitem[K any, V any] struct {
 	forward []*skiplistitem[K, V]
 	k       K
 	v       V

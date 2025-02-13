@@ -14,17 +14,62 @@ import (
 )
 
 type Loader struct {
-	AutoReloadType ReloadType `json:"autoReloadType" comment:"none,fsnotify,timer"` // 本地分为Watch和AutoReload，Watch采用系统调用通知，AutoReload定时器去查文件是否变更
-	TimerInterval  time.Duration
+	AutoReloadType ReloadType    `json:"autoReloadType" comment:"none,fsnotify,timer"` // 本地分为fsnotify和timer，fsnotify采用系统调用通知，timer定时器去查文件是否变更
+	TimerInterval  time.Duration `json:"timerInterval" comment:"timer interval"`
 }
 
-type ReloadType string
+type ReloadType int
 
 const (
-	ReloadTypeNone     = "none"
-	ReloadTypeFsNotify = "fsnotify"
-	ReloadTypeTimer    = "timer"
+	ReloadTypeNone ReloadType = iota
+	ReloadTypeFsNotify
+	ReloadTypeTimer
 )
+
+const (
+	ReloadTypeNoneName     = "none"
+	ReloadTypeFsNotifyName = "fsnotify"
+	ReloadTypeTimerName    = "timer"
+)
+
+func (t ReloadType) MarshalText() ([]byte, error) {
+	return []byte(t.String()), nil
+}
+func (t *ReloadType) UnmarshalText(data []byte) error {
+	switch string(data) {
+	case ReloadTypeNoneName:
+		*t = ReloadTypeNone
+	case ReloadTypeFsNotifyName:
+		*t = ReloadTypeFsNotify
+	case ReloadTypeTimerName:
+		*t = ReloadTypeTimer
+	default:
+		*t = ReloadTypeNone
+	}
+	return nil
+}
+
+func (t *ReloadType) UnmarshalJSON(data []byte) error {
+	data = data[1 : len(data)-1]
+	return t.UnmarshalText(data)
+}
+
+func (t ReloadType) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + t.String() + `"`), nil
+}
+
+func (t ReloadType) String() string {
+	switch t {
+	case ReloadTypeNone:
+		return ReloadTypeNoneName
+	case ReloadTypeFsNotify:
+		return ReloadTypeFsNotifyName
+	case ReloadTypeTimer:
+		return ReloadTypeTimerName
+	default:
+		return ReloadTypeNoneName
+	}
+}
 
 // New initialize a Loader
 func New() *Loader {
@@ -46,7 +91,7 @@ func (ld *Loader) Handle(handle func([]byte), files ...string) (err error) {
 	if err != nil {
 		return err
 	}
-	if ld.AutoReloadType != "" && ld.AutoReloadType != ReloadTypeNone {
+	if ld.AutoReloadType != ReloadTypeNone {
 		if ld.AutoReloadType == ReloadTypeTimer {
 			go ld.watchTimer(handle, files...)
 		} else {

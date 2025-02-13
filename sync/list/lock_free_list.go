@@ -7,40 +7,39 @@ package list
 import (
 	"github.com/hopeio/utils/sync"
 	"sync/atomic"
-	"unsafe"
 )
 
-type LockFreeList struct {
-	head unsafe.Pointer
-	tail unsafe.Pointer
+type LockFreeList[T any] struct {
+	head atomic.Pointer[sync.Node[T]]
+	tail atomic.Pointer[sync.Node[T]]
 	size uint64
 }
 
-func New() *LockFreeList {
-	return &LockFreeList{}
+func New[T any]() *LockFreeList[T] {
+	return &LockFreeList[T]{}
 }
 
-func (l *LockFreeList) Push(v interface{}) {
-	node := &sync.DirectItem{V: v}
+func (l *LockFreeList[T]) Push(v interface{}) {
+	node := &sync.Node[T]{V: v}
 	if l.size == 0 {
-		atomic.StorePointer(&l.head, unsafe.Pointer(node))
-		atomic.StorePointer(&l.tail, unsafe.Pointer(node))
+		l.head.Store(node)
+		l.tail.Store(node)
 		atomic.AddUint64(&l.size, 1)
 		return
 	}
-	var last, lastnext *sync.DirectItem
+	var last, lastnext *sync.Node[T]
 	for {
-		last = sync.LoadItem(&l.tail)
-		lastnext = sync.LoadItem(&last.Next)
-		if sync.LoadItem(&l.tail) == last { // are tail and next consistent?
+		last = l.tail.Load()
+		lastnext = last.Next.Load()
+		if l.tail.Load() == last { // are tail and next consistent?
 			if lastnext == nil { // was tail pointing to the last node?
-				if sync.CasItem(&last.Next, lastnext, node) { // try to link item at the end of linked list
-					sync.CasItem(&l.tail, last, node) // enqueue is done. try swing tail to the inserted node
+				if last.Next.CompareAndSwap(lastnext, node) { // try to link item at the end of linked list
+					l.tail.CompareAndSwap(last, node) // enqueue is done. try swing tail to the inserted node
 					atomic.AddUint64(&l.size, 1)
 					return
 				}
 			} else { // tail was not pointing to the last node
-				sync.CasItem(&l.tail, last, lastnext) // try swing tail to the next node
+				l.tail.CompareAndSwap(last, lastnext) // try swing tail to the next node
 			}
 		}
 	}

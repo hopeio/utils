@@ -12,21 +12,21 @@ import (
 
 type Heap[T any] struct {
 	arr  []T
-	less cmp.LessFunc[T]
+	cmp  cmp.CompareFunc[T]
 	zero T
 }
 
-func New[T any](l int, less cmp.LessFunc[T]) *Heap[T] {
+func New[T any](l int, cmp cmp.CompareFunc[T]) *Heap[T] {
 	return &Heap[T]{
-		arr:  make([]T, 0, l),
-		less: less,
+		arr: make([]T, 0, l),
+		cmp: cmp,
 	}
 }
 
-func NewFromArray[T any](arr []T, less cmp.LessFunc[T]) *Heap[T] {
+func NewFromArray[T any](arr []T, cmp cmp.CompareFunc[T]) *Heap[T] {
 	heap := &Heap[T]{
-		arr:  arr,
-		less: less,
+		arr: arr,
+		cmp: cmp,
 	}
 	for i := 1; i < len(arr); i++ {
 		heap.up(i)
@@ -57,7 +57,7 @@ func (h *Heap[T]) Put(val T) {
 		}
 		return
 	}
-	if h.less(val, h.arr[0]) {
+	if h.cmp(val, h.arr[0]) < 0 {
 		return
 	}
 	h.arr[0] = val
@@ -93,15 +93,15 @@ func (h *Heap[T]) Remove(i int) (T, bool) {
 }
 
 func (h *Heap[T]) down(i0, n int) bool {
-	return Down(h.arr, i0, n, h.less)
+	return Down(h.arr, i0, n, h.cmp)
 }
 
 func (h *Heap[T]) up(j int) {
-	Up(h.arr, j, h.less)
+	Up(h.arr, j, h.cmp)
 }
 
 func (h *Heap[T]) fix(i int) {
-	Fix(h.arr, i, h.less)
+	Fix(h.arr, i, h.cmp)
 }
 
 func (h *Heap[T]) First() (T, bool) {

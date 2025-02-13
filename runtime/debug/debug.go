@@ -14,10 +14,10 @@ import (
 )
 
 // go tool pprof ./cpu.pprof
-func CpuPprof() func() {
-	f, err := os.Create("./cpu.pprof")
+func PprofCPU(filename string) func() {
+	f, err := os.Create(filename)
 	if err != nil {
-		log.Fatal("could not create CPU profile: ", err)
+		log.Fatal("could not create file: ", err)
 	}
 	// StartCPUProfile为当前进程开启CPU profile。
 	if err := pprof.StartCPUProfile(f); err != nil {
@@ -30,34 +30,28 @@ func CpuPprof() func() {
 	}
 }
 
-func MemPprof(fun func()) func() {
-	f, err := os.Create("./mem.pprof")
+func PprofHeap(filename string) {
+	f, err := os.Create(filename)
 	if err != nil {
-		log.Fatal("could not create CPU profile: ", err)
+		log.Fatal("could not create file: ", err)
 	}
 	runtime.GC()
-	fun()
 	if err := pprof.WriteHeapProfile(f); err != nil {
-		log.Fatal("could not start CPU profile: ", err)
+		log.Fatal("could not write heap profile: ", err)
 	}
-	return func() {
-		f.Close()
-	}
+	f.Close()
 }
 
-func Pprof(opt string) func() {
-	f, err := os.Create("./mem.pprof")
+func PprofByName(filename, pname string) {
+	f, err := os.Create(filename)
 	if err != nil {
-		log.Fatal("could not create CPU profile: ", err)
+		log.Fatal("could not create file: ", err)
 	}
-	runtime.GC()
 
-	if err := pprof.Lookup(opt).WriteTo(f, 1); err != nil {
-		log.Fatal("could not start CPU profile: ", err)
+	if err := pprof.Lookup(pname).WriteTo(f, 1); err != nil {
+		log.Fatal("could not write: ", err)
 	}
-	return func() {
-		f.Close()
-	}
+	f.Close()
 }
 
 func PrintMemoryUsage(flag any) {

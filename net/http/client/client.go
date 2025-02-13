@@ -139,7 +139,7 @@ func (c *Client) ReqDataHandler(handler func(data []byte) ([]byte, error)) *Clie
 	return c
 }
 
-func (c *Client) HttpRequestOption(opts ...HttpRequestOption) *Downloader {
+func (c *Client) HttpRequestOptions(opts ...HttpRequestOption) *Downloader {
 	c.httpRequestOptions = append(c.httpRequestOptions, opts...)
 	return c
 }

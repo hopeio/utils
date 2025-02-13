@@ -4,34 +4,37 @@
 
 package btree
 
+import "github.com/hopeio/utils/cmp"
+
 const maxItems = 255
 const minItems = maxItems * 40 / 100
 
-type node struct {
+type node[T any] struct {
 	leaf     bool
 	numItems int16
-	items    [maxItems]interface{}
-	children *[maxItems + 1]*node
+	items    [maxItems]T
+	children *[maxItems + 1]*node[T]
 }
 
-type justaLeaf struct {
+type justaLeaf[T any] struct {
 	leaf     bool
 	numItems int16
-	items    [maxItems]interface{}
+	items    [maxItems]T
 }
 
 // BTree is an ordered set items
-type BTree struct {
-	root   *node
+type BTree[T any] struct {
+	root   *node[T]
 	length int
-	less   func(a, b interface{}) bool
-	lnode  *node
+	cmp    cmp.CompareFunc[T]
+	lnode  *node[T]
+	zero   T
 }
 
-func newNode(leaf bool) *node {
-	n := &node{leaf: leaf}
+func newNode[T any](leaf bool) *node[T] {
+	n := &node[T]{leaf: leaf}
 	if !leaf {
-		n.children = new([maxItems + 1]*node)
+		n.children = new([maxItems + 1]*node[T])
 	}
 	return n
 }
@@ -43,22 +46,22 @@ type PathHint struct {
 }
 
 // New returns a new BTree
-func New(less func(a, b interface{}) bool) *BTree {
-	if less == nil {
-		panic("nil less")
+func New[T any](cmp cmp.CompareFunc[T]) *BTree[T] {
+	if cmp == nil {
+		panic("nil cmp func")
 	}
-	tr := new(BTree)
-	tr.less = less
+	tr := new(BTree[T])
+	tr.cmp = cmp
 	return tr
 }
 
 // Less is a convenience function that performs a comparison of two items
 // using the same "less" function provided to New.
-func (tr *BTree) Less(a, b interface{}) bool {
-	return tr.less(a, b)
+func (tr *BTree[T]) Less(a, b T) bool {
+	return tr.cmp(a, b) < 0
 }
 
-func (n *node) find(key interface{}, less func(a, b interface{}) bool,
+func (n *node[T]) find(key T, cmp cmp.CompareFunc[T],
 	hint *PathHint, depth int,
 ) (index int16, found bool) {
 	low := int16(0)
@@ -68,9 +71,10 @@ func (n *node) find(key interface{}, less func(a, b interface{}) bool,
 		if index > n.numItems-1 {
 			index = n.numItems - 1
 		}
-		if less(key, n.items[index]) {
+		diff := cmp(key, n.items[index])
+		if diff < 0 {
 			high = index - 1
-		} else if less(n.items[index], key) {
+		} else if diff > 0 {
 			low = index + 1
 		} else {
 			found = true
@@ -79,14 +83,13 @@ func (n *node) find(key interface{}, less func(a, b interface{}) bool,
 	}
 	for low <= high {
 		mid := low + ((high+1)-low)/2
-		if !less(key, n.items[mid]) {
+		if cmp(key, n.items[mid]) >= 0 {
 			low = mid + 1
 		} else {
 			high = mid - 1
 		}
 	}
-	if low > 0 && !less(n.items[low-1], key) &&
-		!less(key, n.items[low-1]) {
+	if low > 0 && cmp(n.items[low-1], key) == 0 {
 		index = low - 1
 		found = true
 	} else {
@@ -105,42 +108,39 @@ done:
 }
 
 // SetHint sets or replace a value for a key using a path hint
-func (tr *BTree) SetHint(item interface{}, hint *PathHint) (prev interface{}) {
-	if item == nil {
-		panic("nil item")
-	}
+func (tr *BTree[T]) SetHint(item T, hint *PathHint) (prev T, ok bool) {
 	if tr.root == nil {
-		tr.root = newNode(true)
+		tr.root = newNode[T](true)
 		tr.root.items[0] = item
 		tr.root.numItems = 1
 		tr.length = 1
 		return
 	}
-	prev = tr.root.set(item, tr.less, hint, 0)
-	if prev != nil {
-		return prev
+	prev, ok = tr.root.set(item, tr.cmp, hint, 0)
+	if ok {
+		return
 	}
 	tr.lnode = nil
 	if tr.root.numItems == maxItems {
 		n := tr.root
 		right, median := n.split()
-		tr.root = newNode(false)
+		tr.root = newNode[T](false)
 		tr.root.children[0] = n
 		tr.root.items[0] = median
 		tr.root.children[1] = right
 		tr.root.numItems = 1
 	}
 	tr.length++
-	return prev
+	return
 }
 
 // Set or replace a value for a key
-func (tr *BTree) Set(item interface{}) (prev interface{}) {
+func (tr *BTree[T]) Set(item T) (prev T, ok bool) {
 	return tr.SetHint(item, nil)
 }
 
-func (n *node) split() (right *node, median interface{}) {
-	right = newNode(n.leaf)
+func (n *node[T]) split() (right *node[T], median T) {
+	right = newNode[T](n.leaf)
 	median = n.items[maxItems/2]
 	copy(right.items[:maxItems/2], n.items[maxItems/2+1:])
 	if !n.leaf {
@@ -153,30 +153,30 @@ func (n *node) split() (right *node, median interface{}) {
 		}
 	}
 	for i := maxItems / 2; i < maxItems; i++ {
-		n.items[i] = nil
+		n.items[i] = *new(T)
 	}
 	n.numItems = maxItems / 2
 	return right, median
 }
 
-func (n *node) set(item interface{}, less func(a, b interface{}) bool,
+func (n *node[T]) set(item T, cmp cmp.CompareFunc[T],
 	hint *PathHint, depth int,
-) (prev interface{}) {
-	i, found := n.find(item, less, hint, depth)
+) (prev T, ok bool) {
+	i, found := n.find(item, cmp, hint, depth)
 	if found {
 		prev = n.items[i]
 		n.items[i] = item
-		return prev
+		return prev, found
 	}
 	if n.leaf {
 		copy(n.items[i+1:n.numItems+1], n.items[i:n.numItems])
 		n.items[i] = item
 		n.numItems++
-		return nil
+		return *new(T), false
 	}
-	prev = n.children[i].set(item, less, hint, depth+1)
-	if prev != nil {
-		return prev
+	prev, ok = n.children[i].set(item, cmp, hint, depth+1)
+	if ok {
+		return prev, ok
 	}
 	if n.children[i].numItems == maxItems {
 		right, median := n.children[i].split()
@@ -186,10 +186,10 @@ func (n *node) set(item interface{}, less func(a, b interface{}) bool,
 		n.children[i+1] = right
 		n.numItems++
 	}
-	return prev
+	return prev, ok
 }
 
-func (n *node) scan(iter func(item interface{}) bool) bool {
+func (n *node[T]) scan(iter func(item T) bool) bool {
 	if n.leaf {
 		for i := int16(0); i < n.numItems; i++ {
 			if !iter(n.items[i]) {
@@ -210,24 +210,24 @@ func (n *node) scan(iter func(item interface{}) bool) bool {
 }
 
 // Get a value for key
-func (tr *BTree) Get(key interface{}) interface{} {
+func (tr *BTree[T]) Get(key T) (T, bool) {
 	return tr.GetHint(key, nil)
 }
 
 // GetHint gets a value for key using a path hint
-func (tr *BTree) GetHint(key interface{}, hint *PathHint) interface{} {
-	if tr.root == nil || key == nil {
-		return nil
+func (tr *BTree[T]) GetHint(key T, hint *PathHint) (T, bool) {
+	if tr.root == nil {
+		return tr.zero, false
 	}
 	depth := 0
 	n := tr.root
 	for {
-		i, found := n.find(key, tr.less, hint, depth)
+		i, found := n.find(key, tr.cmp, hint, depth)
 		if found {
-			return n.items[i]
+			return n.items[i], true
 		}
 		if n.leaf {
-			return nil
+			return tr.zero, false
 		}
 		n = n.children[i]
 		depth++
@@ -235,23 +235,23 @@ func (tr *BTree) GetHint(key interface{}, hint *PathHint) interface{} {
 }
 
 // Len returns the number of items in the tree
-func (tr *BTree) Len() int {
+func (tr *BTree[T]) Len() int {
 	return tr.length
 }
 
 // Delete a value for a key
-func (tr *BTree) Delete(key interface{}) interface{} {
+func (tr *BTree[T]) Delete(key T) (T, bool) {
 	return tr.DeleteHint(key, nil)
 }
 
 // DeleteHint deletes a value for a key using a path hint
-func (tr *BTree) DeleteHint(key interface{}, hint *PathHint) interface{} {
-	if tr.root == nil || key == nil {
-		return nil
+func (tr *BTree[T]) DeleteHint(key T, hint *PathHint) (T, bool) {
+	if tr.root == nil {
+		return tr.zero, false
 	}
-	prev := tr.root.delete(false, key, tr.less, hint, 0)
-	if prev == nil {
-		return nil
+	prev, ok := tr.root.delete(false, key, tr.cmp, hint, 0)
+	if !ok {
+		return tr.zero, false
 	}
 	tr.lnode = nil
 	if tr.root.numItems == 0 && !tr.root.leaf {
@@ -261,46 +261,48 @@ func (tr *BTree) DeleteHint(key interface{}, hint *PathHint) interface{} {
 	if tr.length == 0 {
 		tr.root = nil
 	}
-	return prev
+	return prev, ok
 }
 
-func (n *node) delete(max bool, key interface{},
-	less func(a, b interface{}) bool, hint *PathHint, depth int,
-) interface{} {
+func (n *node[T]) delete(max bool, key T,
+	cmp cmp.CompareFunc[T], hint *PathHint, depth int,
+) (T, bool) {
 	var i int16
 	var found bool
 	if max {
 		i, found = n.numItems-1, true
 	} else {
-		i, found = n.find(key, less, hint, depth)
+		i, found = n.find(key, cmp, hint, depth)
 	}
 	if n.leaf {
 		if found {
 			prev := n.items[i]
 			// found the items at the leaf, remove it and return.
 			copy(n.items[i:], n.items[i+1:n.numItems])
-			n.items[n.numItems-1] = nil
+			n.items[n.numItems-1] = *new(T)
 			n.numItems--
-			return prev
+			return prev, true
 		}
-		return nil
+		return *new(T), false
 	}
 
-	var prev interface{}
+	var prev T
+	var ok bool
 	if found {
 		if max {
 			i++
-			prev = n.children[i].delete(true, "", less, nil, 0)
+			prev, ok = n.children[i].delete(true, *new(T), cmp, nil, 0)
 		} else {
 			prev = n.items[i]
-			maxItem := n.children[i].delete(true, "", less, nil, 0)
+			var maxItem T
+			maxItem, ok = n.children[i].delete(true, *new(T), cmp, nil, 0)
 			n.items[i] = maxItem
 		}
 	} else {
-		prev = n.children[i].delete(max, key, less, hint, depth+1)
+		prev, ok = n.children[i].delete(max, key, cmp, hint, depth+1)
 	}
-	if prev == nil {
-		return nil
+	if !ok {
+		return *new(T), false
 	}
 	if n.children[i].numItems < minItems {
 		if i == n.numItems {
@@ -318,7 +320,7 @@ func (n *node) delete(max bool, key interface{},
 			n.children[i].numItems += n.children[i+1].numItems + 1
 			copy(n.items[i:], n.items[i+1:n.numItems])
 			copy(n.children[i+1:], n.children[i+2:n.numItems+1])
-			n.items[n.numItems] = nil
+			n.items[n.numItems] = *new(T)
 			n.children[n.numItems+1] = nil
 			n.numItems--
 		} else if n.children[i].numItems > n.children[i+1].numItems {
@@ -336,7 +338,7 @@ func (n *node) delete(max bool, key interface{},
 			}
 			n.children[i+1].numItems++
 			n.items[i] = n.children[i].items[n.children[i].numItems-1]
-			n.children[i].items[n.children[i].numItems-1] = nil
+			n.children[i].items[n.children[i].numItems-1] = *new(T)
 			if !n.children[0].leaf {
 				n.children[i].children[n.children[i].numItems] = nil
 			}
@@ -359,30 +361,30 @@ func (n *node) delete(max bool, key interface{},
 			n.children[i+1].numItems--
 		}
 	}
-	return prev
+	return prev, ok
 }
 
 // Ascend the tree within the range [pivot, last]
 // Pass nil for pivot to scan all item in ascending order
 // Return false to stop iterating
-func (tr *BTree) Ascend(pivot interface{}, iter func(item interface{}) bool) {
+func (tr *BTree[T]) Ascend(pivot *T, iter func(item T) bool) {
 	if tr.root == nil {
 		return
 	}
 	if pivot == nil {
 		tr.root.scan(iter)
 	} else if tr.root != nil {
-		tr.root.ascend(pivot, tr.less, nil, 0, iter)
+		tr.root.ascend(*pivot, tr.cmp, nil, 0, iter)
 	}
 }
 
-func (n *node) ascend(pivot interface{}, less func(a, b interface{}) bool,
-	hint *PathHint, depth int, iter func(item interface{}) bool,
+func (n *node[T]) ascend(pivot T, cmp cmp.CompareFunc[T],
+	hint *PathHint, depth int, iter func(item T) bool,
 ) bool {
-	i, found := n.find(pivot, less, hint, depth)
+	i, found := n.find(pivot, cmp, hint, depth)
 	if !found {
 		if !n.leaf {
-			if !n.children[i].ascend(pivot, less, hint, depth+1, iter) {
+			if !n.children[i].ascend(pivot, cmp, hint, depth+1, iter) {
 				return false
 			}
 		}
@@ -400,7 +402,7 @@ func (n *node) ascend(pivot interface{}, less func(a, b interface{}) bool,
 	return true
 }
 
-func (n *node) reverse(iter func(item interface{}) bool) bool {
+func (n *node[T]) reverse(iter func(item T) bool) bool {
 	if n.leaf {
 		for i := n.numItems - 1; i >= 0; i-- {
 			if !iter(n.items[i]) {
@@ -426,24 +428,24 @@ func (n *node) reverse(iter func(item interface{}) bool) bool {
 // Descend the tree within the range [pivot, first]
 // Pass nil for pivot to scan all item in descending order
 // Return false to stop iterating
-func (tr *BTree) Descend(pivot interface{}, iter func(item interface{}) bool) {
+func (tr *BTree[T]) Descend(pivot *T, iter func(item T) bool) {
 	if tr.root == nil {
 		return
 	}
 	if pivot == nil {
 		tr.root.reverse(iter)
 	} else if tr.root != nil {
-		tr.root.descend(pivot, tr.less, nil, 0, iter)
+		tr.root.descend(*pivot, tr.cmp, nil, 0, iter)
 	}
 }
 
-func (n *node) descend(pivot interface{}, less func(a, b interface{}) bool,
-	hint *PathHint, depth int, iter func(item interface{}) bool,
+func (n *node[T]) descend(pivot T, cmp cmp.CompareFunc[T],
+	hint *PathHint, depth int, iter func(item T) bool,
 ) bool {
-	i, found := n.find(pivot, less, hint, depth)
+	i, found := n.find(pivot, cmp, hint, depth)
 	if !found {
 		if !n.leaf {
-			if !n.children[i].descend(pivot, less, hint, depth+1, iter) {
+			if !n.children[i].descend(pivot, cmp, hint, depth+1, iter) {
 				return false
 			}
 		}
@@ -463,21 +465,18 @@ func (n *node) descend(pivot interface{}, less func(a, b interface{}) bool,
 }
 
 // Load is for bulk loading pre-sorted items
-func (tr *BTree) Load(item interface{}) interface{} {
-	if item == nil {
-		panic("nil item")
-	}
+func (tr *BTree[T]) Load(item T) (T, bool) {
 	if tr.lnode != nil && tr.lnode.numItems < maxItems-2 {
-		if tr.less(tr.lnode.items[tr.lnode.numItems-1], item) {
+		if tr.cmp(tr.lnode.items[tr.lnode.numItems-1], item) < 0 {
 			tr.lnode.items[tr.lnode.numItems] = item
 			tr.lnode.numItems++
 			tr.length++
-			return nil
+			return tr.zero, false
 		}
 	}
-	prev := tr.Set(item)
-	if prev != nil {
-		return prev
+	prev, ok := tr.Set(item)
+	if ok {
+		return prev, true
 	}
 	n := tr.root
 	for {
@@ -487,19 +486,19 @@ func (tr *BTree) Load(item interface{}) interface{} {
 		}
 		n = n.children[n.numItems]
 	}
-	return nil
+	return tr.zero, false
 }
 
 // Min returns the minimum item in tree.
 // Returns nil if the tree has no items.
-func (tr *BTree) Min() interface{} {
+func (tr *BTree[T]) Min() (T, bool) {
 	if tr.root == nil {
-		return nil
+		return tr.zero, false
 	}
 	n := tr.root
 	for {
 		if n.leaf {
-			return n.items[0]
+			return n.items[0], true
 		}
 		n = n.children[0]
 	}
@@ -507,14 +506,14 @@ func (tr *BTree) Min() interface{} {
 
 // Max returns the maximum item in tree.
 // Returns nil if the tree has no items.
-func (tr *BTree) Max() interface{} {
+func (tr *BTree[T]) Max() (T, bool) {
 	if tr.root == nil {
-		return nil
+		return tr.zero, false
 	}
 	n := tr.root
 	for {
 		if n.leaf {
-			return n.items[n.numItems-1]
+			return n.items[n.numItems-1], true
 		}
 		n = n.children[n.numItems]
 	}
@@ -522,9 +521,9 @@ func (tr *BTree) Max() interface{} {
 
 // PopMin removes the minimum item in tree and returns it.
 // Returns nil if the tree has no items.
-func (tr *BTree) PopMin() interface{} {
+func (tr *BTree[T]) PopMin() (T, bool) {
 	if tr.root == nil {
-		return nil
+		return tr.zero, false
 	}
 	tr.lnode = nil
 	n := tr.root
@@ -535,10 +534,10 @@ func (tr *BTree) PopMin() interface{} {
 				return tr.Delete(item)
 			}
 			copy(n.items[:], n.items[1:])
-			n.items[n.numItems-1] = nil
+			n.items[n.numItems-1] = tr.zero
 			n.numItems--
 			tr.length--
-			return item
+			return item, true
 		}
 		n = n.children[0]
 	}
@@ -546,9 +545,9 @@ func (tr *BTree) PopMin() interface{} {
 
 // PopMax removes the minimum item in tree and returns it.
 // Returns nil if the tree has no items.
-func (tr *BTree) PopMax() interface{} {
+func (tr *BTree[T]) PopMax() (T, bool) {
 	if tr.root == nil {
-		return nil
+		return tr.zero, false
 	}
 	tr.lnode = nil
 	n := tr.root
@@ -558,10 +557,10 @@ func (tr *BTree) PopMax() interface{} {
 			if n.numItems == minItems {
 				return tr.Delete(item)
 			}
-			n.items[n.numItems-1] = nil
+			n.items[n.numItems-1] = tr.zero
 			n.numItems--
 			tr.length--
-			return item
+			return item, true
 		}
 		n = n.children[n.numItems]
 	}
@@ -569,7 +568,7 @@ func (tr *BTree) PopMax() interface{} {
 
 // Height returns the height of the tree.
 // Returns zero if tree has no items.
-func (tr *BTree) Height() int {
+func (tr *BTree[T]) Height() int {
 	var height int
 	if tr.root != nil {
 		n := tr.root
@@ -586,13 +585,13 @@ func (tr *BTree) Height() int {
 
 // Walk iterates over all items in tree, in order.
 // The items param will contain one or more items.
-func (tr *BTree) Walk(iter func(item []interface{})) {
+func (tr *BTree[T]) Walk(iter func(item []T)) {
 	if tr.root != nil {
 		tr.root.walk(iter)
 	}
 }
 
-func (n *node) walk(iter func(item []interface{})) {
+func (n *node[T]) walk(iter func(item []T)) {
 	if n.leaf {
 		iter(n.items[:n.numItems])
 	} else {

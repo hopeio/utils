@@ -27,8 +27,8 @@ func newDownloadHttpClient() *http.Client {
 // TODO: Range Status(206) PartialContent 下载
 type Downloader = Client
 
-func NewDownloader() *Downloader {
-	return &Downloader{
+func NewDownloader(options ...Option) *Downloader {
+	downloader := &Downloader{
 		typ:           ClientTypeDownload,
 		httpClient:    DefaultDownloadHttpClient,
 		retryTimes:    3,
@@ -36,6 +36,10 @@ func NewDownloader() *Downloader {
 		logger:        nil,
 		logLevel:      LogLevelSilent,
 	}
+	for _, opt := range options {
+		opt(downloader)
+	}
+	return downloader
 }
 
 func (c *Downloader) Download(filepath string, r *DownloadReq) error {

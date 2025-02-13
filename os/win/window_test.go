@@ -46,7 +46,7 @@ func TestWindows(t *testing.T) {
 		hwnd := w32.FindWindow(mainFormClass, mainFormTitle)
 		w32.ShowWindow(hwnd, w32.SW_NORMAL)
 		w32.SetForegroundWindow(hwnd)*/
-	/*var windows = GetDesktopWindowHWND()
+	/*var windows = DesktopWindowHWND()
 	for _, w := range windows {
 
 	}*/
