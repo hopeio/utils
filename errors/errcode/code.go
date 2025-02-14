@@ -30,25 +30,25 @@ const (
 var codeMap = make(map[ErrCode]string)
 
 // 不是并发安全的，在初始化的时候做
-func RegisterErrCode(code ErrCode, msg string) {
+func Register(code ErrCode, msg string) {
 	codeMap[code] = msg
 }
 
 func init() {
-	RegisterErrCode(Canceled, "Canceled")
-	RegisterErrCode(Unknown, "Unknown")
-	RegisterErrCode(InvalidArgument, "InvalidArgument")
-	RegisterErrCode(DeadlineExceeded, "DeadlineExceeded")
-	RegisterErrCode(NotFound, "NotFound")
-	RegisterErrCode(AlreadyExists, "AlreadyExists")
-	RegisterErrCode(PermissionDenied, "PermissionDenied")
-	RegisterErrCode(ResourceExhausted, "ResourceExhausted")
-	RegisterErrCode(FailedPrecondition, "FailedPrecondition")
-	RegisterErrCode(Aborted, "Aborted")
-	RegisterErrCode(OutOfRange, "OutOfRange")
-	RegisterErrCode(Unimplemented, "Unimplemented")
-	RegisterErrCode(Internal, "Internal")
-	RegisterErrCode(Unavailable, "Unavailable")
-	RegisterErrCode(DataLoss, "DataLoss")
-	RegisterErrCode(Unauthenticated, "Unauthenticated")
+	Register(Canceled, "Canceled")
+	Register(Unknown, "Unknown")
+	Register(InvalidArgument, "InvalidArgument")
+	Register(DeadlineExceeded, "DeadlineExceeded")
+	Register(NotFound, "NotFound")
+	Register(AlreadyExists, "AlreadyExists")
+	Register(PermissionDenied, "PermissionDenied")
+	Register(ResourceExhausted, "ResourceExhausted")
+	Register(FailedPrecondition, "FailedPrecondition")
+	Register(Aborted, "Aborted")
+	Register(OutOfRange, "OutOfRange")
+	Register(Unimplemented, "Unimplemented")
+	Register(Internal, "Internal")
+	Register(Unavailable, "Unavailable")
+	Register(DataLoss, "DataLoss")
+	Register(Unauthenticated, "Unauthenticated")
 }
