@@ -92,3 +92,7 @@ func (code ErrCode) HttpStatus() int {
 	}
 	return http.StatusInternalServerError
 }
+
+type Generic interface {
+	~int | ~int32 | ~int64 | ~uint | ~uint32 | ~uint64
+}
