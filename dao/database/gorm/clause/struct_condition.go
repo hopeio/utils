@@ -47,7 +47,9 @@ func ConditionByStruct(param any) (clause.Expression, error) {
 			if err != nil {
 				return nil, err
 			}
-			conds = append(conds, subCondition)
+			if subCondition != nil {
+				conds = append(conds, subCondition)
+			}
 		} else {
 			if tag == "" && empty {
 				continue
@@ -56,7 +58,9 @@ func ConditionByStruct(param any) (clause.Expression, error) {
 				if (fieldKind == reflect.Interface || fieldKind == reflect.Ptr) && field.Elem().IsZero() {
 					continue
 				}
-				conds = append(conds, field.Interface().(ConditionExpr).Condition())
+				if cond := field.Interface().(ConditionExpr).Condition(); cond != nil {
+					conds = append(conds, cond)
+				}
 				continue
 			}
 			if fieldKind == reflect.Struct && field.Addr().Type().Implements(ConditionExprType) {
