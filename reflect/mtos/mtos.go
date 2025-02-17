@@ -1,7 +1,7 @@
 package mtos
 
 import (
-	"github.com/mitchellh/mapstructure"
+	"github.com/go-viper/mapstructure/v2"
 )
 
 var decodeHook = mapstructure.ComposeDecodeHookFunc(
