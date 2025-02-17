@@ -13,9 +13,9 @@ import (
 )
 
 type DateFilter struct {
-	DateBegin string `json:"dateBegin" explain:"起始时间"`
-	DateEnd   string `json:"dateEnd" explain:"结束时间"`
-	RangeEnum int    `json:"rangeEnum" explain:"1-今天,2-本周，3-本月，4-今年"`
+	DateBegin string `json:"dateBegin" comment:"起始时间"`
+	DateEnd   string `json:"dateEnd" comment:"结束时间"`
+	RangeEnum int    `json:"rangeEnum" comment:"1-今天,2-本周，3-本月，4-今年"`
 }
 
 // 赋值本周期，并返回下周期日期

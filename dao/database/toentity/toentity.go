@@ -21,7 +21,7 @@ const Tmpl = `package entity
 import "time"
 
 type Example struct{
-A int` + "`json:\"a\" explain:\"模板\"`" + `
+A int` + "`json:\"a\" comment:\"模板\"`" + `
 B string
 C time.Time
 }
@@ -32,7 +32,7 @@ const FileTmpl = `package generate
 import "time"
 
 `
-const TagTmpl = "`json:\"%s\" explain:\"%s\"`"
+const TagTmpl = "`json:\"%s\" comment:\"%s\"`"
 
 func NewLine() byte {
 	return '\n'
@@ -68,7 +68,7 @@ func (f *Field) Generate() *ast.Field {
 			},
 		},
 		Type:    &ast.Ident{Name: f.GoTYpe},
-		Tag:     &ast.BasicLit{Kind: token.STRING, Value: "`" + `json:"` + stringsi.LowerCaseFirst(field) + `" explain:"` + f.Comment + "\"`"},
+		Tag:     &ast.BasicLit{Kind: token.STRING, Value: "`" + `json:"` + stringsi.LowerCaseFirst(field) + `" comment:"` + f.Comment + "\"`"},
 		Comment: nil,
 	}
 }

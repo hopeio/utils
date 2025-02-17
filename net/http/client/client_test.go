@@ -13,20 +13,20 @@ import (
 )
 
 type OperatorReq struct {
-	Id           uint64    `json:"id" explain:"运营商id" example:"1"`
-	Ids          []uint64  `json:"ids" explain:"运营商id" example:"[1,2]"`
-	Name         string    `json:"name" explain:"运营商名称" example:"xxx"`
-	StartTime    time.Time `json:"startTime" explain:"起始时间"`
-	EndTime      time.Time `json:"endTime" explain:"结束时间"`
-	PageNo       int       `json:"pageNo" explain:"页数" example:"1"`
-	PageNum      int       `json:"pageNum" explain:"每页数量" example:"20"`
-	PlatformType uint8     `json:"platformType" explain:"平台类型,必传,传255为所有状态"`
+	Id           uint64    `json:"id" comment:"运营商id" example:"1"`
+	Ids          []uint64  `json:"ids" comment:"运营商id" example:"[1,2]"`
+	Name         string    `json:"name" comment:"运营商名称" example:"xxx"`
+	StartTime    time.Time `json:"startTime" comment:"起始时间"`
+	EndTime      time.Time `json:"endTime" comment:"结束时间"`
+	PageNo       int       `json:"pageNo" comment:"页数" example:"1"`
+	PageNum      int       `json:"pageNum" comment:"每页数量" example:"20"`
+	PlatformType uint8     `json:"platformType" comment:"平台类型,必传,传255为所有状态"`
 }
 
 type OperatorPublicInfo struct {
 	Id        uint64 `json:"id"`
-	Name      string `json:"name" explain:"'公司名称"`
-	ShortName string `json:"shortName" explain:"运营商名称/公司简称"`
+	Name      string `json:"name" comment:"'公司名称"`
+	ShortName string `json:"shortName" comment:"运营商名称/公司简称"`
 }
 
 type OperatorPublicList struct {
