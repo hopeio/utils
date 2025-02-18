@@ -9,7 +9,6 @@ package http
 import (
 	"encoding/base64"
 	"net/http"
-	"net/url"
 )
 
 func SetBasicAuth(header http.Header, username, password string) {
@@ -26,8 +25,7 @@ func GetToken(r *http.Request) string {
 		return token
 	}
 	if cookie, _ := r.Cookie(HeaderCookieValueToken); cookie != nil {
-		value, _ := url.QueryUnescape(cookie.Value)
-		return value
+		return cookie.Value
 	}
 	return ""
 }

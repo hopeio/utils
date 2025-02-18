@@ -17,7 +17,7 @@ func GetToken(req *fasthttp.Request) string {
 	if token := stringsi.BytesToString(req.Header.Peek(httpi.HeaderAuthorization)); token != "" {
 		return token
 	}
-	if cookie := stringsi.BytesToString(req.Header.Cookie("token")); len(cookie) > 0 {
+	if cookie := stringsi.BytesToString(req.Header.Cookie(httpi.HeaderCookieValueToken)); len(cookie) > 0 {
 		token, _ := url.QueryUnescape(cookie)
 		return token
 	}
