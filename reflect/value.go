@@ -39,13 +39,13 @@ var (
 
 // DereferenceValue dereference and unpack interface,
 // get the underlying non-pointer and non-interface value.
+// if v is nil will return invalid value, shuold use IsValid() to check.
 func DerefValue(v reflect.Value) reflect.Value {
 	for {
 		kind := v.Kind()
 		if kind == reflect.Ptr || kind == reflect.Interface {
-			if ev := v.Elem(); ev.IsValid() {
-				v = ev
-			} else {
+			v = v.Elem()
+			if !v.IsValid() {
 				return v
 			}
 		} else {
