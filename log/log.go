@@ -54,10 +54,10 @@ func SetDefaultLogger(lf *Config, cores ...zapcore.Core) {
 // range -3~6
 func GetCallerSkipLogger(skip int) *Logger {
 	if skip < -3 {
-		panic("skip不小于-3")
+		panic("skip not less than -3")
 	}
 	if skip > 6 {
-		panic("skip不大于6")
+		panic("skip not great than 6")
 	}
 	idx := skip + 3
 	if skipLoggers[idx].needUpdate || skipLoggers[idx].Logger == nil {
