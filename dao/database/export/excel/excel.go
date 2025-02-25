@@ -1,12 +1,57 @@
 package excel
 
-import "gorm.io/gorm"
+import (
+	"database/sql"
+	"github.com/xuri/excelize/v2"
+)
 
 // TODO
-func export[T any](db *gorm.DB, filename string) error {
-	var ts []T
-	if err := db.Find(&ts).Error; err != nil {
+type NullString struct {
+	sql.Null[string]
+}
+
+func (n NullString) String() string {
+	return n.V
+}
+
+func Export(rows *sql.Rows, filename string) error {
+	f := excelize.NewFile()
+	columns, err := rows.Columns()
+	if err != nil {
 		return err
 	}
-	return nil
+	/*	types,err:=rows.ColumnTypes()
+		if err != nil {
+			return err
+		}*/
+	err = f.SetSheetRow("Sheet1", "A1", &columns)
+	if err != nil {
+		return err
+	}
+	columnValues := make([]NullString, len(columns))
+	columnValuePtrs := make([]any, len(columns))
+	for i := range columnValues {
+		columnValuePtrs[i] = &columnValues[i]
+	}
+	row := 2
+	for rows.Next() {
+		err = rows.Scan(columnValuePtrs...)
+		if err != nil {
+			return err
+		}
+		cell, err := excelize.CoordinatesToCellName(1, row)
+		if err != nil {
+			return err
+		}
+		err = f.SetSheetRow("Sheet1", cell, &columnValues)
+		if err != nil {
+			return err
+		}
+		row++
+	}
+	err = rows.Close()
+	if err != nil {
+		return err
+	}
+	return f.SaveAs(filename)
 }
