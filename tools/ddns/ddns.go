@@ -86,7 +86,7 @@ func main() {
 		}
 	}
 	updateTime := time.Now()
-	timer := time.NewTimer(time.Minute)
+	timer := time.NewTimer(time.Hour)
 	for {
 		select {
 		case <-ctx.Done():
@@ -121,8 +121,10 @@ func main() {
 			t := time.Now().Sub(updateTime)
 			if t > time.Hour*24 {
 				timer.Reset(time.Second * 30)
-			} else if t > time.Hour*6 {
+			} else if t > time.Hour*12 {
 				timer.Reset(time.Minute)
+			} else if t > time.Hour*6 {
+				timer.Reset(time.Hour / 2)
 			} else {
 				timer.Reset(time.Hour)
 			}
