@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -194,15 +193,8 @@ func (dReq *DownloadReq) Download(filepath string) error {
 			return err
 		}
 		if resp.Header.Get(httpi.HeaderAcceptRanges) == "bytes" {
-			total, err := strconv.ParseInt(resp.Header.Get(httpi.HeaderContentLength), 10, 64)
-			if err != nil {
-				return err
-			}
-			if total > defaultSize {
-				reader.Close()
-				return dReq.continuationDownload(filepath)
-			}
-
+			reader.Close()
+			return dReq.continuationDownload(filepath)
 		}
 		err = fs.Download(filepath, reader)
 		reader.Close()
@@ -240,15 +232,8 @@ func (dReq *DownloadReq) DownloadAttachment(dir string) error {
 				return nil
 			}
 			if resp.Header.Get(httpi.HeaderAcceptRanges) == "bytes" {
-				total, err := strconv.ParseInt(resp.Header.Get(httpi.HeaderContentLength), 10, 64)
-				if err != nil {
-					return err
-				}
-				if total > defaultSize {
-					reader.Close()
-					return dReq.continuationDownload(filepath)
-				}
-
+				reader.Close()
+				return dReq.continuationDownload(filepath)
 			}
 			first = false
 		}
@@ -280,7 +265,7 @@ func (dReq *DownloadReq) continuationDownload(filepath string) error {
 	offset := fileinfo.Size()
 	var reader io.ReadCloser
 	for range dReq.downloader.retryTimes {
-		dReq.header = append(dReq.header, httpi.HeaderRange, defaultRange)
+		dReq.header = append(dReq.header, httpi.HeaderRange, httpi.FormatRange(offset, 0))
 
 		reader, err = dReq.GetReader()
 		if err != nil {
