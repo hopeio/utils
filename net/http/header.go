@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"mime"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -88,7 +89,7 @@ func ParseDisposition(disposition string) (mediatype string, params map[string]s
 	return mime.ParseMediaType(disposition)
 }
 
-func ParseRange(rangeHeader string) (start int64, end int64, total int64, err error) {
+func ParseContentRange(rangeHeader string) (start int64, end int64, total int64, err error) {
 	// 提取Range值，格式为"bytes unit-unit/*"
 	parts := strings.Split(rangeHeader, " ")
 	if len(parts) != 2 || parts[0] != "bytes" {
@@ -127,7 +128,7 @@ func ParseRange(rangeHeader string) (start int64, end int64, total int64, err er
 	return
 }
 
-func FormatRange(start, end, total int64) string {
+func FormatContentRange(start, end, total int64) string {
 	if end <= 0 {
 		return fmt.Sprintf("bytes=%d-", start)
 	}
@@ -135,6 +136,51 @@ func FormatRange(start, end, total int64) string {
 		return fmt.Sprintf("bytes=%d-%d/*", start, end)
 	}
 	return fmt.Sprintf("bytes=%d-%d/%d", start, end, total)
+}
+
+func ParseRange(header string) (int64, int64, error) {
+	if len(header) < len("bytes=") {
+		return 0, 0, fmt.Errorf("invalid Content-Range format")
+	}
+	header = header[len("bytes="):]
+	parts := strings.Split(header, "-")
+	if len(parts) != 2 {
+		return 0, 0, fmt.Errorf("invalid range header format")
+	}
+
+	start, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	end, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return 0, 0, err
+	}
+	return start, end, nil
+}
+
+func FormatRange(start, end int64) string {
+	if end <= 0 {
+		return fmt.Sprintf("bytes=%d-", start)
+	}
+	return fmt.Sprintf("bytes=%d-%d", start, end)
+}
+
+func ParseContentDisposition(header string) (string, error) {
+	if len(header) < len("attachment; filename=") {
+		return "", fmt.Errorf("invalid Content-Disposition header")
+	}
+	header = header[len("attachment; filename="):]
+	if header[0] == '"' && header[len(header)-1] == '"' {
+		header = header[1 : len(header)-1]
+	}
+	return url.PathUnescape(header)
+}
+
+func FormatContentDisposition(filename string) string {
+	// Basic example without encoding considerations
+	return fmt.Sprintf(`attachment; filename="%s"`, filename)
 }
 
 type MapHeader map[string]string

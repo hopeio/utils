@@ -19,6 +19,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -30,9 +31,7 @@ type DownloadMode uint16
 
 const (
 	DModeOverwrite DownloadMode = 1 << iota
-	DModeContinue
-	DModeMultipart   // TODO 分块下载后合并
-	DModeMultiThread // TODO 暂时没找到并发写文件的方法，可以并发下载,顺序写入
+	DModeForceContinue
 )
 
 const RangeFormat = "bytes=%d-%d/%d"
@@ -44,6 +43,7 @@ type DownloadReq struct {
 	ctx        context.Context
 	header     httpi.SliceHeader //请求级请求头
 	mode       DownloadMode      // 模式，0-强制覆盖，1-不存在下载，2-断续下载
+	rangeSize  int64
 }
 
 func NewDownloadReq(url string) *DownloadReq {
@@ -54,40 +54,40 @@ func NewDownloadReq(url string) *DownloadReq {
 	}
 }
 
-func (req *DownloadReq) Downloader(c *Downloader) *DownloadReq {
-	req.downloader = c
-	return req
+func (dReq *DownloadReq) Downloader(c *Downloader) *DownloadReq {
+	dReq.downloader = c
+	return dReq
 }
 
-func (req *DownloadReq) SetDownloader(set func(c *Downloader)) *DownloadReq {
-	req.downloader = NewDownloader()
-	set(req.downloader)
-	return req
+func (dReq *DownloadReq) SetDownloader(set func(c *Downloader)) *DownloadReq {
+	dReq.downloader = NewDownloader()
+	set(dReq.downloader)
+	return dReq
 }
 
-func (req *DownloadReq) AddHeader(k, v string) *DownloadReq {
-	req.header.Set(k, v)
-	return req
+func (dReq *DownloadReq) AddHeader(k, v string) *DownloadReq {
+	dReq.header.Set(k, v)
+	return dReq
 }
 
-func (c *DownloadReq) Mode(mode DownloadMode) *DownloadReq {
-	c.mode = mode
-	return c
+func (dReq *DownloadReq) Mode(mode DownloadMode) *DownloadReq {
+	dReq.mode = mode
+	return dReq
 }
 
-func (c *DownloadReq) GetMode() DownloadMode {
-	return c.mode
+func (dReq *DownloadReq) GetMode() DownloadMode {
+	return dReq.mode
 }
 
 // 如果文件已存在，强制覆盖
-func (c *DownloadReq) OverwriteMode() *DownloadReq {
-	c.mode |= DModeOverwrite
-	return c
+func (dReq *DownloadReq) OverwriteMode() *DownloadReq {
+	dReq.mode |= DModeOverwrite
+	return dReq
 }
 
-func (c *DownloadReq) GetResponse() (*http.Response, error) {
-	d := c.downloader
-	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, c.Url, nil)
+func (dReq *DownloadReq) GetResponse(options ...func(*http.Request)) (*http.Response, error) {
+	d := dReq.downloader
+	req, err := http.NewRequestWithContext(dReq.ctx, http.MethodGet, dReq.Url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -99,8 +99,11 @@ func (c *DownloadReq) GetResponse() (*http.Response, error) {
 	req.Header.Set(httpi.HeaderUserAgent, UserAgentChrome117)
 
 	httpi.CopyHttpHeader(req.Header, d.header)
-	c.header.IntoHttpHeader(req.Header)
+	dReq.header.IntoHttpHeader(req.Header)
 	for _, opt := range d.httpRequestOptions {
+		opt(req)
+	}
+	for _, opt := range options {
 		opt(req)
 	}
 
@@ -123,24 +126,29 @@ func (c *DownloadReq) GetResponse() (*http.Response, error) {
 	return nil, err
 }
 
-func (c *DownloadReq) GetReader() (io.ReadCloser, error) {
+func (dReq *DownloadReq) GetReader() (io.ReadCloser, error) {
+	_, reader, err := dReq.getReader()
+	return reader, err
+}
+
+func (dReq *DownloadReq) getReader() (*http.Response, io.ReadCloser, error) {
 Retry:
-	resp, err := c.GetResponse()
+	resp, err := dReq.GetResponse()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		resp.Body.Close()
 		if resp.StatusCode == http.StatusNotFound {
-			return nil, ErrNotFound
+			return nil, nil, ErrNotFound
 		}
 		if resp.StatusCode == http.StatusRequestedRangeNotSatisfiable {
-			return nil, ErrRangeNotSatisfiable
+			return nil, nil, ErrRangeNotSatisfiable
 		}
-		return nil, fmt.Errorf("请求错误,status code:%d,url:%s", resp.StatusCode, c.Url)
+		return nil, nil, fmt.Errorf("请求错误,status code:%d,url:%s", resp.StatusCode, dReq.Url)
 	}
 
-	d := c.downloader
+	d := dReq.downloader
 	reader := resp.Body
 	if d.responseHandler != nil {
 		retry, reader2, err := d.responseHandler(resp)
@@ -148,53 +156,117 @@ Retry:
 			goto Retry
 		}
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		reader = ioi.WrapCloser(reader2)
 	}
 	if d.resDataHandler != nil {
 		data, err := io.ReadAll(reader)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		data, err = d.resDataHandler(data)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		resp.Body.Close()
 		reader = ioi.WrapCloser(bytes.NewBuffer(data))
 	}
-	return reader, nil
+	return resp, reader, nil
 }
 
-func (c *DownloadReq) Download(filepath string) error {
-	if c.mode&DModeOverwrite == 0 && fs.Exist(filepath) {
+func (dReq *DownloadReq) Download(filepath string) error {
+	if dReq.mode&DModeOverwrite == 0 && fs.Exist(filepath) {
 		return nil
 	}
-	if c.downloader.retryTimes == 0 {
-		c.downloader.retryTimes = 1
+	if dReq.downloader.retryTimes == 0 {
+		dReq.downloader.retryTimes = 1
 	}
-	if c.mode&DModeContinue != 0 {
-		return c.ContinuationDownload(filepath)
+	if dReq.mode&DModeForceContinue != 0 {
+		return dReq.continuationDownload(filepath)
 	}
 	var reader io.ReadCloser
 	var err error
-	for range c.downloader.retryTimes {
-		reader, err = c.GetReader()
+	var resp *http.Response
+	for range dReq.downloader.retryTimes {
+		resp, reader, err = dReq.getReader()
 		if err != nil {
 			return err
+		}
+		if resp.Header.Get(httpi.HeaderAcceptRanges) == "bytes" {
+			total, err := strconv.ParseInt(resp.Header.Get(httpi.HeaderContentLength), 10, 64)
+			if err != nil {
+				return err
+			}
+			if total > defaultSize {
+				reader.Close()
+				return dReq.continuationDownload(filepath)
+			}
+
 		}
 		err = fs.Download(filepath, reader)
 		reader.Close()
 		if err == nil {
 			return nil
 		}
-		log.Warn(err, c.Url, filepath)
+		log.Warn(err, dReq.Url, filepath)
 	}
 	return err
 }
 
-func (c *DownloadReq) ContinuationDownload(filepath string) error {
+func (dReq *DownloadReq) DownloadAttachment(dir string) error {
+
+	if dReq.downloader.retryTimes == 0 {
+		dReq.downloader.retryTimes = 1
+	}
+	var reader io.ReadCloser
+	var err error
+	var resp *http.Response
+	filepath := dir + fs.PathSeparator + path.Base(dReq.Url)
+	first := true
+	for range dReq.downloader.retryTimes {
+		resp, reader, err = dReq.getReader()
+		if err != nil {
+			return err
+		}
+
+		if first {
+			disposition, err := httpi.ParseContentDisposition(resp.Header.Get(httpi.HeaderContentDisposition))
+			if err != nil {
+				return err
+			}
+			filepath = dir + fs.PathSeparator + disposition
+			if dReq.mode&DModeOverwrite == 0 && fs.Exist(filepath) {
+				return nil
+			}
+			if resp.Header.Get(httpi.HeaderAcceptRanges) == "bytes" {
+				total, err := strconv.ParseInt(resp.Header.Get(httpi.HeaderContentLength), 10, 64)
+				if err != nil {
+					return err
+				}
+				if total > defaultSize {
+					reader.Close()
+					return dReq.continuationDownload(filepath)
+				}
+
+			}
+			first = false
+		}
+		if dReq.mode&DModeForceContinue != 0 {
+			reader.Close()
+			return dReq.continuationDownload(filepath)
+		}
+		err = fs.Download(filepath, reader)
+		reader.Close()
+		if err == nil {
+			return nil
+		}
+		log.Warn(err, dReq.Url, filepath)
+	}
+	return err
+}
+
+func (dReq *DownloadReq) continuationDownload(filepath string) error {
 	f, err := fs.OpenFile(filepath+DownloadKey, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return err
@@ -207,10 +279,10 @@ func (c *DownloadReq) ContinuationDownload(filepath string) error {
 
 	offset := fileinfo.Size()
 	var reader io.ReadCloser
-	for range c.downloader.retryTimes {
-		c.header = append(c.header, httpi.HeaderRange, "bytes="+strconv.FormatInt(offset, 10)+"-")
+	for range dReq.downloader.retryTimes {
+		dReq.header = append(dReq.header, httpi.HeaderRange, defaultRange)
 
-		reader, err = c.GetReader()
+		reader, err = dReq.GetReader()
 		if err != nil {
 			if errors.Is(err, ErrRangeNotSatisfiable) {
 				f.Close()
@@ -234,12 +306,12 @@ func (c *DownloadReq) ContinuationDownload(filepath string) error {
 	return err
 }
 
-// bytes xxx-xxx/xxxx
-const defaultRange = "bytes=0-8388608" // 1024*1024*8
+const defaultRange = "bytes=0-"
+const defaultSize = 100 * 1024 * 1024
 
 // TODO: 利用简单任务调度实现
-func (c *DownloadReq) ConcurrencyDownload(filepath string, url string, concurrencyNum int) error {
-	if c.mode&DModeOverwrite == 0 && fs.Exist(filepath) {
+func (dReq *DownloadReq) ConcurrencyDownload(filepath string, url string, concurrencyNum int) error {
+	if dReq.mode&DModeOverwrite == 0 && fs.Exist(filepath) {
 		return nil
 	}
 	panic("TODO")

@@ -269,7 +269,7 @@ func (r *UploadReq) UploadMultipartChunked(formData map[string]string, file Mult
 				total = end + 1
 			}
 			req.Body = io.NopCloser(bytes.NewReader(buf[0:size]))
-			req.Header.Set(httpi.HeaderContentRange, httpi.FormatRange(start, end, total))
+			req.Header.Set(httpi.HeaderContentRange, httpi.FormatContentRange(start, end, total))
 			resp, err := u.httpClient.Do(req)
 			if err != nil {
 				return err
@@ -369,7 +369,7 @@ func (r *UploadReq) UploadRawChunked(reader io.Reader, name string) error {
 				total = end + 1
 			}
 			req.Body = io.NopCloser(bytes.NewReader(buf[0:nr]))
-			req.Header.Set(httpi.HeaderContentRange, httpi.FormatRange(start, end, total))
+			req.Header.Set(httpi.HeaderContentRange, httpi.FormatContentRange(start, end, total))
 			resp, err := u.httpClient.Do(req)
 			if err != nil {
 				return err

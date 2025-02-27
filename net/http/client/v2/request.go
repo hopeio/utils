@@ -34,8 +34,8 @@ func (req *Request[RES]) SetClient(set func(c *client.Client)) *Request[RES] {
 	return req
 }
 
-func (r *Request[RES]) Origin() *client.Request {
-	return (*client.Request)(r)
+func (req *Request[RES]) Origin() *client.Request {
+	return (*client.Request)(req)
 }
 
 func (req *Request[RES]) Header(header httpi.SliceHeader) *Request[RES] {
@@ -63,8 +63,8 @@ func (req *Request[RES]) DoNoParam() (*RES, error) {
 }
 
 // Do create a HTTP request
-func (r *Request[RES]) Do(param any) (*RES, error) {
+func (req *Request[RES]) Do(param any) (*RES, error) {
 	response := new(RES)
-	err := (*client.Request)(r).Do(param, response)
+	err := (*client.Request)(req).Do(param, response)
 	return response, err
 }

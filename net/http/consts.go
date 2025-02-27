@@ -123,5 +123,5 @@ const (
 const (
 	FormDataFieldTmpl = `form-data; name="%s"`
 	FormDataFileTmpl  = `form-data; name="%s"; filename="%s"`
-	AttachmentTmpl    = `attachment; filename="%s" `
+	AttachmentTmpl    = `attachment; filename="%s"`
 )

@@ -8,6 +8,7 @@ package http
 
 import (
 	"net/http"
+	"net/url"
 	"testing"
 )
 
@@ -26,4 +27,8 @@ func TestRoute(t *testing.T) {
 	//g.GET("/:name", func(context *gin.Context) {})
 	//g.GET("/*file", func(context *gin.Context) {})
 
+}
+
+func TestURLUnescape(t *testing.T) {
+	t.Log(url.QueryUnescape(""))
 }

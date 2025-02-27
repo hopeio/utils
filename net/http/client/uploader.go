@@ -34,8 +34,8 @@ func NewUploader() *Uploader {
 	}
 }
 
-func (u *Uploader) UploadReq(url string) *UploadReq {
-	return NewUploadReq(url).Uploader(u)
+func (d *Uploader) UploadReq(url string) *UploadReq {
+	return NewUploadReq(url).Uploader(d)
 }
 
 const (

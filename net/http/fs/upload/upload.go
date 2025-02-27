@@ -38,7 +38,7 @@ func Upload(dir string) http.HandlerFunc {
 			return
 		}
 
-		start, end, total, err := httpi.ParseRange(rangeHeader)
+		start, end, total, err := httpi.ParseContentRange(rangeHeader)
 		if err != nil {
 			http.Error(w, "failed to parse range header", http.StatusBadRequest)
 			return

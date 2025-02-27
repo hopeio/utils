@@ -15,13 +15,7 @@ import (
 var DefaultDownloadHttpClient = newDownloadHttpClient()
 
 func newDownloadHttpClient() *http.Client {
-	return &http.Client{
-		//Timeout: timeout * 2,
-		Transport: &http.Transport{
-			Proxy:             http.ProxyFromEnvironment, // 代理使用
-			ForceAttemptHTTP2: true,
-		},
-	}
+	return &http.Client{}
 }
 
 // TODO: Range Status(206) PartialContent 下载
@@ -42,12 +36,16 @@ func NewDownloader(options ...Option) *Downloader {
 	return downloader
 }
 
-func (c *Downloader) Download(filepath string, r *DownloadReq) error {
-	return r.Downloader(c).Download(filepath)
+func (d *Downloader) Download(filepath string, r *DownloadReq) error {
+	return r.Downloader(d).Download(filepath)
 }
 
-func (c *Downloader) DownloadReq(url string) *DownloadReq {
-	return NewDownloadReq(url).Downloader(c)
+func (d *Downloader) DownloadAttachment(dir string, r *DownloadReq) {
+	r.Downloader(d).DownloadAttachment(dir)
+}
+
+func (d *Downloader) DownloadReq(url string) *DownloadReq {
+	return NewDownloadReq(url).Downloader(d)
 }
 
 const DownloadKey = fs.DownloadKey
