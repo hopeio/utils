@@ -28,7 +28,7 @@ func SetOptions(options ...jwt.ParserOption) {
 // 或者说用户每更改一次信息就刷新token（貌似可行）
 // 有泛型这里多好写
 type Claims[T any] struct {
-	Data T `json:"data,omitempty"`
+	Auth T `json:"auth,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -40,7 +40,7 @@ func NewClaims[T any](data T, maxAge int64, sign string) *Claims[T] {
 	now := time.Now()
 	exp := now.Add(time.Duration(maxAge))
 	return &Claims[T]{
-		Data: data,
+		Auth: data,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: &jwt.NumericDate{Time: exp},
 			IssuedAt:  &jwt.NumericDate{Time: now},
