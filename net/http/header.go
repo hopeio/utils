@@ -178,6 +178,11 @@ func ParseContentDisposition(header string) (string, error) {
 	return url.PathUnescape(header)
 }
 
+func GetContentLength(header http.Header) int64 {
+	length, _ := strconv.ParseInt(header.Get(HeaderContentLength), 10, 64)
+	return length
+}
+
 func FormatContentDisposition(filename string) string {
 	// Basic example without encoding considerations
 	return fmt.Sprintf(`attachment; filename="%s"`, filename)

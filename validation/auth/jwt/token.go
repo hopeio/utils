@@ -29,13 +29,11 @@ func SetOptions(options ...jwt.ParserOption) {
 // 有泛型这里多好写
 type Claims[T any] struct {
 	Data T `json:"data,omitempty"`
-	*jwt.RegisteredClaims
+	jwt.RegisteredClaims
 }
 
 func (c *Claims[T]) GenerateToken(secret interface{}) (string, error) {
-	tokenClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
-	token, err := tokenClaims.SignedString(secret)
-	return token, err
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, c).SignedString(secret)
 }
 
 func NewClaims[T any](data T, maxAge int64, sign string) *Claims[T] {
@@ -43,7 +41,7 @@ func NewClaims[T any](data T, maxAge int64, sign string) *Claims[T] {
 	exp := now.Add(time.Duration(maxAge))
 	return &Claims[T]{
 		Data: data,
-		RegisteredClaims: &jwt.RegisteredClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: &jwt.NumericDate{Time: exp},
 			IssuedAt:  &jwt.NumericDate{Time: now},
 			Issuer:    sign,

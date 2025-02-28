@@ -434,7 +434,7 @@ func BracketsIntervals(s string, tokenBegin, tokenEnd rune) (string, bool) {
 //	"MyC" =>                  ["My", "C"]
 //	"HTML" =>                 ["HTML"]
 //	"PDFLoader" =>            ["PDF", "Loader"]
-//	"AString" =>              ["A", "String"]
+//	"AString" =>              ["A", "Chinese"]
 //	"SimpleXMLParser" =>      ["Simple", "XML", "Parser"]
 //	"vimRPCPlugin" =>         ["vim", "RPC", "Plugin"]
 //	"GL11Version" =>          ["GL", "11", "Version"]

@@ -10,11 +10,20 @@ import (
 	randi "github.com/hopeio/utils/strings"
 	"math/rand/v2"
 	"reflect"
+	"time"
 )
+
+var timeType = reflect.TypeOf(time.Time{})
+
+func New[T any]() T {
+	var v T
+	Mock(&v)
+	return v
+}
 
 func Mock(v interface{}) {
 	value := reflect.ValueOf(v)
-	typMap := make(map[reflect.Type]int)
+	typMap := make(map[reflect.Type]uint8)
 	mock(value, nil, typMap)
 }
 
@@ -24,7 +33,7 @@ const length = 1
 // 一个类型最大重复次数
 const times = 3
 
-func mock(value reflect.Value, field *reflect.StructField, typMap map[reflect.Type]int) {
+func mock(value reflect.Value, field *reflect.StructField, typMap map[reflect.Type]uint8) {
 	typ := value.Type()
 	var tag string
 	if field != nil {
@@ -45,7 +54,7 @@ func mock(value reflect.Value, field *reflect.StructField, typMap map[reflect.Ty
 		}
 	case reflect.String:
 		if tag == "" {
-			value.SetString(randi.String())
+			value.SetString(randi.English())
 		}
 	case reflect.Ptr:
 		if value.IsNil() && value.CanSet() {
@@ -53,12 +62,19 @@ func mock(value reflect.Value, field *reflect.StructField, typMap map[reflect.Ty
 		}
 		mock(value.Elem(), field, typMap)
 	case reflect.Struct:
+		if typ == timeType {
+			value.Set(reflect.ValueOf(time.Now()))
+			return
+		}
 		if count := typMap[typ]; count == times {
 			return
 		}
 		typMap[typ] = typMap[typ] + 1
 		for i := 0; i < value.NumField(); i++ {
 			sf := typ.Field(i)
+			if !sf.IsExported() {
+				continue
+			}
 			fieldValue := value.Field(i)
 			mock(fieldValue, &sf, typMap)
 		}

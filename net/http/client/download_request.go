@@ -187,14 +187,19 @@ func (dReq *DownloadReq) Download(filepath string) error {
 	var reader io.ReadCloser
 	var err error
 	var resp *http.Response
+	var notContinuation bool
 	for range dReq.downloader.retryTimes {
 		resp, reader, err = dReq.getReader()
 		if err != nil {
 			return err
 		}
-		if resp.Header.Get(httpi.HeaderAcceptRanges) == "bytes" {
-			reader.Close()
-			return dReq.continuationDownload(filepath)
+		if !notContinuation && resp.Header.Get(httpi.HeaderAcceptRanges) == "bytes" {
+			length := httpi.GetContentLength(resp.Header)
+			if length > defaultSize {
+				reader.Close()
+				return dReq.continuationDownload(filepath)
+			}
+			notContinuation = true
 		}
 		err = fs.Download(filepath, reader)
 		reader.Close()
@@ -232,8 +237,11 @@ func (dReq *DownloadReq) DownloadAttachment(dir string) error {
 				return nil
 			}
 			if resp.Header.Get(httpi.HeaderAcceptRanges) == "bytes" {
-				reader.Close()
-				return dReq.continuationDownload(filepath)
+				length := httpi.GetContentLength(resp.Header)
+				if length > defaultSize {
+					reader.Close()
+					return dReq.continuationDownload(filepath)
+				}
 			}
 			first = false
 		}
@@ -292,7 +300,7 @@ func (dReq *DownloadReq) continuationDownload(filepath string) error {
 }
 
 const defaultRange = "bytes=0-"
-const defaultSize = 100 * 1024 * 1024
+const defaultSize = 30 * 1024 * 1024
 
 // TODO: 利用简单任务调度实现
 func (dReq *DownloadReq) ConcurrencyDownload(filepath string, url string, concurrencyNum int) error {
