@@ -16,6 +16,14 @@ import (
 )
 
 type Header interface {
+	Add(key, value string)
+	Set(key, value string)
+	Get(key string) string
+	Values(key string) []string
+	Range(func(key, value string))
+}
+
+type IntoHttpHeader interface {
 	IntoHttpHeader(header http.Header)
 }
 
@@ -26,20 +34,49 @@ func NewHeader() *SliceHeader {
 	return &h
 }
 
-func (h *SliceHeader) Add(k, v string) *SliceHeader {
+func (h *SliceHeader) Add(k, v string) {
 	*h = append(*h, k, v)
-	return h
+
 }
 
-func (h *SliceHeader) Set(k, v string) *SliceHeader {
+func (h *SliceHeader) Set(k, v string) {
 	header := *h
 	for i, s := range header {
 		if s == k {
 			header[i+1] = v
-			return h
+			return
 		}
 	}
-	return h.Add(k, v)
+	h.Add(k, v)
+}
+
+func (h *SliceHeader) Get(k string) string {
+	header := *h
+	for i, s := range header {
+		if s == k {
+			return header[i+1]
+		}
+	}
+	return ""
+}
+func (h *SliceHeader) Values(k string) []string {
+	header := *h
+	var values []string
+	for i, s := range header {
+		if s == k {
+			values = append(values, header[i+1])
+		}
+	}
+	return values
+}
+
+func (h *SliceHeader) Range(f func(key, value string)) {
+	header := *h
+	for i, s := range header {
+		if i%2 == 0 {
+			f(s, header[i+1])
+		}
+	}
 }
 
 func (h SliceHeader) IntoHttpHeader(header http.Header) {
@@ -190,8 +227,60 @@ func FormatContentDisposition(filename string) string {
 
 type MapHeader map[string]string
 
-func (m MapHeader) IntoHttpHeader(header http.Header) {
-	for k, v := range m {
+func (h MapHeader) IntoHttpHeader(header http.Header) {
+	for k, v := range h {
 		header.Set(k, v)
+	}
+}
+
+func (h MapHeader) Add(k, v string) {
+	h[k] = v
+}
+
+func (h MapHeader) Set(k, v string) {
+	h[k] = v
+}
+
+func (h MapHeader) Get(k string) string {
+	return h[k]
+}
+
+func (h MapHeader) Values(k string) []string {
+	return []string{h[k]}
+}
+
+func (h MapHeader) Range(f func(key, value string)) {
+	for k, v := range h {
+		f(k, v)
+	}
+}
+
+type HttpHeader http.Header
+
+func (h HttpHeader) IntoHttpHeader(header http.Header) {
+	for k, v := range h {
+		header.Set(k, v[0])
+	}
+}
+
+func (h HttpHeader) Add(k, v string) {
+	http.Header(h).Add(k, v)
+}
+
+func (h HttpHeader) Set(k, v string) {
+	http.Header(h).Set(k, v)
+}
+
+func (h HttpHeader) Get(k string) string {
+	return http.Header(h).Get(k)
+}
+
+func (h HttpHeader) Values(k string) []string {
+	return http.Header(h).Values(k)
+}
+
+func (h HttpHeader) Range(f func(key, value string)) {
+	for k, v := range h {
+		f(k, v[0])
 	}
 }

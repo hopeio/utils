@@ -12,8 +12,8 @@ type ResponseFile struct {
 	Body io.ReadCloser `json:"body,omitempty"`
 }
 
-func (res *ResponseFile) RespHeader() map[string]string {
-	return map[string]string{httpi.HeaderContentType: httpi.ContentTypeOctetStream, httpi.HeaderContentDisposition: fmt.Sprintf(httpi.AttachmentTmpl, res.Name)}
+func (res *ResponseFile) Header() httpi.Header {
+	return httpi.MapHeader{httpi.HeaderContentType: httpi.ContentTypeOctetStream, httpi.HeaderContentDisposition: fmt.Sprintf(httpi.AttachmentTmpl, res.Name)}
 }
 
 func (res *ResponseFile) WriteTo(writer io.Writer) (int64, error) {
@@ -32,8 +32,8 @@ type ResponseFileWriteTo struct {
 	Body httpi.WriterToCloser `json:"body,omitempty"`
 }
 
-func (res *ResponseFileWriteTo) RespHeader() map[string]string {
-	return map[string]string{httpi.HeaderContentType: httpi.ContentTypeOctetStream, httpi.HeaderContentDisposition: fmt.Sprintf(httpi.AttachmentTmpl, res.Name)}
+func (res *ResponseFileWriteTo) Header() httpi.Header {
+	return httpi.MapHeader{httpi.HeaderContentType: httpi.ContentTypeOctetStream, httpi.HeaderContentDisposition: fmt.Sprintf(httpi.AttachmentTmpl, res.Name)}
 }
 
 func (res *ResponseFileWriteTo) WriteTo(writer io.Writer) (int64, error) {

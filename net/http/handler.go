@@ -47,14 +47,14 @@ type ReqResp struct {
 	*http.Request
 	http.ResponseWriter
 }
-type Service[REQ, RES any] func(ctx ReqResp, req REQ) (RES, *ResError)
+type Service[REQ, RES any] func(ctx ReqResp, req REQ) (RES, *ErrRep)
 
 func HandlerWrap[REQ, RES any](service Service[*REQ, *RES]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		req := new(REQ)
 		err := binding.Bind(r, req)
 		if err != nil {
-			RespSuccessData(w, errcode.InvalidArgument.Wrap(err))
+			RespErrCodeMsg(w, errcode.InvalidArgument, err.Error())
 			return
 		}
 		res, errRep := service(ReqResp{r, w}, req)
@@ -86,7 +86,7 @@ func HandlerWrapCompatibleGRPC[REQ, RES any](method types.GrpcServiceMethod[*REQ
 		}
 		res, err := method(WarpContext(ReqResp{r, w}), req)
 		if err != nil {
-			ResErrorFromError(err).Response(w, http.StatusOK)
+			ErrRepFrom(err).Response(w, http.StatusOK)
 			return
 		}
 		anyres := any(res)

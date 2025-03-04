@@ -17,7 +17,7 @@ import (
 
 // only example
 
-type GinService[REQ, RES any] func(*gin.Context, REQ) (RES, *httpi.ResError)
+type GinService[REQ, RES any] func(*gin.Context, REQ) (RES, *httpi.ErrRep)
 
 func HandlerWrap[REQ, RES any](service GinService[*REQ, *RES]) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -50,7 +50,7 @@ func HandlerWrapCompatibleGRPC[REQ, RES any](service types.GrpcServiceMethod[*RE
 		}
 		res, err := service(httpi.WarpContext(ctx), req)
 		if err != nil {
-			ctx.JSON(http.StatusOK, httpi.ResErrorFromError(err))
+			ctx.JSON(http.StatusOK, httpi.ErrRepFrom(err))
 			return
 		}
 		if httpres, ok := any(res).(httpi.IHttpResponse); ok {

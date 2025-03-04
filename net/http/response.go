@@ -62,11 +62,11 @@ func NewErrorResData(code errcode.ErrCode, msg string) *ResAnyData {
 	}
 }
 
-func RespErrcode(w http.ResponseWriter, code errcode.ErrCode) {
+func RespErrCode(w http.ResponseWriter, code errcode.ErrCode) {
 	NewResData[any](code, code.Error(), nil).Response(w, http.StatusOK)
 }
 
-func RespError(w http.ResponseWriter, code errcode.ErrCode, msg string) {
+func RespErrCodeMsg(w http.ResponseWriter, code errcode.ErrCode, msg string) {
 	NewResData[any](code, msg, nil).Response(w, http.StatusOK)
 }
 
@@ -122,16 +122,15 @@ func NewReceiveData(code errcode.ErrCode, msg string, data any) *ReceiveData {
 
 type IHttpResponse interface {
 	StatusCode() int
-	RespHeader() map[string]string
+	Header() Header
 	io.WriterTo
 	io.Closer
 }
 
 func ResponseWrite(w http.ResponseWriter, httpres IHttpResponse) (int, error) {
 	w.WriteHeader(httpres.StatusCode())
-	for k, v := range httpres.RespHeader() {
-		w.Header().Set(k, v)
-	}
+	header := w.Header()
+	httpres.Header().Range(header.Set)
 	i, err := httpres.WriteTo(w)
 	if err != nil {
 		return int(i), err
@@ -144,12 +143,12 @@ func ResponseWrite(w http.ResponseWriter, httpres IHttpResponse) (int, error) {
 }
 
 type HttpResponseRawBody struct {
-	Status  int               `json:"status,omitempty"`
-	Headers map[string]string `json:"header,omitempty"`
-	Body    []byte            `json:"body,omitempty"`
+	Status  int       `json:"status,omitempty"`
+	Headers MapHeader `json:"header,omitempty"`
+	Body    []byte    `json:"body,omitempty"`
 }
 
-func (res *HttpResponseRawBody) RespHeader() map[string]string {
+func (res *HttpResponseRawBody) Header() Header {
 	return res.Headers
 }
 
@@ -176,12 +175,17 @@ func (res *HttpResponseRawBody) Response(w http.ResponseWriter) (int, error) {
 }
 
 type HttpResponse struct {
-	Status  int               `json:"status,omitempty"`
-	Headers map[string]string `json:"header,omitempty"`
-	Body    WriterToCloser    `json:"body,omitempty"`
+	Status  int            `json:"status,omitempty"`
+	Headers MapHeader      `json:"header,omitempty"`
+	Body    WriterToCloser `json:"body,omitempty"`
 }
 
-func (res *HttpResponse) RespHeader() map[string]string {
+type WriterToCloser interface {
+	io.WriterTo
+	io.Closer
+}
+
+func (res *HttpResponse) Header() Header {
 	return res.Headers
 }
 
@@ -213,41 +217,40 @@ func (res *HttpResponse) Response(w http.ResponseWriter) (int, error) {
 	return int(i), err
 }
 
-type ResError errcode.ErrRep
+type ErrRep errcode.ErrRep
 
-func (res *ResError) Response(w http.ResponseWriter, statusCode int) (int, error) {
+func ErrRepFrom(err error) *ErrRep {
+	if errrep, ok := err.(*errcode.ErrRep); ok {
+		return (*ErrRep)(errrep)
+	}
+	if errcode, ok := err.(errcode.ErrCode); ok {
+		return &ErrRep{Code: errcode, Msg: errcode.Error()}
+	}
+	return &ErrRep{Code: errcode.Unknown, Msg: err.Error()}
+}
+
+func (res *ErrRep) Response(w http.ResponseWriter, statusCode int) (int, error) {
 	w.WriteHeader(statusCode)
 	w.Header().Set(HeaderContentType, ContentTypeJsonUtf8)
 	jsonBytes, _ := json.Marshal(res)
 	return w.Write(jsonBytes)
 }
 
-type WriterToCloser interface {
-	io.WriterTo
-	io.Closer
+func ResponseError(w http.ResponseWriter, err error) {
+	ErrRepFrom(err).Response(w, http.StatusOK)
 }
 
 type IHttpResponseTo interface {
 	Response(w http.ResponseWriter) (int, error)
 }
 
-func ResErrorFromError(err error) *ResError {
-	if errco, ok := err.(errcode.ErrCode); ok {
-		return &ResError{Code: errco, Msg: errco.Error()}
-	}
-	if errrep, ok := err.(*errcode.ErrRep); ok {
-		return (*ResError)(errrep)
-	}
-	return &ResError{Code: errcode.Unknown, Msg: err.Error()}
-}
-
 type HttpResponseStream struct {
-	Status  int               `json:"status,omitempty"`
-	Headers map[string]string `json:"header,omitempty"`
-	Body    iter.Seq[[]byte]  `json:"body,omitempty"`
+	Status  int              `json:"status,omitempty"`
+	Headers MapHeader        `json:"header,omitempty"`
+	Body    iter.Seq[[]byte] `json:"body,omitempty"`
 }
 
-func (res *HttpResponseStream) RespHeader() map[string]string {
+func (res *HttpResponseStream) Header() Header {
 	res.Headers[HeaderTransferEncoding] = "chunked"
 	return res.Headers
 }

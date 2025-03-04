@@ -13,7 +13,7 @@ import (
 )
 
 func RespErrcode(ctx *gin.Context, code errcode.ErrCode) {
-	httpi.RespErrcode(ctx.Writer, code)
+	httpi.RespErrCode(ctx.Writer, code)
 }
 
 func RespSuccessMsg(ctx *gin.Context, msg string) {

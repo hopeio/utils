@@ -7,15 +7,14 @@ import (
 
 type ICommonResponseWriter interface {
 	Status(code int)
-	Set(k, v string)
+	Header() Header
 	io.Writer
 }
 
 func CommonResponseWrite(w ICommonResponseWriter, httpres IHttpResponse) (int, error) {
 	w.Status(httpres.StatusCode())
-	for k, v := range httpres.RespHeader() {
-		w.Set(k, v)
-	}
+	header := w.Header()
+	httpres.Header().Range(header.Set)
 	i, err := httpres.WriteTo(w)
 	if err != nil {
 		return int(i), err
@@ -34,7 +33,7 @@ type CommonResponseWriter struct {
 func (w *CommonResponseWriter) Status(code int) {
 	w.WriteHeader(code)
 }
-func (w *CommonResponseWriter) Set(k, v string) {
+func (w *CommonResponseWriter) SetHeader(k, v string) {
 	w.Header().Set(k, v)
 }
 func (w *CommonResponseWriter) Write(p []byte) (int, error) {
@@ -47,4 +46,8 @@ type ICommonHttpResponseTo interface {
 
 type CommonHttpResponseTo struct {
 	IHttpResponseTo
+}
+
+type ICommonResponseTo interface {
+	Response(w ICommonResponseWriter) (int, error)
 }
