@@ -14,8 +14,8 @@ import (
 )
 
 type Loader struct {
-	AutoReloadType ReloadType    `json:"autoReloadType" comment:"none,fsnotify,timer"` // 本地分为fsnotify和timer，fsnotify采用系统调用通知，timer定时器去查文件是否变更
-	TimerInterval  time.Duration `json:"timerInterval" comment:"timer interval"`
+	// 间隔大于1秒采用timer定时加载，小于1秒用fsnotify
+	AutoReloadInterval time.Duration `json:"autoReloadInterval" comment:"none"`
 }
 
 type ReloadType int
@@ -72,16 +72,8 @@ func (t ReloadType) String() string {
 }
 
 // New initialize a Loader
-func New() *Loader {
-	return &Loader{}
-}
-
-func (ld *Loader) SetAutoReloadType(autoReloadType ReloadType, interval time.Duration) {
-	ld.AutoReloadType = autoReloadType
-	if autoReloadType == ReloadTypeTimer && interval < time.Second {
-		interval = interval * time.Second
-	}
-	ld.TimerInterval = interval
+func New(interval time.Duration) *Loader {
+	return &Loader{AutoReloadInterval: interval}
 }
 
 // Load will unmarshal configurations to struct from files that you provide
@@ -91,8 +83,8 @@ func (ld *Loader) Handle(handle func([]byte), files ...string) (err error) {
 	if err != nil {
 		return err
 	}
-	if ld.AutoReloadType != ReloadTypeNone {
-		if ld.AutoReloadType == ReloadTypeTimer {
+	if ld.AutoReloadInterval != 0 {
+		if ld.AutoReloadInterval >= time.Second {
 			go ld.watchTimer(handle, files...)
 		} else {
 			go ld.watchNotify(handle, files...)
@@ -154,7 +146,7 @@ func (ld *Loader) watchTimer(handle func([]byte), files ...string) {
 			fileModTimes[file] = fileInfo.ModTime()
 		}
 	}
-	timer := time.NewTicker(ld.TimerInterval)
+	timer := time.NewTicker(ld.AutoReloadInterval)
 	for range timer.C {
 		for i := len(files) - 1; i >= 0; i-- {
 			file := files[i]
