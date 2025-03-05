@@ -13,7 +13,7 @@ type ResponseFile struct {
 }
 
 func (res *ResponseFile) Header() httpi.Header {
-	return httpi.MapHeader{httpi.HeaderContentType: httpi.ContentTypeOctetStream, httpi.HeaderContentDisposition: fmt.Sprintf(httpi.AttachmentTmpl, res.Name)}
+	return &httpi.SliceHeader{httpi.HeaderContentType, httpi.ContentTypeOctetStream, httpi.HeaderContentDisposition, fmt.Sprintf(httpi.AttachmentTmpl, res.Name)}
 }
 
 func (res *ResponseFile) WriteTo(writer io.Writer) (int64, error) {
@@ -33,7 +33,7 @@ type ResponseFileWriteTo struct {
 }
 
 func (res *ResponseFileWriteTo) Header() httpi.Header {
-	return httpi.MapHeader{httpi.HeaderContentType: httpi.ContentTypeOctetStream, httpi.HeaderContentDisposition: fmt.Sprintf(httpi.AttachmentTmpl, res.Name)}
+	return &httpi.SliceHeader{httpi.HeaderContentType, httpi.ContentTypeOctetStream, httpi.HeaderContentDisposition, fmt.Sprintf(httpi.AttachmentTmpl, res.Name)}
 }
 
 func (res *ResponseFileWriteTo) WriteTo(writer io.Writer) (int64, error) {

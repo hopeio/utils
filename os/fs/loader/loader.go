@@ -9,6 +9,7 @@ package loader
 import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/hopeio/utils/log"
+	"io"
 	"os"
 	"time"
 )
@@ -77,31 +78,31 @@ func New(interval time.Duration) *Loader {
 }
 
 // Load will unmarshal configurations to struct from files that you provide
-func (ld *Loader) Handle(handle func([]byte), files ...string) (err error) {
+func (ld *Loader) Handle(handle func(io.Reader), filepaths ...string) (err error) {
 
-	err = load(handle, files...)
+	err = load(handle, filepaths...)
 	if err != nil {
 		return err
 	}
 	if ld.AutoReloadInterval != 0 {
 		if ld.AutoReloadInterval >= time.Second {
-			go ld.watchTimer(handle, files...)
+			go ld.watchTimer(handle, filepaths...)
 		} else {
-			go ld.watchNotify(handle, files...)
+			go ld.watchNotify(handle, filepaths...)
 		}
 	}
 
 	return
 }
 
-func (ld *Loader) watchNotify(handle func([]byte), files ...string) {
+func (ld *Loader) watchNotify(handle func(reader io.Reader), filepaths ...string) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Error(err)
 	}
 	defer watcher.Close()
-	for _, file := range files {
-		err = watcher.Add(file)
+	for _, filepath := range filepaths {
+		err = watcher.Add(filepath)
 		if err != nil {
 			log.Error(err)
 		}
@@ -124,7 +125,7 @@ func (ld *Loader) watchNotify(handle func([]byte), files ...string) {
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				log.Info("modified file:", event.Name)
 				if err := load(handle, event.Name); err != nil {
-					log.Error("failed to reload data from %v, got error %v\n", files, err)
+					log.Errorf("failed to reload data from %v, got error %v\n", filepaths, err)
 				}
 			}
 		case err, ok := <-watcher.Errors:
@@ -136,7 +137,7 @@ func (ld *Loader) watchNotify(handle func([]byte), files ...string) {
 	}
 }
 
-func (ld *Loader) watchTimer(handle func([]byte), files ...string) {
+func (ld *Loader) watchTimer(handle func(reader io.Reader), files ...string) {
 	var fileModTimes map[string]time.Time
 	for i := len(files) - 1; i >= 0; i-- {
 		file := files[i]
@@ -164,14 +165,15 @@ func (ld *Loader) watchTimer(handle func([]byte), files ...string) {
 	}
 }
 
-func load(handle func([]byte), files ...string) (err error) {
-	for _, file := range files {
-		log.Debugf("load data from: '%v'", file)
-		data, err := os.ReadFile(file)
+func load(handle func(io.Reader), filepaths ...string) (err error) {
+	for _, filepath := range filepaths {
+		log.Debugf("load data from: '%v'", filepath)
+		file, err := os.Open(filepath)
 		if err != nil {
 			return err
 		}
-		handle(data)
+		handle(file)
+		file.Close()
 	}
 	return err
 }

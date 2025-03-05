@@ -21,8 +21,8 @@ type File struct {
 	Name string
 }
 
-type FileInterface interface {
-	io.Reader
+type IFile interface {
+	io.ReadCloser
 	Name() string
 }
 
@@ -31,7 +31,7 @@ type FileInfo struct {
 	modTime time.Time
 	size    int64
 	mode    fs.FileMode
-	Binary  []byte
+	Body    io.ReadCloser
 }
 
 func (f *FileInfo) Name() string {
