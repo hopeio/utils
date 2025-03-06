@@ -93,42 +93,46 @@ func (d *Date) UnmarshalText(data []byte) error {
 	return nil
 }
 
-func (ts Date) GormDataType() string {
+func (d Date) GormDataType() string {
 	return "time"
 }
 
-func (ts Date) MarshalBinary() ([]byte, error) {
-	return binary.ToBinary(ts), nil
+func (d Date) MarshalBinary() ([]byte, error) {
+	return binary.ToBinary(d), nil
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
-func (ts *Date) UnmarshalBinary(data []byte) error {
-	*ts = binary.BinaryTo[Date](data)
+func (d *Date) UnmarshalBinary(data []byte) error {
+	*d = binary.BinaryTo[Date](data)
 	return nil
 }
 
-func (ts Date) GobEncode() ([]byte, error) {
-	return ts.MarshalBinary()
+func (d Date) GobEncode() ([]byte, error) {
+	return d.MarshalBinary()
 }
 
-func (ts *Date) GobDecode(data []byte) error {
-	return ts.UnmarshalBinary(data)
+func (d *Date) GobDecode(data []byte) error {
+	return d.UnmarshalBinary(data)
 }
 
-func (x Date) MarshalGQL(w io.Writer) {
-	w.Write([]byte(x.Time().Format(time.DateOnly)))
+func (d Date) MarshalGQL(w io.Writer) {
+	w.Write([]byte(d.Time().Format(time.DateOnly)))
 }
 
-func (x *Date) UnmarshalGQL(v interface{}) error {
+func (d *Date) UnmarshalGQL(v interface{}) error {
 	if i, ok := v.(string); ok {
 		t, err := time.Parse(time.DateOnly, i)
 		if err != nil {
 			return err
 		}
-		*x = Date(t.Unix() / SecondsOfDay)
+		*d = Date(t.Unix() / SecondsOfDay)
 		return nil
 	}
 	return errors.New("enum need integer type")
+}
+
+func (d Date) String() string {
+	return d.Time().Format(time.DateOnly)
 }
 
 type DateTime int64
