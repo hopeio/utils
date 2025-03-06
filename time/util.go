@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func TimeCost(start time.Time) time.Duration {
+func Cost(start time.Time) time.Duration {
 	return time.Since(start)
 }
 

@@ -19,21 +19,25 @@ import (
 
 type Date int32
 
+func DateFromTime(t time.Time) Date {
+	return Date(t.Unix() / SecondsOfDay)
+}
+
 func (d Date) Time() time.Time {
-	return time.Unix(int64(d)*int64(DaySecond), 0)
+	return time.Unix(int64(d)*SecondsOfDay, 0)
 }
 
 // Scan scan time.
 func (d *Date) Scan(value interface{}) (err error) {
 	nullTime := &sql.NullTime{}
 	err = nullTime.Scan(value)
-	*d = Date(nullTime.Time.Unix() / int64(DaySecond))
+	*d = Date(nullTime.Time.Unix() / SecondsOfDay)
 	return
 }
 
 // Value get time value.
 func (d Date) Value() (driver.Value, error) {
-	return []byte(time.Unix(int64(d)*int64(DaySecond), 0).Format(time.DateOnly)), nil
+	return []byte(time.Unix(int64(d)*SecondsOfDay, 0).Format(time.DateOnly)), nil
 }
 
 func (d Date) MarshalJSON() ([]byte, error) {
@@ -56,7 +60,7 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 		if err != nil {
 			return err
 		}
-		*d = Date(t.Unix() / int64(DaySecond))
+		*d = Date(t.Unix() / SecondsOfDay)
 		return nil
 	} else {
 		v, err := strconv.ParseInt(str, 10, 64)
@@ -64,9 +68,9 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		if len(str) == 13 {
-			*d = Date(v / 1000 / int64(DaySecond))
+			*d = Date(v / 1000 / SecondsOfDay)
 		} else {
-			*d = Date(v / int64(DaySecond))
+			*d = Date(v / SecondsOfDay)
 		}
 	}
 	return nil
@@ -85,7 +89,7 @@ func (d *Date) UnmarshalText(data []byte) error {
 	if err != nil {
 		return err
 	}
-	*d = Date(t.Unix() / int64(DaySecond))
+	*d = Date(t.Unix() / SecondsOfDay)
 	return nil
 }
 
@@ -121,13 +125,17 @@ func (x *Date) UnmarshalGQL(v interface{}) error {
 		if err != nil {
 			return err
 		}
-		*x = Date(t.Unix() / int64(DaySecond))
+		*x = Date(t.Unix() / SecondsOfDay)
 		return nil
 	}
 	return errors.New("enum need integer type")
 }
 
 type DateTime int64
+
+func DateTimeFromTime(t time.Time) Date {
+	return Date(t.Unix())
+}
 
 func (d DateTime) Time() time.Time {
 	return time.Unix(int64(d), 0)
@@ -201,4 +209,8 @@ func (d *DateTime) UnmarshalText(data []byte) error {
 
 func (ts DateTime) GormDataType() string {
 	return "time"
+}
+
+func (ts DateTime) Date() Date {
+	return Date(int64(ts) / SecondsOfDay)
 }

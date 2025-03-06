@@ -9,12 +9,6 @@ package time
 import "time"
 
 const (
-	SecondsOfDay    = 24 * 60 * 60
-	SecondsOfMinute = 60
-	TimeDay         = SecondsOfDay * time.Second
-)
-
-const (
 	LayoutTimeMacro   = "2006-01-02 15:04:05.999999"
 	LayoutDateTime    = "2006-01-02 15:04:05"
 	LayoutRFC3339     = time.RFC3339
@@ -33,16 +27,21 @@ const (
 )
 
 const (
-	Day        = time.Hour * 24
-	MonthDay30 = Day * 30
-	MonthDay31 = Day * 31
-	MonthDay28 = Day * 28
-	MonthDay29 = Day * 29
-	Month      = MonthDay30
-	YearDay365 = Day * 365
-	YearDay366 = Day * 366
-	Year       = YearDay365
-	DaySecond  = Day / time.Second
+	Day             = time.Hour * 24
+	MonthDay30      = Day * 30
+	MonthDay31      = Day * 31
+	MonthDay28      = Day * 28
+	MonthDay29      = Day * 29
+	Month           = MonthDay30
+	YearDay365      = Day * 365
+	YearDay366      = Day * 366
+	Year            = YearDay365
+	SecondsOfDay    = HoursOfDay * SecondsOfHour
+	SecondsOfMinute = 60
+	SecondsOfHour   = MinutesOfHour * SecondsOfMinute
+	MinutesOfHour   = 60
+	MinutesOfDay    = MinutesOfHour * HoursOfDay
+	HoursOfDay      = 24
 )
 
 const (
