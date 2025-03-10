@@ -18,7 +18,6 @@ import (
 type Watch struct {
 	*fsnotify.Watcher
 	interval time.Duration
-	done     chan struct{}
 	handler  watch.Handler
 }
 
@@ -27,7 +26,6 @@ func New(interval time.Duration) (*Watch, error) {
 	w := &Watch{
 		Watcher:  watcher,
 		interval: interval,
-		done:     make(chan struct{}, 1),
 		//1.map和数组做取舍
 		handler: make(watch.Handler),
 		//Handler:  make(map[string]map[fsnotify.Op]func()),
@@ -59,14 +57,12 @@ func (w *Watch) Add(path string, op fsnotify.Op, callback func(string)) error {
 
 func (w *Watch) run() {
 	ev := &fsnotify.Event{}
-OuterLoop:
 	for {
 		select {
 		case event, ok := <-w.Watcher.Events:
 			if !ok {
 				return
 			}
-			log.Info("event:", event)
 			ev = &event
 			if handle, ok := w.handler[event.Name]; ok {
 				now := time.Now()
@@ -85,14 +81,13 @@ OuterLoop:
 				return
 			}
 			log.Error("error:", err)
-		case <-w.done:
-			break OuterLoop
+
 		}
 	}
 }
 
 func (w *Watch) Close() error {
-	w.done <- struct{}{}
-	close(w.done)
+	close(w.Events)
+	close(w.Errors)
 	return w.Watcher.Close()
 }
