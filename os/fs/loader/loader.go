@@ -16,7 +16,7 @@ import (
 
 type Loader struct {
 	// 间隔大于1秒采用timer定时加载，小于1秒用fsnotify
-	AutoReloadInterval time.Duration `json:"autoReloadInterval" comment:"none"`
+	ReloadInterval time.Duration `comment:"0:not reload; < 1s: fsnotify; >= 1s: polling"`
 }
 
 type ReloadType int
@@ -74,40 +74,38 @@ func (t ReloadType) String() string {
 
 // New initialize a Loader
 func New(interval time.Duration) *Loader {
-	return &Loader{AutoReloadInterval: interval}
+	return &Loader{ReloadInterval: interval}
 }
 
 // Load will unmarshal configurations to struct from files that you provide
 func (ld *Loader) Handle(handle func(io.Reader), filepaths ...string) (err error) {
-
 	err = load(handle, filepaths...)
 	if err != nil {
 		return err
 	}
-	if ld.AutoReloadInterval != 0 {
-		if ld.AutoReloadInterval >= time.Second {
+	if ld.ReloadInterval != 0 {
+		if ld.ReloadInterval >= time.Second {
 			go ld.watchTimer(handle, filepaths...)
 		} else {
-			go ld.watchNotify(handle, filepaths...)
+			watcher, err := fsnotify.NewWatcher()
+			if err != nil {
+				return err
+			}
+			for _, filepath := range filepaths {
+				err = watcher.Add(filepath)
+				if err != nil {
+					return err
+				}
+			}
+			go watchNotify(watcher, handle, filepaths...)
 		}
 	}
 
 	return
 }
 
-func (ld *Loader) watchNotify(handle func(reader io.Reader), filepaths ...string) {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		log.Error(err)
-	}
+func watchNotify(watcher *fsnotify.Watcher, handle func(reader io.Reader), filepaths ...string) {
 	defer watcher.Close()
-	for _, filepath := range filepaths {
-		err = watcher.Add(filepath)
-		if err != nil {
-			log.Error(err)
-		}
-	}
-
 	interval := make(map[string]time.Time)
 
 	for {
@@ -116,14 +114,12 @@ func (ld *Loader) watchNotify(handle func(reader io.Reader), filepaths ...string
 			if !ok {
 				return
 			}
-			now := time.Now()
-			if now.Sub(interval[event.Name]) < time.Second {
-				continue
-			}
-			interval[event.Name] = now
-			//log.Info("event:", event)
 			if event.Op&fsnotify.Write == fsnotify.Write {
-				log.Info("modified file:", event.Name)
+				now := time.Now()
+				if now.Sub(interval[event.Name]) < time.Second {
+					continue
+				}
+				interval[event.Name] = now
 				if err := load(handle, event.Name); err != nil {
 					log.Errorf("failed to reload data from %v, got error %v\n", filepaths, err)
 				}
@@ -132,7 +128,7 @@ func (ld *Loader) watchNotify(handle func(reader io.Reader), filepaths ...string
 			if !ok {
 				return
 			}
-			log.Error("error:", err)
+			log.Error(err)
 		}
 	}
 }
@@ -147,7 +143,8 @@ func (ld *Loader) watchTimer(handle func(reader io.Reader), files ...string) {
 			fileModTimes[file] = fileInfo.ModTime()
 		}
 	}
-	timer := time.NewTicker(ld.AutoReloadInterval)
+	timer := time.NewTicker(ld.ReloadInterval)
+	defer timer.Stop()
 	for range timer.C {
 		for i := len(files) - 1; i >= 0; i-- {
 			file := files[i]
