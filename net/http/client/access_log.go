@@ -8,9 +8,11 @@ package client
 
 import (
 	"github.com/hopeio/utils/log"
+	"github.com/hopeio/utils/net/http/consts"
 	stringsi "github.com/hopeio/utils/strings"
 	"go.uber.org/zap"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -44,7 +46,7 @@ func DefaultLogger(param *AccessLogParam, err error) {
 	reqField, respField, statusField := zap.Skip(), zap.Skip(), zap.Skip()
 	if len(param.ReqBody) > 0 {
 		key := "body"
-		if param.ReqBody.IsJson() {
+		if strings.HasPrefix(param.Request.Header.Get(consts.HeaderContentType), consts.ContentTypeJson) {
 			reqField = zap.Reflect(key, log.RawJson(param.ReqBody))
 		} else {
 			reqField = zap.String(key, stringsi.BytesToString(param.ReqBody))
