@@ -18,7 +18,7 @@ import (
 
 type Watch struct {
 	interval time.Duration
-	done     chan struct{}
+	timer    *time.Ticker
 	handler  Handler
 }
 
@@ -34,9 +34,9 @@ type Handler map[string]*Callback
 func New(interval time.Duration) *Watch {
 	w := &Watch{
 		interval: interval,
-		done:     make(chan struct{}, 1),
 		//1.map和数组做取舍
 		handler: make(map[string]*Callback),
+		timer:   time.NewTicker(interval),
 		//handler:  make(map[string]map[fsnotify.Op]func()),
 		//2.提高时间复杂度，用event做key，然后每次事件循环取值
 		//handler:  make(map[fsnotify.Event]func()),
@@ -71,24 +71,16 @@ func (w *Watch) Remove(url string) error {
 }
 
 func (w *Watch) run() {
-	timer := time.NewTicker(w.interval)
-OuterLoop:
-	for {
-		select {
-		case <-timer.C:
-			for _, callback := range w.handler {
-				callback.Do()
-			}
-		case <-w.done:
-			break OuterLoop
+
+	for range w.timer.C {
+		for _, callback := range w.handler {
+			callback.Do()
 		}
 	}
-	timer.Stop()
 }
 
 func (w *Watch) Close() {
-	w.done <- struct{}{}
-	close(w.done)
+	w.timer.Stop()
 }
 
 func (c *Callback) Do() {
@@ -120,7 +112,7 @@ func (c *Callback) Do() {
 }
 
 func (w *Watch) Update(interval time.Duration) {
-	w.done <- struct{}{}
 	w.interval = interval
+	w.timer.Reset(interval)
 	go w.run()
 }

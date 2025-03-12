@@ -7,10 +7,12 @@
 package loader
 
 import (
+	"errors"
 	"github.com/fsnotify/fsnotify"
 	"github.com/hopeio/utils/log"
 	"io"
 	"os"
+	"path/filepath"
 	"slices"
 	"sync"
 	"time"
@@ -133,11 +135,21 @@ func (ld *Loader) Close() error {
 }
 
 // Load will unmarshal configurations to struct from files that you provide
-func (ld *Loader) Handle(handle func(io.Reader)) (err error) {
-	err = load(handle, ld.Paths...)
-	if err != nil {
-		return err
+func (ld *Loader) Handle(handle func(io.Reader) error) (err error) {
+	if len(ld.Paths) == 0 {
+		return errors.New("empty local config path")
 	}
+	for i, path := range ld.Paths {
+		ld.Paths[i], err = filepath.Abs(path)
+		if err != nil {
+			return err
+		}
+		err = load(handle, ld.Paths[i])
+		if err != nil {
+			return err
+		}
+	}
+
 	if ld.ReloadInterval != 0 {
 		if ld.ReloadInterval >= time.Second {
 			ld.timer = time.NewTicker(ld.ReloadInterval)
@@ -161,7 +173,7 @@ func (ld *Loader) Handle(handle func(io.Reader)) (err error) {
 	return
 }
 
-func (ld *Loader) watchNotify(handle func(reader io.Reader)) {
+func (ld *Loader) watchNotify(handle func(reader io.Reader) error) {
 	interval := make(map[string]time.Time)
 	for {
 		select {
@@ -175,7 +187,7 @@ func (ld *Loader) watchNotify(handle func(reader io.Reader)) {
 					continue
 				}
 				interval[event.Name] = now
-				if err := load(handle, event.Name); err != nil {
+				if err := loads(handle, event.Name); err != nil {
 					log.Errorf("failed to reload data from %v, got error %v\n", ld.Paths, err)
 				}
 			}
@@ -188,7 +200,7 @@ func (ld *Loader) watchNotify(handle func(reader io.Reader)) {
 	}
 }
 
-func (ld *Loader) watchTimer(handle func(reader io.Reader)) {
+func (ld *Loader) watchTimer(handle func(reader io.Reader) error) {
 	var fileModTimes map[string]time.Time
 	for i := range ld.Paths {
 		file := ld.Paths[i]
@@ -207,7 +219,7 @@ func (ld *Loader) watchTimer(handle func(reader io.Reader)) {
 			if fileInfo, err := os.Stat(file); err == nil && fileInfo.Mode().IsRegular() {
 				if fileInfo.ModTime().After(fileModTimes[file]) {
 					fileModTimes[file] = fileInfo.ModTime()
-					if err := load(handle, file); err != nil {
+					if err := loads(handle, file); err != nil {
 						log.Error("failed to reload data from %v, got error %v\n", ld.Paths, err)
 					}
 				}
@@ -216,15 +228,25 @@ func (ld *Loader) watchTimer(handle func(reader io.Reader)) {
 	}
 }
 
-func load(handle func(io.Reader), filepaths ...string) (err error) {
+func loads(handle func(io.Reader) error, filepaths ...string) (err error) {
 	for _, filepath := range filepaths {
-		log.Debugf("load data from: '%v'", filepath)
-		file, err := os.Open(filepath)
+		err := load(handle, filepath)
 		if err != nil {
 			return err
 		}
-		handle(file)
-		file.Close()
 	}
 	return err
+}
+
+func load(handle func(io.Reader) error, filepath string) (err error) {
+	log.Debugf("load data from: '%v'", filepath)
+	file, err := os.Open(filepath)
+	if err != nil {
+		return err
+	}
+	err = handle(file)
+	if err != nil {
+		return err
+	}
+	return file.Close()
 }
