@@ -41,9 +41,9 @@ func (m *BitMask) Set(x, y int, v bool) error {
 	return nil
 }
 
-func (m *BitMask) Get(x, y int) bool {
+func (m *BitMask) Get(x, y int) (bool, bool) {
 	if !(image.Point{X: x, Y: y}).In(m.Rect) {
-		return false
+		return false, false
 	}
 	total := m.Rect.Dx()*y + x - m.Rect.Min.X
 	n := total / 8
@@ -52,7 +52,7 @@ func (m *BitMask) Get(x, y int) bool {
 		n--
 	}
 	bit--
-	return m.Data[n]&(1<<bit) != 0
+	return m.Data[n]&(1<<bit) != 0, true
 }
 
 type Mask struct {
@@ -76,10 +76,10 @@ func (m *Mask) Set(x, y int, v uint8) error {
 	return nil
 }
 
-func (m *Mask) Get(x, y int) uint8 {
+func (m *Mask) Get(x, y int) (uint8, bool) {
 	if !(image.Point{X: x, Y: y}).In(m.rect) {
-		return 0
+		return 0, false
 	}
 	n := m.rect.Dx()*y + x - m.rect.Min.X
-	return m.Data[n]
+	return m.Data[n], true
 }

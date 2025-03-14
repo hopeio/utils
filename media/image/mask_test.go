@@ -9,7 +9,7 @@ func TestSet_ValidPoint_ValueSetCorrectly(t *testing.T) {
 	rect := image.Rect(0, 0, 10, 10)
 	bitMask := NewBitMask(rect)
 	bitMask.Set(5, 5, true)
-	if !bitMask.Get(5, 5) {
+	if bit, ok := bitMask.Get(5, 5); !ok || !bit {
 		t.Errorf("Expected value to be set to true, got false")
 	}
 }
@@ -18,11 +18,11 @@ func TestSetAndGetValueAtBoundary_CorrectBehavior(t *testing.T) {
 	rect := image.Rect(0, 0, 10, 10)
 	bitMask := NewBitMask(rect)
 	bitMask.Set(0, 0, true)
-	if !bitMask.Get(0, 0) {
+	if bit, ok := bitMask.Get(0, 0); !ok || !bit {
 		t.Errorf("Expected boundary value to be set to true, got false")
 	}
 	bitMask.Set(9, 9, true)
-	if !bitMask.Get(9, 9) {
+	if bit, ok := bitMask.Get(9, 9); !ok || !bit {
 		t.Errorf("Expected boundary value to be set to true, got false")
 	}
 }
