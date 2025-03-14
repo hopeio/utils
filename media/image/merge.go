@@ -101,11 +101,11 @@ func MergeUniformBoundsImagesByOverlapReuseMemory(imgIdxs [][]int, getImage func
 }
 
 type MergeImage struct {
-	Pixes                           [][]image.Image
-	stride                          int
-	effectiveWidth, effectiveHeight []int
-	cacheXIdx, cacheYIdx            int
-	Rect                            image.Rectangle
+	Pixes                      [][]image.Image
+	stride                     int
+	effectiveRow, effectiveCol []int
+	cacheRow, cacheCol         int
+	Rect                       image.Rectangle
 }
 
 func (m *MergeImage) ColorModel() color.Model {
@@ -116,26 +116,26 @@ func (m *MergeImage) Bounds() image.Rectangle {
 	return m.Rect
 }
 
-func (m *MergeImage) ImgOffset(x, y int) image.Image {
-	if m.effectiveWidth[m.cacheXIdx] == x {
-		m.cacheXIdx += 1
+func (m *MergeImage) ImgOffset(row, col int) image.Image {
+	if m.effectiveRow[m.cacheRow] == row {
+		m.cacheRow += 1
 	} else {
-		if m.effectiveWidth[m.cacheXIdx] < x {
-			m.cacheXIdx = findImgIdx(m.effectiveWidth, m.cacheXIdx+1, len(m.effectiveWidth), x)
-		} else if m.cacheXIdx-1 >= 0 && m.effectiveWidth[m.cacheXIdx-1] > x {
-			m.cacheXIdx = findImgIdx(m.effectiveWidth, 0, m.cacheXIdx, x)
+		if m.effectiveRow[m.cacheRow] < row {
+			m.cacheRow = findImgIdx(m.effectiveRow, m.cacheRow+1, len(m.effectiveRow), row)
+		} else if m.cacheRow-1 >= 0 && m.effectiveRow[m.cacheRow-1] > row {
+			m.cacheRow = findImgIdx(m.effectiveRow, 0, m.cacheRow, row)
 		}
 	}
-	if m.effectiveHeight[m.cacheYIdx] == y {
-		m.cacheYIdx += 1
+	if m.effectiveCol[m.cacheCol] == col {
+		m.cacheCol += 1
 	} else {
-		if m.effectiveHeight[m.cacheYIdx] < y {
-			m.cacheYIdx = findImgIdx(m.effectiveHeight, m.cacheYIdx+1, len(m.effectiveHeight), y)
-		} else if m.cacheYIdx-1 >= 0 && m.effectiveHeight[m.cacheYIdx-1] > y {
-			m.cacheYIdx = findImgIdx(m.effectiveHeight, 0, m.cacheYIdx, y)
+		if m.effectiveCol[m.cacheCol] < col {
+			m.cacheCol = findImgIdx(m.effectiveCol, m.cacheCol+1, len(m.effectiveCol), col)
+		} else if m.cacheCol-1 >= 0 && m.effectiveCol[m.cacheCol-1] > col {
+			m.cacheCol = findImgIdx(m.effectiveCol, 0, m.cacheCol, col)
 		}
 	}
-	return m.Pixes[m.cacheYIdx][m.cacheXIdx]
+	return m.Pixes[m.cacheCol][m.cacheRow]
 }
 
 func findImgIdx(idx []int, start, end, x int) int {
@@ -152,39 +152,39 @@ func (m *MergeImage) At(x, y int) color.Color {
 		return colori.RGB{}
 	}
 	pix := m.ImgOffset(x, y)
-	if m.cacheXIdx > 0 {
-		x -= m.effectiveWidth[m.cacheXIdx-1]
+	if m.cacheRow > 0 {
+		x -= m.effectiveRow[m.cacheRow-1]
 	}
-	if m.cacheYIdx > 0 {
-		y -= m.effectiveHeight[m.cacheYIdx-1]
+	if m.cacheCol > 0 {
+		y -= m.effectiveCol[m.cacheCol-1]
 	}
 	return pix.At(x, y)
 }
 
 func NewMergeImage(imgs [][]image.Image, width, height int, horizontalOverlaps, verticalOverlaps []int) *MergeImage {
-	effectiveWidth := make([]int, len(imgs[0]))
-	effectiveHeight := make([]int, len(imgs))
+	effectiveRow := make([]int, len(imgs[0]))
+	effectiveCol := make([]int, len(imgs))
 	var resultWidth, resultHeight int
 	for i := range imgs[0] {
 		resultWidth += width
 		if i < len(horizontalOverlaps) {
 			resultWidth -= horizontalOverlaps[i]
 		}
-		effectiveWidth[i] = resultWidth
+		effectiveRow[i] = resultWidth
 	}
 	for i := range imgs {
 		resultHeight += height
 		if i < len(verticalOverlaps) {
 			resultHeight -= verticalOverlaps[i]
 		}
-		effectiveHeight[i] = resultHeight
+		effectiveCol[i] = resultHeight
 	}
 	return &MergeImage{
-		Pixes:           imgs,
-		stride:          width * 3,
-		effectiveWidth:  effectiveWidth,
-		effectiveHeight: effectiveHeight,
-		Rect:            image.Rect(0, 0, resultWidth, resultHeight),
+		Pixes:        imgs,
+		stride:       width * 3,
+		effectiveRow: effectiveRow,
+		effectiveCol: effectiveCol,
+		Rect:         image.Rect(0, 0, resultWidth, resultHeight),
 	}
 }
 

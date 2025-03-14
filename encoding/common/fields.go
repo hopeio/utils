@@ -333,7 +333,7 @@ func isValidTag(s string) bool {
 }
 
 const (
-	caseMask     = ^byte(0x20) // Mask to ignore case in ASCII.
+	caseMask     = ^byte(0x20) // Data to ignore case in ASCII.
 	kelvin       = '\u212a'
 	smallLongEss = '\u017f'
 )
