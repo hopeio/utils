@@ -206,25 +206,30 @@ func Reduce[S ~[]T, T any](slices S, fn func(T, T) T) T {
 	return ret
 }
 
-func Convert[T1S ~[]T1, T2S ~[]T2, T1, T2 any](s T2S) T1S {
+func Convert[T1S ~[]T1, T2S ~[]T2, T1, T2 any](s T1S) T2S {
 	t1, t2 := new(T1), new(T2)
 	t1type, t2type := reflect.TypeOf(t1).Elem(), reflect.TypeOf(t2).Elem()
 	t1kind, t2kind := t1type.Kind(), t2type.Kind()
-
-	if t1type.ConvertibleTo(t2type) && reflecti.CanCast(t1type, t2type, false) {
-		if t1kind == t2kind {
-			return unsafe.Slice((*T1)(unsafe.Pointer(unsafe.SliceData(s))), len(s))
-		}
-		if t1kind != reflect.Interface && t2kind != reflect.Interface {
-			return Map(s, func(v T2) T1 { return *(*T1)(unsafe.Pointer(&v)) })
-		}
+	if reflecti.CanCast(t1type, t2type, false) && t1kind == t2kind {
+		return unsafe.Slice((*T2)(unsafe.Pointer(unsafe.SliceData(s))), len(s))
+	}
+	if t1type.ConvertibleTo(t2type) {
+		return Map(s, func(v T1) T2 {
+			return reflect.ValueOf(v).Convert(t2type).Interface().(T2)
+		})
 	}
 
-	if _, ok := any(t1).(T1); ok {
-		return Map(s, func(v T2) T1 { return any(v).(T1) })
+	if t2kind == reflect.Interface && t1type.Implements(t2type) {
+		return Map(s, func(v T1) T2 {
+			return reflect.ValueOf(v).Convert(t2type).Interface().(T2)
+		})
 	}
-	if _, ok := any(t2).(T2); ok {
-		return Map(s, func(v T2) T1 { return any(v).(T1) })
+
+	if _, ok := any(t1).(T2); ok {
+		return Map(s, func(v T1) T2 { return any(v).(T2) })
+	}
+	if _, ok := any(t2).(T1); ok {
+		return Map(s, func(v T1) T2 { return any(v).(T2) })
 	}
 	panic("unsupported type")
 }

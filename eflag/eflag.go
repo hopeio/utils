@@ -45,7 +45,17 @@ func (a anyValue) Set(v string) error {
 	return mtos.SetValueByString(reflect.Value(a), v)
 }
 
-func Bind(commandLine *pflag.FlagSet, v any) error {
+func Bind(args []string, v any) error {
+	commandLine := pflag.NewFlagSet(args[0], pflag.ContinueOnError)
+	commandLine.ParseErrorsWhitelist.UnknownFlags = true
+	err := AddFlag(commandLine, v)
+	if err != nil {
+		return err
+	}
+	return commandLine.Parse(args[1:])
+}
+
+func AddFlag(commandLine *pflag.FlagSet, v any) error {
 	fcValue := reflecti.DerefValue(reflect.ValueOf(v))
 	if !fcValue.IsValid() {
 		return errors.New("invalid value")
@@ -90,7 +100,7 @@ func Bind(commandLine *pflag.FlagSet, v any) error {
 				}
 			}
 		} else if kind == reflect.Struct {
-			err := Bind(commandLine, fieldValue)
+			err := AddFlag(commandLine, fieldValue)
 			if err != nil {
 				return err
 			}

@@ -37,14 +37,14 @@ var _ cmp.CompareKey[uint64] = &Foo{}
 
 func TestHasCoincide(t *testing.T) {
 	s1 := []*Foo{
-		&Foo{1, "1"},
-		&Foo{2, "2"},
-		&Foo{5, "3"},
+		{1, "1"},
+		{2, "2"},
+		{5, "3"},
 	}
 	s2 := []*Foo{
-		&Foo{4, "1"},
-		&Foo{5, "1"},
-		&Foo{6, "1"},
+		{4, "1"},
+		{5, "1"},
+		{6, "1"},
 	}
 	assert.Equal(t, false, HasCoincide(s1, s2))
 	assert.Equal(t, true, HasCoincideByKey(s1, s2))

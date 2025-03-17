@@ -6,8 +6,8 @@
 
 package errors
 
-type Unwrap interface {
-	Unwrap(err error) error
+type Unwrapper interface {
+	Unwrap() error
 }
 
 type Is interface {
@@ -28,15 +28,12 @@ func (e *wrapError) Unwrap() error {
 	return e.err
 }
 
-type wrapErrors struct {
-	msg  string
-	errs []error
-}
-
-func (e *wrapErrors) Error() string {
-	return e.msg
-}
-
-func (e *wrapErrors) Unwrap() []error {
-	return e.errs
+func Wrap(err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	return &wrapError{
+		msg: msg,
+		err: err,
+	}
 }

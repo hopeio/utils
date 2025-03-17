@@ -119,3 +119,15 @@ func uintptrElem(ptr uintptr) uintptr {
 func rangeValue(v reflect.Value, callbacks [reflect.UnsafePointer]func(reflect.Value) reflect.Value) {
 	callbacks[v.Kind()](v)
 }
+
+func IsInteger(kind reflect.Kind) bool {
+	return kind >= reflect.Int && kind <= reflect.Uintptr
+}
+
+func IsFloat(kind reflect.Kind) bool {
+	return kind == reflect.Float32 || kind == reflect.Float64
+}
+
+func IsNumber(kind reflect.Kind) bool {
+	return IsInteger(kind) || IsFloat(kind)
+}

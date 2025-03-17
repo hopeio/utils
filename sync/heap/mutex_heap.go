@@ -12,24 +12,24 @@ import (
 	"sync"
 )
 
-type Heap[T cmp.Comparable[T]] struct {
+type MutexHeap[T cmp.Comparable[T]] struct {
 	mu   sync.RWMutex
 	data []T
 	zero T
 }
 
-func New[T cmp.Comparable[T]](l int) Heap[T] {
-	return Heap[T]{
+func New[T cmp.Comparable[T]](l int) MutexHeap[T] {
+	return MutexHeap[T]{
 		data: make([]T, 0, l),
 	}
 }
 
-func NewFromArray[T cmp.Comparable[T]](arr []T) Heap[T] {
-	return Heap[T]{
+func NewFromArray[T cmp.Comparable[T]](arr []T) MutexHeap[T] {
+	return MutexHeap[T]{
 		data: arr,
 	}
 }
-func (h *Heap[T]) First() (T, bool) {
+func (h *MutexHeap[T]) First() (T, bool) {
 	h.mu.RLock()
 	if len(h.data) == 0 {
 		h.mu.RUnlock()
@@ -40,20 +40,20 @@ func (h *Heap[T]) First() (T, bool) {
 	return first, true
 }
 
-func (h *Heap[T]) Init() {
+func (h *MutexHeap[T]) Init() {
 	h.mu.Lock()
 	heap.Init(h.data)
 	h.mu.Unlock()
 }
 
-func (h *Heap[T]) Push(x T) {
+func (h *MutexHeap[T]) Push(x T) {
 	h.mu.Lock()
 	h.data = append(h.data, x)
 	heap.Up(h.data, len(h.data)-1)
 	h.mu.Unlock()
 }
 
-func (h *Heap[T]) Pop() (T, bool) {
+func (h *MutexHeap[T]) Pop() (T, bool) {
 	h.mu.Lock()
 	if len(h.data) == 0 {
 		h.mu.Unlock()
@@ -68,7 +68,7 @@ func (h *Heap[T]) Pop() (T, bool) {
 	return item, true
 }
 
-func (h Heap[T]) Last() (T, bool) {
+func (h MutexHeap[T]) Last() (T, bool) {
 	h.mu.Lock()
 	if len(h.data) == 0 {
 		h.mu.Unlock()
@@ -79,7 +79,7 @@ func (h Heap[T]) Last() (T, bool) {
 	return last, false
 }
 
-func (h *Heap[T]) Remove(i int) (T, bool) {
+func (h *MutexHeap[T]) Remove(i int) (T, bool) {
 	h.mu.Lock()
 	if len(h.data) == 0 {
 		h.mu.Unlock()

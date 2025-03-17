@@ -7,48 +7,55 @@ package stack
 import (
 	"github.com/hopeio/utils/sync"
 	"sync/atomic"
-	"unsafe"
 )
 
 // LockFreeStack implements lock-free freelist based stack.
-type LockFreeStack struct {
-	top unsafe.Pointer
-	len uint64
+type LockFreeStack[T any] struct {
+	top  atomic.Pointer[sync.Node[T]]
+	size uint64
 }
 
 // NewLockFreeStack creates a new lock-free queue.
-func NewLockFreeStack() *LockFreeStack {
-	return &LockFreeStack{}
+func NewLockFreeStack[T any]() *LockFreeStack[T] {
+	return &LockFreeStack[T]{}
 }
 
 // Pop pops value from the top of the stack.
-func (s *LockFreeStack) Pop() interface{} {
-	var top, next unsafe.Pointer
-	var item *sync.DirectItem
+func (s *LockFreeStack[T]) Pop() (T, bool) {
+	if atomic.LoadUint64(&s.size) == 0 {
+		return *new(T), false
+	}
+
+	var top, next *sync.Node[T]
+	var item *sync.Node[T]
 	for {
-		top = atomic.LoadPointer(&s.top)
+		top = s.top.Load()
 		if top == nil {
-			return nil
+			return *new(T), false
 		}
-		item = (*sync.DirectItem)(top)
-		next = atomic.LoadPointer(&item.Next)
-		if atomic.CompareAndSwapPointer(&s.top, top, next) {
-			atomic.AddUint64(&s.len, ^uint64(0))
-			return item.V
+		item = top
+		next = item.Next.Load()
+		if s.top.CompareAndSwap(top, next) {
+			atomic.AddUint64(&s.size, ^uint64(0))
+			return item.V, true
 		}
 	}
 }
 
 // Push pushes a value on top of the stack.
-func (s *LockFreeStack) Push(v interface{}) {
-	item := sync.DirectItem{V: v}
-	var top unsafe.Pointer
+func (s *LockFreeStack[T]) Push(v T) {
+	item := sync.Node[T]{V: v}
+	var top *sync.Node[T]
 	for {
-		top = atomic.LoadPointer(&s.top)
-		item.Next = top
-		if atomic.CompareAndSwapPointer(&s.top, top, unsafe.Pointer(&item)) {
-			atomic.AddUint64(&s.len, 1)
+		top = s.top.Load()
+		item.Next.Store(top)
+		if s.top.CompareAndSwap(top, &item) {
+			atomic.AddUint64(&s.size, 1)
 			return
 		}
 	}
+}
+
+func (s *LockFreeStack[T]) Len() uint64 {
+	return atomic.LoadUint64(&s.size)
 }

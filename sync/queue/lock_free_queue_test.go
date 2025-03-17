@@ -7,7 +7,6 @@ package queue
 import (
 	"fmt"
 	"math/rand"
-	"sync"
 	"sync/atomic"
 	"testing"
 )
@@ -21,22 +20,22 @@ func TestQueueDequeueEmpty(t *testing.T) {
 
 func TestQueue_Length(t *testing.T) {
 	q := NewLockFreeQueue[any]()
-	if q.Length() != 0 {
+	if q.Len() != 0 {
 		t.Fatalf("empty queue has non-zero length")
 	}
 
 	q.Enqueue(1)
-	if q.Length() != 1 {
-		t.Fatalf("count of enqueue wrong, want %d, got %d.", 1, q.Length())
+	if q.Len() != 1 {
+		t.Fatalf("count of enqueue wrong, want %d, got %d.", 1, q.Len())
 	}
 
 	q.Dequeue()
-	if q.Length() != 0 {
-		t.Fatalf("count of dequeue wrong, want %d, got %d", 0, q.Length())
+	if q.Len() != 0 {
+		t.Fatalf("count of dequeue wrong, want %d, got %d", 0, q.Len())
 	}
 }
 
-func ExampleQueue() {
+func ExampleLockFreeQueue() {
 	q := NewLockFreeQueue[string]()
 
 	q.Enqueue("1st item")
@@ -48,41 +47,14 @@ func ExampleQueue() {
 	fmt.Println(q.Dequeue())
 
 	// Output:
-	// 1st item
-	// 2nd item
-	// 3rd item
+	// 1st item true
+	// 2nd item true
+	// 3rd item true
 }
 
 type queueInterface[T any] interface {
 	Enqueue(T)
 	Dequeue() (T, bool)
-}
-
-type mutexQueue struct {
-	v  []int
-	mu sync.Mutex
-}
-
-func newMutexQueue() *mutexQueue {
-	return &mutexQueue{v: make([]int, 0)}
-}
-
-func (q *mutexQueue) Enqueue(v int) {
-	q.mu.Lock()
-	q.v = append(q.v, v)
-	q.mu.Unlock()
-}
-
-func (q *mutexQueue) Dequeue() (int, bool) {
-	q.mu.Lock()
-	if len(q.v) == 0 {
-		q.mu.Unlock()
-		return 0, false
-	}
-	v := q.v[0]
-	q.v = q.v[1:]
-	q.mu.Unlock()
-	return v, true
 }
 
 func BenchmarkQueue(b *testing.B) {
@@ -91,7 +63,7 @@ func BenchmarkQueue(b *testing.B) {
 	for range length {
 		inputs = append(inputs, rand.Int())
 	}
-	q, mq := NewLockFreeQueue[int](), newMutexQueue()
+	q, mq := NewLockFreeQueue[int](), NewMutexQueue[int]()
 	b.ResetTimer()
 
 	for _, q := range [...]queueInterface[int]{q, mq} {

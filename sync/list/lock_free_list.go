@@ -21,7 +21,7 @@ func New[T any]() *LockFreeList[T] {
 
 func (l *LockFreeList[T]) Push(v interface{}) {
 	node := &sync.Node[T]{V: v}
-	if l.size == 0 {
+	if atomic.LoadUint64(&l.size) == 0 {
 		l.head.Store(node)
 		l.tail.Store(node)
 		atomic.AddUint64(&l.size, 1)
@@ -43,4 +43,23 @@ func (l *LockFreeList[T]) Push(v interface{}) {
 			}
 		}
 	}
+}
+
+func (l *LockFreeList[T]) Pop() (v T, ok bool) {
+	var last, lastnext *sync.Node[T]
+	for {
+		last = l.tail.Load()
+		lastnext = last.Next.Load()
+		if l.tail.Load() == last { // are tail and next consistent?
+			if lastnext == nil { // is tail pointing to the last node?
+				return *new(T), false
+			} else { // tail was not pointing to the last node
+				l.tail.CompareAndSwap(last, lastnext) // try swing tail to the
+			}
+		}
+	}
+}
+
+func (l *LockFreeList[T]) Len() uint64 {
+	return atomic.LoadUint64(&l.size)
 }

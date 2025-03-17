@@ -37,8 +37,12 @@ func (ms *MinStack[T]) Push(x T) {
 }
 
 // Pop ...
-func (ms *MinStack[T]) Pop() {
-	ms.store.Pop()
+func (ms *MinStack[T]) Pop() (T, bool) {
+	node, ok := ms.store.Pop()
+	if !ok {
+		return *new(T), false
+	}
+	return node.value, true
 }
 
 // Top ...

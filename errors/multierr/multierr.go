@@ -623,3 +623,27 @@ func FromIter(iter iter.Seq[error]) error {
 	}
 	return nil
 }
+
+type wrapErrors struct {
+	msg  string
+	errs *multiError
+}
+
+func (e *wrapErrors) Error() string {
+	return e.msg
+}
+
+func (e *wrapErrors) Unwrap() error {
+	return e.errs
+}
+
+func (merr *multiError) Unwrap() []error {
+	return merr.Errors()
+}
+
+func (merr *multiError) Wrap(msg string) *wrapErrors {
+	return &wrapErrors{
+		msg:  msg,
+		errs: merr,
+	}
+}

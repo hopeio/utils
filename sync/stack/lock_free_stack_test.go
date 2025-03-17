@@ -7,20 +7,19 @@ package stack
 import (
 	"fmt"
 	"math/rand"
-	"sync"
 	"sync/atomic"
 	"testing"
 )
 
 func TestStackPopEmpty(t *testing.T) {
-	s := NewLockFreeStack()
-	if s.Pop() != nil {
+	s := NewLockFreeStack[int]()
+	if _, ok := s.Pop(); ok {
 		t.Fatal("pop empty stack returns non-nil")
 	}
 }
 
-func ExampleStack() {
-	s := NewLockFreeStack()
+func ExampleLockFreeStack() {
+	s := NewLockFreeStack[int]()
 
 	s.Push(1)
 	s.Push(2)
@@ -31,37 +30,14 @@ func ExampleStack() {
 	fmt.Println(s.Pop())
 
 	// Output:
-	// 3
-	// 2
-	// 1
+	// 3 true
+	// 2 true
+	// 1 true
 }
 
-type stackInterface interface {
-	Push(interface{})
-	Pop() interface{}
-}
-
-type mutexStack struct {
-	v  []interface{}
-	mu sync.Mutex
-}
-
-func newMutexStack() *mutexStack {
-	return &mutexStack{v: make([]interface{}, 0)}
-}
-
-func (s *mutexStack) Push(v interface{}) {
-	s.mu.Lock()
-	s.v = append(s.v, v)
-	s.mu.Unlock()
-}
-
-func (s *mutexStack) Pop() interface{} {
-	s.mu.Lock()
-	v := s.v[len(s.v)]
-	s.v = s.v[:len(s.v)-1]
-	s.mu.Unlock()
-	return v
+type stackInterface[T any] interface {
+	Push(T)
+	Pop() (T, bool)
 }
 
 func BenchmarkStack(b *testing.B) {
@@ -70,9 +46,9 @@ func BenchmarkStack(b *testing.B) {
 	for i := 0; i < length; i++ {
 		inputs = append(inputs, rand.Int())
 	}
-	s, ms := NewLockFreeStack(), newMutexStack()
+	s, ms := NewLockFreeStack[int](), NewMutexStack[int]()
 	b.ResetTimer()
-	for _, s := range [...]stackInterface{s, ms} {
+	for _, s := range [...]stackInterface[int]{s, ms} {
 		b.Run(fmt.Sprintf("%T", s), func(b *testing.B) {
 			var c int64
 			b.RunParallel(func(pb *testing.PB) {

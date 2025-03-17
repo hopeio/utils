@@ -73,7 +73,7 @@ func (q *LockFreeQueue[T]) Dequeue() (T, bool) {
 	}
 }
 
-// Length returns the length of the queue.
-func (q *LockFreeQueue[T]) Length() uint64 {
+// Len returns the length of the queue.
+func (q *LockFreeQueue[T]) Len() uint64 {
 	return atomic.LoadUint64(&q.len)
 }
