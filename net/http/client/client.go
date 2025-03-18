@@ -88,7 +88,7 @@ func (d *Client) Header(header httpi.Header) *Client {
 	if d.header == nil {
 		d.header = make(http.Header)
 	}
-	header.IntoHttpHeader(d.header)
+	httpi.HeaderIntoHttpHeader(header, d.header)
 	return d
 }
 

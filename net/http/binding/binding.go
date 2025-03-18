@@ -128,7 +128,7 @@ func RegisterBodyBinding(name string, unmarshaller func(data []byte, obj any) er
 	CustomBody.unmarshaller = unmarshaller
 }
 
-func RegisterBodyBindingByDecoder(name string, newDecoder func(io.Reader) encoding.Decoder) {
+func RegisterBodyBindingDecoder(name string, newDecoder func(io.Reader) encoding.Decoder) {
 	CustomBody.name = name
 	CustomBody.decoder = newDecoder
 }

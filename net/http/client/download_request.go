@@ -312,7 +312,7 @@ func (dReq *DownloadReq) ConcurrencyDownload(filepath string, url string, concur
 }
 
 func GetReader(url string) (io.ReadCloser, error) {
-	return GetReaderWithHttpRequestOptions(url, nil)
+	return GetReaderWithHttpRequestOptions(url)
 }
 
 func GetReaderWithHttpRequestOptions(url string, opts ...HttpRequestOption) (io.ReadCloser, error) {

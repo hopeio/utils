@@ -27,6 +27,12 @@ type IntoHttpHeader interface {
 	IntoHttpHeader(header http.Header)
 }
 
+func HeaderIntoHttpHeader(header Header, httpHeader http.Header) {
+	header.Range(func(key, value string) {
+		httpHeader.Set(key, value)
+	})
+}
+
 type SliceHeader []string
 
 func NewHeader() *SliceHeader {
