@@ -109,14 +109,11 @@ func CopyStruct(src any, dest any) error {
 func CanCast(t1, t2 reflect.Type, strict bool) bool {
 	t1kind, t2kind := t1.Kind(), t2.Kind()
 	if strict {
-		if t1kind != t2kind {
-			return false
-		}
-		if t1kind <= reflect.Complex128 {
+		if (t1 == t2) || (t1kind == reflect.String && t2kind == reflect.String) || (t1kind <= reflect.Complex128 && t2kind <= reflect.Complex128 && t1kind == t2kind) {
 			return true
 		}
 	} else {
-		if t1kind == t2kind {
+		if t1kind <= reflect.Float64 && t2kind <= reflect.Float64 {
 			return true
 		}
 		if (t1kind == reflect.Complex64 || t1kind == reflect.Complex128) && (t2kind == reflect.Complex64 || t2kind == reflect.Complex128) {
