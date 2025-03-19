@@ -8,7 +8,7 @@ package filter
 
 import (
 	"context"
-	httpi "github.com/hopeio/utils/net/http"
+	httpi "github.com/hopeio/utils/net/http/consts"
 	"strings"
 
 	"google.golang.org/grpc/codes"

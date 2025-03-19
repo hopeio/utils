@@ -35,3 +35,13 @@ func (b bodyBinding) Bind(req *http.Request, obj interface{}) error {
 	}
 	return b.unmarshaller(data, obj)
 }
+
+func (b *bodyBinding) RegisterUnmarshaller(name string, unmarshaller func(data []byte, obj any) error) {
+	CustomBody.name = name
+	CustomBody.unmarshaller = unmarshaller
+}
+
+func (b *bodyBinding) RegisterDecoder(name string, decoder func(io.Reader) encoding.Decoder) {
+	CustomBody.name = name
+	CustomBody.decoder = decoder
+}

@@ -10,9 +10,9 @@ import (
 	"context"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/hopeio/utils/errors/errcode"
+	"github.com/hopeio/utils/net/http/consts"
 	"google.golang.org/grpc/codes"
 
-	httpi "github.com/hopeio/utils/net/http"
 	"github.com/hopeio/utils/net/http/grpc/gateway"
 	"github.com/hopeio/utils/net/http/grpc/reconn"
 	stringsi "github.com/hopeio/utils/strings"
@@ -43,9 +43,9 @@ func CustomHttpError(ctx context.Context, mux *runtime.ServeMux, marshaler runti
 
 	const fallback = `{"code": 14, "message": "failed to marshal error message"}`
 
-	w.Header().Del(httpi.HeaderTrailer)
+	w.Header().Del(consts.HeaderTrailer)
 	contentType := marshaler.ContentType(nil)
-	w.Header().Set(httpi.HeaderContentType, contentType)
+	w.Header().Set(consts.HeaderContentType, contentType)
 	se, ok := err.(*errcode.ErrRep)
 	if !ok {
 		se = &errcode.ErrRep{Code: errcode.ErrCode(codes.Unknown), Msg: err.Error()}
@@ -70,10 +70,10 @@ func CustomHttpError(ctx context.Context, mux *runtime.ServeMux, marshaler runti
 
 	var wantsTrailers bool
 
-	if te := r.Header.Get(httpi.HeaderTE); strings.Contains(strings.ToLower(te), "trailers") {
+	if te := r.Header.Get(consts.HeaderTE); strings.Contains(strings.ToLower(te), "trailers") {
 		wantsTrailers = true
 		gateway.HandleForwardResponseTrailerHeader(w, md.TrailerMD)
-		w.Header().Set(httpi.HeaderTransferEncoding, "chunked")
+		w.Header().Set(consts.HeaderTransferEncoding, "chunked")
 	}
 
 	/*	st := HTTPStatusFromCode(se.Code)

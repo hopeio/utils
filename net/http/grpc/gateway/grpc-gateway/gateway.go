@@ -9,6 +9,7 @@ package grpc_gateway
 import (
 	"context"
 	httpi "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/utils/net/http/consts"
 	"github.com/hopeio/utils/net/http/grpc/gateway"
 	"net/http"
 	"net/url"
@@ -25,17 +26,17 @@ func New() *runtime.ServeMux {
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, &JSONPb{}),
 
 		runtime.WithMetadata(func(ctx context.Context, req *http.Request) metadata.MD {
-			area, err := url.PathUnescape(req.Header.Get(httpi.HeaderArea))
+			area, err := url.PathUnescape(req.Header.Get(consts.HeaderArea))
 			if err != nil {
 				area = ""
 			}
 			var token = httpi.GetToken(req)
 
 			return map[string][]string{
-				httpi.HeaderArea:          {area},
-				httpi.HeaderDeviceInfo:    {req.Header.Get(httpi.HeaderDeviceInfo)},
-				httpi.HeaderLocation:      {req.Header.Get(httpi.HeaderLocation)},
-				httpi.HeaderAuthorization: {token},
+				consts.HeaderArea:          {area},
+				consts.HeaderDeviceInfo:    {req.Header.Get(consts.HeaderDeviceInfo)},
+				consts.HeaderLocation:      {req.Header.Get(consts.HeaderLocation)},
+				consts.HeaderAuthorization: {token},
 			}
 		}),
 		runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {

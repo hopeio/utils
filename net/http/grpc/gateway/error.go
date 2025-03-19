@@ -8,7 +8,7 @@ package gateway
 
 import (
 	"fmt"
-	httpi "github.com/hopeio/utils/net/http"
+	httpi "github.com/hopeio/utils/net/http/consts"
 	"github.com/hopeio/utils/net/http/grpc"
 	"google.golang.org/grpc/metadata"
 	"net/http"

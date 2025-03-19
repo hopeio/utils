@@ -8,11 +8,12 @@ package http
 
 import (
 	"encoding/base64"
+	"github.com/hopeio/utils/net/http/consts"
 	"net/http"
 )
 
 func SetBasicAuth(header http.Header, username, password string) {
-	header.Set(HeaderAuthorization, "Basic "+BasicAuth(username, password))
+	header.Set(consts.HeaderAuthorization, "Basic "+BasicAuth(username, password))
 }
 
 func BasicAuth(username, password string) string {
@@ -21,10 +22,10 @@ func BasicAuth(username, password string) string {
 }
 
 func GetToken(r *http.Request) string {
-	if token := r.Header.Get(HeaderAuthorization); token != "" {
+	if token := r.Header.Get(consts.HeaderAuthorization); token != "" {
 		return token
 	}
-	if cookie, _ := r.Cookie(HeaderCookieValueToken); cookie != nil {
+	if cookie, _ := r.Cookie(consts.HeaderCookieValueToken); cookie != nil {
 		return cookie.Value
 	}
 	return ""

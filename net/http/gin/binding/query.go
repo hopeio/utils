@@ -18,7 +18,7 @@ func (queryBinding) Name() string {
 
 func (queryBinding) Bind(ctx *gin.Context, obj interface{}) error {
 	values := ctx.Request.URL.Query()
-	if err := mtos.MapFormByTag(obj, mtos.KVsSource(values), binding.Tag); err != nil {
+	if err := mtos.MappingByTag(obj, mtos.KVsSource(values), binding.Tag); err != nil {
 		return err
 	}
 	return Validate(obj)

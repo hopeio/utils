@@ -42,7 +42,7 @@ func (formMultipartBinding) Bind(req *http.Request, obj interface{}) error {
 	if err := req.ParseMultipartForm(defaultMemory); err != nil {
 		return err
 	}
-	if err := mtos.MapFormByTag(obj, (*MultipartSource)(req), Tag); err != nil {
+	if err := mtos.MappingByTag(obj, (*MultipartSource)(req), Tag); err != nil {
 		return err
 	}
 

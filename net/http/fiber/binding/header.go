@@ -19,7 +19,7 @@ func (headerBinding) Name() string {
 }
 
 func (headerBinding) Bind(req fiber.Ctx, obj interface{}) error {
-	if err := mtos.MapFormByTag(obj, (*HeaderSource)(&req.Request().Header), binding.Tag); err != nil {
+	if err := mtos.MappingByTag(obj, (*HeaderSource)(&req.Request().Header), binding.Tag); err != nil {
 		return err
 	}
 

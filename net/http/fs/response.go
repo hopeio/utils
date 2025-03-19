@@ -3,6 +3,7 @@ package fs
 import (
 	"fmt"
 	httpi "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/utils/net/http/consts"
 	"io"
 	"net/http"
 )
@@ -13,7 +14,7 @@ type ResponseFile struct {
 }
 
 func (res *ResponseFile) Header() httpi.Header {
-	return &httpi.SliceHeader{httpi.HeaderContentType, httpi.ContentTypeOctetStream, httpi.HeaderContentDisposition, fmt.Sprintf(httpi.AttachmentTmpl, res.Name)}
+	return &httpi.SliceHeader{consts.HeaderContentType, consts.ContentTypeOctetStream, consts.HeaderContentDisposition, fmt.Sprintf(consts.AttachmentTmpl, res.Name)}
 }
 
 func (res *ResponseFile) WriteTo(writer io.Writer) (int64, error) {
@@ -33,7 +34,7 @@ type ResponseFileWriteTo struct {
 }
 
 func (res *ResponseFileWriteTo) Header() httpi.Header {
-	return &httpi.SliceHeader{httpi.HeaderContentType, httpi.ContentTypeOctetStream, httpi.HeaderContentDisposition, fmt.Sprintf(httpi.AttachmentTmpl, res.Name)}
+	return &httpi.SliceHeader{consts.HeaderContentType, consts.ContentTypeOctetStream, consts.HeaderContentDisposition, fmt.Sprintf(consts.AttachmentTmpl, res.Name)}
 }
 
 func (res *ResponseFileWriteTo) WriteTo(writer io.Writer) (int64, error) {

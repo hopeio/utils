@@ -21,7 +21,7 @@ func (uriBinding) Name() string {
 }
 
 func (uriBinding) Bind(ctx *gin.Context, obj interface{}) error {
-	if err := mtos.MapFormByTag(obj, (uriSource)(ctx.Params), binding.Tag); err != nil {
+	if err := mtos.MappingByTag(obj, (uriSource)(ctx.Params), binding.Tag); err != nil {
 		return err
 	}
 	return Validate(obj)

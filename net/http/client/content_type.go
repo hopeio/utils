@@ -7,7 +7,7 @@
 package client
 
 import (
-	httpi "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/utils/net/http/consts"
 	"strings"
 )
 
@@ -17,13 +17,13 @@ func (c ContentType) String() string {
 	if c < ContentTypeApplication {
 		return contentTypes[c] + ";charset=UTF-8"
 	}
-	return httpi.ContentTypeOctetStream + ";charset=UTF-8"
+	return consts.ContentTypeOctetStream + ";charset=UTF-8"
 }
 
 func (c *ContentType) Decode(contentType string) {
-	if strings.HasPrefix(contentType, httpi.ContentTypeJson) {
+	if strings.HasPrefix(contentType, consts.ContentTypeJson) {
 		*c = ContentTypeJson
-	} else if strings.HasPrefix(contentType, httpi.ContentTypeForm) {
+	} else if strings.HasPrefix(contentType, consts.ContentTypeForm) {
 		*c = ContentTypeForm
 	} else if strings.HasPrefix(contentType, "text") {
 		*c = ContentTypeText
@@ -57,21 +57,21 @@ const (
 )
 
 var contentTypes = []string{
-	httpi.ContentTypeJson,
-	httpi.ContentTypeForm,
-	httpi.ContentTypeMultipart,
-	httpi.ContentTypeGrpc,
-	httpi.ContentTypeGrpcWeb,
-	httpi.ContentTypeXmlUnreadable,
-	httpi.ContentTypeText,
-	httpi.ContentTypeOctetStream,
-	/*	httpi.ContentImagePngHeaderValue,
-		httpi.ContentImageJpegHeaderValue,
-		httpi.ContentImageGifHeaderValue,
-		httpi.ContentImageBmpHeaderValue,
-		httpi.ContentImageWebpHeaderValue,
-		httpi.ContentImageAvifHeaderValue,
-		httpi.ContentImageTiffHeaderValue,
-		httpi.ContentImageXIconHeaderValue,
-		httpi.ContentImageVndMicrosoftIconHeaderValue,*/
+	consts.ContentTypeJson,
+	consts.ContentTypeForm,
+	consts.ContentTypeMultipart,
+	consts.ContentTypeGrpc,
+	consts.ContentTypeGrpcWeb,
+	consts.ContentTypeXmlUnreadable,
+	consts.ContentTypeText,
+	consts.ContentTypeOctetStream,
+	/*	consts.ContentImagePngHeaderValue,
+		consts.ContentImageJpegHeaderValue,
+		consts.ContentImageGifHeaderValue,
+		consts.ContentImageBmpHeaderValue,
+		consts.ContentImageWebpHeaderValue,
+		consts.ContentImageAvifHeaderValue,
+		consts.ContentImageTiffHeaderValue,
+		consts.ContentImageXIconHeaderValue,
+		consts.ContentImageVndMicrosoftIconHeaderValue,*/
 }

@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"github.com/hopeio/utils/errors/errcode"
 	"github.com/hopeio/utils/net/http/binding"
+	"github.com/hopeio/utils/net/http/consts"
 	"github.com/hopeio/utils/types"
 	"net/http"
 )
@@ -72,7 +73,7 @@ func HandlerWrap[REQ, RES any](service Service[*REQ, *RES]) http.Handler {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Header().Set(HeaderContentType, ContentTypeJsonUtf8)
+		w.Header().Set(consts.HeaderContentType, consts.ContentTypeJsonUtf8)
 		json.NewEncoder(w).Encode(res)
 	})
 }
@@ -99,7 +100,7 @@ func HandlerWrapCompatibleGRPC[REQ, RES any](method types.GrpcServiceMethod[*REQ
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Header().Set(HeaderContentType, ContentTypeJsonUtf8)
+		w.Header().Set(consts.HeaderContentType, consts.ContentTypeJsonUtf8)
 		json.NewEncoder(w).Encode(res)
 	})
 }

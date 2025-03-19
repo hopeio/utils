@@ -8,15 +8,16 @@ package client
 
 import (
 	httpi "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/utils/net/http/consts"
 	"io"
 	"net/http"
 )
 
 func DefaultHeader() httpi.MapHeader {
 	return httpi.MapHeader{
-		httpi.HeaderAcceptLanguage: "zh-CN,zh;q=0.9;charset=utf-8",
-		httpi.HeaderConnection:     "keep-alive",
-		httpi.HeaderUserAgent:      UserAgentChrome117,
+		consts.HeaderAcceptLanguage: "zh-CN,zh;q=0.9;charset=utf-8",
+		consts.HeaderConnection:     "keep-alive",
+		consts.HeaderUserAgent:      UserAgentChrome117,
 		//"Accept", "application/json,text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8", // 将会越来越少用，服务端一般固定格式
 	}
 }

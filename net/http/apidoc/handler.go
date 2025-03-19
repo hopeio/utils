@@ -8,7 +8,7 @@ package apidoc
 
 import (
 	"bytes"
-	httpi "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/utils/net/http/consts"
 	"github.com/hopeio/utils/os/fs"
 	"net/http"
 	"os"
@@ -34,7 +34,7 @@ func Swagger(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(err.Error()))
 			return
 		}
-		w.Header().Set(httpi.HeaderContentType, "application/json; charset=utf-8")
+		w.Header().Set(consts.HeaderContentType, "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		w.Write(b)
 		return

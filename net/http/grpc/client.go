@@ -9,7 +9,7 @@ package grpc
 import (
 	"crypto/tls"
 	"github.com/hopeio/utils/errors/multierr"
-	httpi "github.com/hopeio/utils/net/http"
+	httpi "github.com/hopeio/utils/net/http/consts"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"

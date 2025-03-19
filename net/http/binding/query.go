@@ -19,7 +19,7 @@ func (queryBinding) Name() string {
 
 func (queryBinding) Bind(req *http.Request, obj interface{}) error {
 	values := req.URL.Query()
-	if err := mtos.MapFormByTag(obj, mtos.KVsSource(values), Tag); err != nil {
+	if err := mtos.MappingByTag(obj, mtos.KVsSource(values), Tag); err != nil {
 		return err
 	}
 	return Validate(obj)

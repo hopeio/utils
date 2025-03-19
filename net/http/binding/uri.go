@@ -20,11 +20,10 @@ func (uriBinding) Name() string {
 }
 
 func (uriBinding) Bind(req *http.Request, obj interface{}) error {
-	if err := mtos.MapFormByTag(obj, (*UriSource)(req), "uri"); err != nil {
+	if err := mtos.MappingByTag(obj, (*UriSource)(req), "uri"); err != nil {
 		return err
 	}
 	return Validate(obj)
-
 }
 
 type UriSource http.Request

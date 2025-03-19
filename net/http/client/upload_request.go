@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/hopeio/utils/log"
 	httpi "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/utils/net/http/consts"
 	stringsi "github.com/hopeio/utils/strings"
 	"io"
 	"mime"
@@ -87,12 +88,12 @@ func NewMultipart(param, name, contentType string, reader io.Reader) *Multipart 
 func (f *Multipart) setHeader(header textproto.MIMEHeader) {
 	var contentDispositionValue string
 	if stringsi.IsEmpty(f.Name) {
-		contentDispositionValue = fmt.Sprintf(httpi.FormDataFieldTmpl, escapeQuotes(f.Param))
+		contentDispositionValue = fmt.Sprintf(consts.FormDataFieldTmpl, escapeQuotes(f.Param))
 	} else {
-		contentDispositionValue = fmt.Sprintf(httpi.FormDataFileTmpl,
+		contentDispositionValue = fmt.Sprintf(consts.FormDataFileTmpl,
 			escapeQuotes(f.Param), escapeQuotes(f.Name))
 	}
-	header.Set(httpi.HeaderContentDisposition, contentDispositionValue)
+	header.Set(consts.HeaderContentDisposition, contentDispositionValue)
 
 	if !stringsi.IsEmpty(f.ContentType) {
 		header.Set(ContentTypeKey, f.ContentType)
@@ -141,7 +142,7 @@ func (r *UploadReq) UploadMultipart(formData map[string]string, files ...*Multip
 	}
 	header := make(textproto.MIMEHeader)
 	for k, v := range formData {
-		header.Set(httpi.HeaderContentDisposition, fmt.Sprintf(httpi.FormDataFieldTmpl, escapeQuotes(k)))
+		header.Set(consts.HeaderContentDisposition, fmt.Sprintf(consts.FormDataFieldTmpl, escapeQuotes(k)))
 		part, err := w.CreatePart(header)
 		if err != nil {
 			return err
@@ -186,7 +187,7 @@ func (r *UploadReq) UploadMultipart(formData map[string]string, files ...*Multip
 			}
 		}
 	}
-	r.header.Set(httpi.HeaderContentType, w.FormDataContentType())
+	r.header.Set(consts.HeaderContentType, w.FormDataContentType())
 	err := w.Close()
 	if err != nil {
 		return err
@@ -231,7 +232,7 @@ func (r *UploadReq) UploadMultipartChunked(formData map[string]string, file Mult
 	}
 	header := make(textproto.MIMEHeader)
 	for k, v := range formData {
-		header.Set(httpi.HeaderContentDisposition, fmt.Sprintf(httpi.FormDataFieldTmpl, escapeQuotes(k)))
+		header.Set(consts.HeaderContentDisposition, fmt.Sprintf(consts.FormDataFieldTmpl, escapeQuotes(k)))
 		part, err := w.CreatePart(header)
 		if err != nil {
 			return err
@@ -269,7 +270,7 @@ func (r *UploadReq) UploadMultipartChunked(formData map[string]string, file Mult
 				total = end + 1
 			}
 			req.Body = io.NopCloser(bytes.NewReader(buf[0:size]))
-			req.Header.Set(httpi.HeaderContentRange, httpi.FormatContentRange(start, end, total))
+			req.Header.Set(consts.HeaderContentRange, httpi.FormatContentRange(start, end, total))
 			resp, err := u.httpClient.Do(req)
 			if err != nil {
 				return err
@@ -290,8 +291,8 @@ func (r *UploadReq) UploadStream(oReader io.Reader) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set(httpi.HeaderContentType, httpi.ContentTypeOctetStream)
-	req.Header.Set(httpi.HeaderTransferEncoding, httpi.HeaderTransferEncodingChunked)
+	req.Header.Set(consts.HeaderContentType, consts.ContentTypeOctetStream)
+	req.Header.Set(consts.HeaderTransferEncoding, consts.HeaderTransferEncodingChunked)
 	// 使用io.Pipe创建一个管道，用于流式传输文件内容
 	reader, writer := io.Pipe()
 
@@ -332,8 +333,8 @@ func (r *UploadReq) UploadRaw(reader io.Reader, name string) error {
 	httpi.CopyHttpHeader(req.Header, u.header)
 	r.header.IntoHttpHeader(req.Header)
 	name = escapeQuotes(name)
-	req.Header.Set(httpi.HeaderContentType, httpi.ContentTypeOctetStream)
-	req.Header.Set(httpi.HeaderContentDisposition, fmt.Sprintf(httpi.FormDataFileTmpl,
+	req.Header.Set(consts.HeaderContentType, consts.ContentTypeOctetStream)
+	req.Header.Set(consts.HeaderContentDisposition, fmt.Sprintf(consts.FormDataFileTmpl,
 		name, name))
 	resp, err := u.httpClient.Do(req)
 	if err != nil {
@@ -354,9 +355,9 @@ func (r *UploadReq) UploadRawChunked(reader io.Reader, name string) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set(httpi.HeaderContentType, httpi.ContentTypeOctetStream)
+	req.Header.Set(consts.HeaderContentType, consts.ContentTypeOctetStream)
 	name = escapeQuotes(name)
-	req.Header.Set(httpi.HeaderContentDisposition, fmt.Sprintf(httpi.FormDataFileTmpl,
+	req.Header.Set(consts.HeaderContentDisposition, fmt.Sprintf(consts.FormDataFileTmpl,
 		name, name))
 	for {
 		nr, er := reader.Read(buf)
@@ -369,7 +370,7 @@ func (r *UploadReq) UploadRawChunked(reader io.Reader, name string) error {
 				total = end + 1
 			}
 			req.Body = io.NopCloser(bytes.NewReader(buf[0:nr]))
-			req.Header.Set(httpi.HeaderContentRange, httpi.FormatContentRange(start, end, total))
+			req.Header.Set(consts.HeaderContentRange, httpi.FormatContentRange(start, end, total))
 			resp, err := u.httpClient.Do(req)
 			if err != nil {
 				return err

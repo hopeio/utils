@@ -9,26 +9,13 @@ package binding
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hopeio/utils/encoding"
+	"github.com/hopeio/utils/net/http/consts"
 	"github.com/hopeio/utils/reflect/mtos"
 	"github.com/hopeio/utils/validation/validator"
-	"io"
 	"net/http"
 )
 
-const (
-	MIMEJSON              = "application/json"
-	MIMEHTML              = "text/html"
-	MIMEXML               = "application/xml"
-	MIMEXML2              = "text/xml"
-	MIMEPlain             = "text/plain"
-	MIMEPOSTForm          = "application/x-www-form-urlencoded"
-	MIMEMultipartPOSTForm = "multipart/form-data"
-	MIMEPROTOBUF          = "application/x-protobuf"
-	MIMEMSGPACK           = "application/x-msgpack"
-	MIMEMSGPACK2          = "application/msgpack"
-	MIMEYAML              = "application/x-yaml"
-)
+var defaultTags = []string{"uri", "path", "query", "header", "form", "json"}
 
 var Tag = "json"
 
@@ -45,13 +32,6 @@ func SetTag(tag string) {
 type Binding interface {
 	Name() string
 	Bind(*http.Request, interface{}) error
-}
-
-// BindingBody adds BindBody method to Binding. BindBody is similar with GinBind,
-// but it reads the body from supplied bytes instead of req.Body.
-type BindingBody interface {
-	Binding
-	BindBody([]byte, interface{}) error
 }
 
 // Validator is the default validator which implements the StructValidator
@@ -82,9 +62,9 @@ func Default(method string, contentType string) Binding {
 
 func Body(contentType string) Binding {
 	switch contentType {
-	case MIMEPOSTForm:
+	case consts.ContentTypeForm:
 		return FormPost
-	case MIMEMultipartPOSTForm:
+	case consts.ContentTypeMultipart:
 		return FormMultipart
 	default: // case MIMEPOSTForm:
 		return CustomBody
@@ -116,19 +96,42 @@ func Bind(r *http.Request, obj interface{}) error {
 	if len(r.Header) > 0 {
 		args = append(args, HeaderSource(r.Header))
 	}
-	err := mtos.MapFormByTag(obj, args, tag)
+	err := mtos.MappingByTag(obj, args, tag)
 	if err != nil {
 		return fmt.Errorf("args bind error: %w", err)
 	}
 	return nil
 }
 
-func RegisterBodyBinding(name string, unmarshaller func(data []byte, obj any) error) {
-	CustomBody.name = name
-	CustomBody.unmarshaller = unmarshaller
+func NewReq[REQ any](r *http.Request) (*REQ, error) {
+	req := new(REQ)
+	err := Bind(r, req)
+	if err != nil {
+		return nil, err
+	}
+	return req, nil
 }
 
-func RegisterBodyBindingDecoder(name string, newDecoder func(io.Reader) encoding.Decoder) {
-	CustomBody.name = name
-	CustomBody.decoder = newDecoder
+func BindBody(r *http.Request, obj interface{}) error {
+	return BindWith(r, obj, CustomBody)
+}
+
+func BindHeader(r *http.Request, obj interface{}) error {
+	return Header.Bind(r, obj)
+}
+
+// BindQuery is a shortcut for c.BindWith(obj, binding.Query).
+func BindQuery(r *http.Request, obj interface{}) error {
+	return BindWith(r, obj, Query)
+}
+
+func BindUri(r *http.Request, obj interface{}) error {
+	return Uri.Bind(r, obj)
+}
+
+// BindWith binds the passed struct pointer using the specified binding engine.
+// It will abort the request with HTTP 400 if any error occurs.
+// See the binding package.
+func BindWith(r *http.Request, obj interface{}, b Binding) error {
+	return b.Bind(r, obj)
 }

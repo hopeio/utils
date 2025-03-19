@@ -8,6 +8,7 @@ package http
 
 import (
 	"fmt"
+	"github.com/hopeio/utils/net/http/consts"
 	"mime"
 	"net/http"
 	"net/url"
@@ -222,7 +223,7 @@ func ParseContentDisposition(header string) (string, error) {
 }
 
 func GetContentLength(header http.Header) int64 {
-	length, _ := strconv.ParseInt(header.Get(HeaderContentLength), 10, 64)
+	length, _ := strconv.ParseInt(header.Get(consts.HeaderContentLength), 10, 64)
 	return length
 }
 

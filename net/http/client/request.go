@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"github.com/andybalholm/brotli"
 	httpi "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/utils/net/http/consts"
 	url2 "github.com/hopeio/utils/net/url"
 	stringsi "github.com/hopeio/utils/strings"
 	"github.com/hopeio/utils/strings/ascii"
@@ -120,7 +121,7 @@ func (req *Request) addHeader(request *http.Request, c *Client) string {
 	sv := make([]string, nv) // shared backing array for header' values
 
 	for k, vv := range c.header {
-		if k == httpi.HeaderAuthorization {
+		if k == consts.HeaderAuthorization {
 			auth = vv[0]
 		}
 		if vv == nil {
@@ -133,12 +134,12 @@ func (req *Request) addHeader(request *http.Request, c *Client) string {
 
 	for i := 0; i+1 < len(req.header); i += 2 {
 		request.Header.Set(req.header[i], req.header[i+1])
-		if req.header[i] == httpi.HeaderAuthorization {
+		if req.header[i] == consts.HeaderAuthorization {
 			auth = req.header[i+1]
 		}
 	}
 
-	request.Header.Set(httpi.HeaderContentType, req.contentType.String())
+	request.Header.Set(consts.HeaderContentType, req.contentType.String())
 	return auth
 }
 
@@ -288,7 +289,7 @@ Retry:
 	var reader io.Reader
 	// net/http会自动处理gzip
 	// go1.22 发现没有处理(并不是,是请求时header标明Content-Encoding时不会处理)
-	encoding := resp.Header.Get(httpi.HeaderContentEncoding)
+	encoding := resp.Header.Get(consts.HeaderContentEncoding)
 	var compress bool
 	switch {
 	case ascii.EqualFold(encoding, "gzip"):
@@ -315,8 +316,8 @@ Retry:
 		reader = resp.Body
 	}
 	if compress {
-		resp.Header.Del(httpi.HeaderContentEncoding)
-		resp.Header.Del(httpi.HeaderContentLength)
+		resp.Header.Del(consts.HeaderContentEncoding)
+		resp.Header.Del(consts.HeaderContentLength)
 		resp.ContentLength = -1
 		resp.Uncompressed = true
 	}
@@ -350,7 +351,7 @@ Retry:
 
 	respBody.Data = respBytes
 	if len(respBytes) > 0 && response != nil {
-		contentType := resp.Header.Get(httpi.HeaderContentType)
+		contentType := resp.Header.Get(consts.HeaderContentType)
 		respBody.ContentType.Decode(contentType)
 
 		if raw, ok := response.(*RawBytes); ok {

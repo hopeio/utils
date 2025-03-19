@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	httpi "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/utils/net/http/consts"
 	"github.com/hopeio/utils/types/param"
 	"net/http"
 	"net/url"
@@ -163,7 +164,7 @@ func (s *Server) redirectError(req *param.OauthReq, err error, w http.ResponseWr
 func (s *Server) redirect(req *param.OauthReq, data map[string]interface{}, w http.ResponseWriter) {
 	w.WriteHeader(http.StatusFound)
 	if req.LoginURI != "" {
-		w.Header().Set(httpi.HeaderLocation, req.LoginURI)
+		w.Header().Set(consts.HeaderLocation, req.LoginURI)
 		w.Write([]byte("not logged in"))
 		return
 	}
@@ -173,7 +174,7 @@ func (s *Server) redirect(req *param.OauthReq, data map[string]interface{}, w ht
 		return
 	}
 
-	w.Header().Set(httpi.HeaderLocation, uri)
+	w.Header().Set(consts.HeaderLocation, uri)
 }
 
 func (s *Server) HandleAuthorizeRequest(ctx context.Context, req *param.OauthReq, token string, w http.ResponseWriter) {

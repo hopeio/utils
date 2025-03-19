@@ -20,7 +20,7 @@ func (uriBinding) Name() string {
 }
 
 func (uriBinding) Bind(c fiber.Ctx, obj interface{}) error {
-	if err := mtos.MapFormByTag(obj, (*uriSource)(c.(*fiber.DefaultCtx)), binding.Tag); err != nil {
+	if err := mtos.MappingByTag(obj, (*uriSource)(c.(*fiber.DefaultCtx)), binding.Tag); err != nil {
 		return err
 	}
 	return binding.Validate(obj)

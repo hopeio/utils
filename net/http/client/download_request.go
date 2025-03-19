@@ -14,6 +14,7 @@ import (
 	ioi "github.com/hopeio/utils/io"
 	"github.com/hopeio/utils/log"
 	httpi "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/utils/net/http/consts"
 	urli "github.com/hopeio/utils/net/url"
 	"github.com/hopeio/utils/os/fs"
 	"io"
@@ -93,9 +94,9 @@ func (dReq *DownloadReq) GetResponse(options ...func(*http.Request)) (*http.Resp
 
 	// 如果自己设置了接受编码，http库不会自动gzip解压，需要自己处理，不加Accept-Encoding和Range头会自动设置gzip
 	//req.Header.Set("Accept-Encoding", "gzip, deflate")
-	req.Header.Set(httpi.HeaderAcceptLanguage, "zh-CN,zh;q=0.9;charset=utf-8")
-	req.Header.Set(httpi.HeaderConnection, "keep-alive")
-	req.Header.Set(httpi.HeaderUserAgent, UserAgentChrome117)
+	req.Header.Set(consts.HeaderAcceptLanguage, "zh-CN,zh;q=0.9;charset=utf-8")
+	req.Header.Set(consts.HeaderConnection, "keep-alive")
+	req.Header.Set(consts.HeaderUserAgent, UserAgentChrome117)
 
 	httpi.CopyHttpHeader(req.Header, d.header)
 	dReq.header.IntoHttpHeader(req.Header)
@@ -193,7 +194,7 @@ func (dReq *DownloadReq) Download(filepath string) error {
 		if err != nil {
 			return err
 		}
-		if !notContinuation && resp.Header.Get(httpi.HeaderAcceptRanges) == "bytes" {
+		if !notContinuation && resp.Header.Get(consts.HeaderAcceptRanges) == "bytes" {
 			length := httpi.GetContentLength(resp.Header)
 			if length > defaultSize {
 				reader.Close()
@@ -228,7 +229,7 @@ func (dReq *DownloadReq) DownloadAttachment(dir string) error {
 		}
 
 		if first {
-			disposition, err := httpi.ParseContentDisposition(resp.Header.Get(httpi.HeaderContentDisposition))
+			disposition, err := httpi.ParseContentDisposition(resp.Header.Get(consts.HeaderContentDisposition))
 			if err != nil {
 				return err
 			}
@@ -236,7 +237,7 @@ func (dReq *DownloadReq) DownloadAttachment(dir string) error {
 			if dReq.mode&DModeOverwrite == 0 && fs.Exist(filepath) {
 				return nil
 			}
-			if resp.Header.Get(httpi.HeaderAcceptRanges) == "bytes" {
+			if resp.Header.Get(consts.HeaderAcceptRanges) == "bytes" {
 				length := httpi.GetContentLength(resp.Header)
 				if length > defaultSize {
 					reader.Close()
@@ -273,7 +274,7 @@ func (dReq *DownloadReq) continuationDownload(filepath string) error {
 	offset := fileinfo.Size()
 	var reader io.ReadCloser
 	for range dReq.downloader.retryTimes {
-		dReq.header = append(dReq.header, httpi.HeaderRange, httpi.FormatRange(offset, 0))
+		dReq.header = append(dReq.header, consts.HeaderRange, httpi.FormatRange(offset, 0))
 
 		reader, err = dReq.GetReader()
 		if err != nil {
@@ -340,7 +341,7 @@ func DownloadImage(filepath, url string) error {
 }
 
 func ImageOption(req *http.Request) {
-	req.Header.Set(httpi.HeaderAccept, "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8")
+	req.Header.Set(consts.HeaderAccept, "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8")
 }
 
 func DownloadToDir(dir, url string) error {

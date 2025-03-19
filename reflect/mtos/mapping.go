@@ -19,7 +19,7 @@ type Setter interface {
 	TrySet(value reflect.Value, field *reflect.StructField, key string, opt SetOptions) (isSet bool, err error)
 }
 
-func MapFormByTag(ptr interface{}, setter Setter, tag string) error {
+func MappingByTag(ptr interface{}, setter Setter, tag string) error {
 	_, err := mapping(reflect.ValueOf(ptr), nil, setter, tag)
 	return err
 }
@@ -184,7 +184,7 @@ func setTimeField(val string, structField *reflect.StructField, value reflect.Va
 			value.Set(reflect.ValueOf(time.Time{}))
 			return nil
 		}
-		
+
 		if isUTC, _ := strconv.ParseBool(structField.Tag.Get("time_utc")); isUTC {
 			l = time.UTC
 		}

@@ -29,7 +29,7 @@ func (headerBinding) Bind(req *http.Request, obj interface{}) error {
 }
 
 func MapHeader(ptr interface{}, h map[string][]string) error {
-	return mtos.MapFormByTag(ptr, HeaderSource(h), "header")
+	return mtos.MappingByTag(ptr, HeaderSource(h), "header")
 }
 
 type HeaderSource map[string][]string

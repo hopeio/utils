@@ -8,14 +8,11 @@ package binding
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/hopeio/utils/encoding"
-	"io"
 )
 
 type bodyBinding struct {
 	name         string
 	unmarshaller func([]byte, any) error
-	newDecoder   func(io.Reader) encoding.Decoder
 }
 
 func (b bodyBinding) Name() string {
@@ -23,5 +20,10 @@ func (b bodyBinding) Name() string {
 }
 
 func (b bodyBinding) Bind(ctx fiber.Ctx, obj interface{}) error {
-	return b.unmarshaller(ctx.Body(), obj)
+	return b.unmarshaller(ctx.Request().Body(), obj)
+}
+
+func (b *bodyBinding) RegisterUnmarshaller(name string, unmarshaller func(data []byte, obj any) error) {
+	b.name = name
+	b.unmarshaller = unmarshaller
 }

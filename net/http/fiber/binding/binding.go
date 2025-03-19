@@ -11,10 +11,10 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v3"
 	"github.com/hopeio/utils/net/http/binding"
+	"github.com/hopeio/utils/net/http/consts"
 	"github.com/hopeio/utils/reflect/mtos"
 	stringsi "github.com/hopeio/utils/strings"
 	"net/http"
-	"strings"
 )
 
 type Binding interface {
@@ -47,9 +47,9 @@ func Default(method string, contentType []byte) Binding {
 
 func Body(contentType []byte) Binding {
 	switch stringsi.BytesToString(contentType) {
-	case binding.MIMEPOSTForm:
+	case consts.ContentTypeForm:
 		return FormPost
-	case binding.MIMEMultipartPOSTForm:
+	case consts.ContentTypeMultipart:
 		return FormMultipart
 	default: // case MIMEPOSTForm:
 		return CustomBody
@@ -77,29 +77,45 @@ func Bind(c fiber.Ctx, obj interface{}) error {
 	if headers := c.GetReqHeaders(); len(headers) > 0 {
 		args = append(args, binding.HeaderSource(headers))
 	}
-	err := mtos.MapFormByTag(obj, args, tag)
+	err := mtos.MappingByTag(obj, args, tag)
 	if err != nil {
 		return fmt.Errorf("args bind error: %w", err)
 	}
 	return nil
 }
 
-func RegisterBodyBinding(name string, unmarshaller func(data []byte, obj any) error) {
-	binding.SetTag(name)
-	CustomBody.name = name
-	CustomBody.unmarshaller = unmarshaller
-}
-
 func SetTag(tag string) {
 	binding.SetTag(tag)
 }
 
-type QuerySource map[string]string
-
-func (q QuerySource) Peek(key string) ([]string, bool) {
-	v, ok := q[key]
-	if strings.Contains(v, ",") {
-		return strings.Split(v, ","), true
+func NewReq[REQ any](c fiber.Ctx) (*REQ, error) {
+	req := new(REQ)
+	err := Bind(c, req)
+	if err != nil {
+		return nil, err
 	}
-	return []string{v}, ok
+	return req, nil
+}
+
+func BindBody(r fiber.Ctx, obj interface{}) error {
+	return BindWith(r, obj, CustomBody)
+}
+
+// BindQuery is a shortcut for c.BindWith(obj, binding.Query).
+func BindQuery(c fiber.Ctx, obj interface{}) error {
+	return BindWith(c, obj, Query)
+}
+
+func BindHeader(c fiber.Ctx, obj interface{}) error {
+	return BindWith(c, obj, Header)
+}
+
+// BindWith binds the passed struct pointer using the specified binding engine.
+// BindUri binds the passed struct pointer using binding.Uri.
+func BindUri(c fiber.Ctx, obj interface{}) error {
+	return Uri.Bind(c, obj)
+}
+
+func BindWith(c fiber.Ctx, obj interface{}, b Binding) error {
+	return b.Bind(c, obj)
 }

@@ -5,35 +5,15 @@
 package binding
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/hopeio/utils/net/http/binding"
 	"github.com/hopeio/utils/reflect/mtos"
-	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
 const defaultMemory = 32 << 20
 
-type formBinding struct{}
 type formPostBinding struct{}
 type formMultipartBinding struct{}
-
-func (formBinding) Name() string {
-	return "form"
-}
-
-func (formBinding) Bind(ctx *gin.Context, obj interface{}) error {
-	if err := ctx.Request.ParseMultipartForm(defaultMemory); err != nil {
-		if err != http.ErrNotMultipart {
-			return err
-		}
-	}
-	args := mtos.PeekVsSource{mtos.KVsSource(ctx.Request.Form)}
-	if err := mtos.MapFormByTag(obj, args, binding.Tag); err != nil {
-		return err
-	}
-	return Validate(obj)
-}
 
 func (formPostBinding) Name() string {
 	return "form-urlencoded"
@@ -44,8 +24,8 @@ func (formPostBinding) Bind(ctx *gin.Context, obj interface{}) error {
 		return err
 	}
 
-	args := mtos.PeekVsSource{mtos.KVsSource(ctx.Request.Form)}
-	if err := mtos.MapFormByTag(obj, args, binding.Tag); err != nil {
+	args := mtos.PeekVsSource{mtos.KVsSource(ctx.Request.PostForm)}
+	if err := mtos.MappingByTag(obj, args, binding.Tag); err != nil {
 		return err
 	}
 	return Validate(obj)
@@ -59,7 +39,7 @@ func (formMultipartBinding) Bind(ctx *gin.Context, obj interface{}) error {
 	if err := ctx.Request.ParseMultipartForm(defaultMemory); err != nil {
 		return err
 	}
-	if err := mtos.MapFormByTag(obj, (*binding.MultipartSource)(ctx.Request), binding.Tag); err != nil {
+	if err := mtos.MappingByTag(obj, (*binding.MultipartSource)(ctx.Request), binding.Tag); err != nil {
 		return err
 	}
 

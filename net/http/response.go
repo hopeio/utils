@@ -9,6 +9,7 @@ package http
 import (
 	"encoding/json"
 	"github.com/hopeio/utils/errors/errcode"
+	"github.com/hopeio/utils/net/http/consts"
 	"io"
 	"iter"
 	"net/http"
@@ -26,7 +27,7 @@ type ResData[T any] struct {
 
 func (res *ResData[T]) Response(w http.ResponseWriter, statusCode int) (int, error) {
 	w.WriteHeader(statusCode)
-	w.Header().Set(HeaderContentType, "application/json; charset=utf-8")
+	w.Header().Set(consts.HeaderContentType, "application/json; charset=utf-8")
 	jsonBytes, _ := json.Marshal(res)
 	return w.Write(jsonBytes)
 }
@@ -91,8 +92,8 @@ func Response[T any](w http.ResponseWriter, code errcode.ErrCode, msg string, da
 }
 
 func ResponseStreamWrite(w http.ResponseWriter, dataSource iter.Seq[[]byte]) {
-	w.Header().Set(HeaderXAccelBuffering, "no") //nginx的锅必须加
-	w.Header().Set(HeaderTransferEncoding, "chunked")
+	w.Header().Set(consts.HeaderXAccelBuffering, "no") //nginx的锅必须加
+	w.Header().Set(consts.HeaderTransferEncoding, "chunked")
 	notifyClosed := w.(http.CloseNotifier).CloseNotify()
 	for data := range dataSource {
 		select {
@@ -231,7 +232,7 @@ func ErrRepFrom(err error) *ErrRep {
 
 func (res *ErrRep) Response(w http.ResponseWriter, statusCode int) (int, error) {
 	w.WriteHeader(statusCode)
-	w.Header().Set(HeaderContentType, ContentTypeJsonUtf8)
+	w.Header().Set(consts.HeaderContentType, consts.ContentTypeJsonUtf8)
 	jsonBytes, _ := json.Marshal(res)
 	return w.Write(jsonBytes)
 }
@@ -251,7 +252,7 @@ type HttpResponseStream struct {
 }
 
 func (res *HttpResponseStream) Header() Header {
-	res.Headers[HeaderTransferEncoding] = "chunked"
+	res.Headers[consts.HeaderTransferEncoding] = "chunked"
 	return res.Headers
 }
 

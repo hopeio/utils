@@ -9,11 +9,9 @@ package binding
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hopeio/utils/encoding"
 	"github.com/hopeio/utils/net/http/binding"
 	"github.com/hopeio/utils/reflect/mtos"
 
-	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -38,13 +36,6 @@ type Binding interface {
 	Bind(*gin.Context, interface{}) error
 }
 
-// BindingBody adds BindBody method to Binding. BindBody is similar with GinBind,
-// but it reads the body from supplied bytes instead of req.Body.
-type BindingBody interface {
-	Binding
-	BindBody([]byte, interface{}) error
-}
-
 // These implement the Binding interface and can be used to bind the data
 // present in the request to struct instances.
 var (
@@ -53,7 +44,7 @@ var (
 	FormMultipart = formMultipartBinding{}
 	Uri           = uriBinding{}
 	Header        = headerBinding{}
-	CustomBody    = bodyBinding{name: "json", unmarshaller: json.Unmarshal}
+	CustomBody    = &bodyBinding{name: "json", unmarshaller: json.Unmarshal}
 )
 
 // Default returns the appropriate Binding instance based on the HTTP method
@@ -102,20 +93,45 @@ func Bind(c *gin.Context, obj interface{}) error {
 	if len(c.Request.Header) > 0 {
 		args = append(args, binding.HeaderSource(c.Request.Header))
 	}
-	err := mtos.MapFormByTag(obj, args, tag)
+	err := mtos.MappingByTag(obj, args, tag)
 	if err != nil {
 		return fmt.Errorf("args bind error: %w", err)
 	}
 	return nil
 }
 
-func RegisterBodyBinding(name string, unmarshaller func(data []byte, obj any) error) {
-	CustomBody.name = name
-	CustomBody.unmarshaller = unmarshaller
+func NewReq[REQ any](c *gin.Context) (*REQ, error) {
+	req := new(REQ)
+	err := Bind(c, req)
+	if err != nil {
+		return nil, err
+	}
+	return req, nil
 }
 
-func RegisterBodyBindingByDecoder(name string, newDecoder func(io.Reader) encoding.Decoder) {
-	binding.SetTag(name)
-	CustomBody.name = name
-	CustomBody.decoder = newDecoder
+func BindBody(c *gin.Context, obj interface{}) error {
+	return BindWith(c, obj, CustomBody)
+}
+
+// BindQuery is a shortcut for c.MustBindWith(obj, binding.Query).
+func BindQuery(c *gin.Context, obj interface{}) error {
+	return BindWith(c, obj, Query)
+}
+
+// MustBindWith binds the passed struct pointer using the specified binding engine.
+// It will abort the request with HTTP 400 if any error occurs.
+// See the binding package.
+func BindWith(c *gin.Context, obj interface{}, b Binding) error {
+	if err := b.Bind(c, obj); err != nil {
+		return err
+	}
+	if err := Validate(obj); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ShouldBindUri binds the passed struct pointer using the specified binding engine.
+func BindUri(r *gin.Context, obj interface{}) error {
+	return Uri.Bind(r, obj)
 }
