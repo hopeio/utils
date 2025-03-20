@@ -12,8 +12,6 @@ import (
 	"github.com/hopeio/utils/net/http/binding"
 	"github.com/hopeio/utils/reflect/mtos"
 
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,43 +45,38 @@ var (
 	CustomBody    = &bodyBinding{name: "json", unmarshaller: json.Unmarshal}
 )
 
-// Default returns the appropriate Binding instance based on the HTTP method
-// and the content type.
-func Default(method string, contentType string) Binding {
-	if method == http.MethodGet {
-		return Query
-	}
-
-	return Body(contentType)
-}
-
-func Body(contentType string) Binding {
-	switch contentType {
-	case MIMEPOSTForm:
-		return FormPost
-	case MIMEMultipartPOSTForm:
-		return FormMultipart
-	default: // case MIMEPOSTForm:
-		return CustomBody
-	}
-}
-
 func Validate(obj interface{}) error {
 	return binding.Validator.ValidateStruct(obj)
 }
 
 func Bind(c *gin.Context, obj interface{}) error {
 	tag := binding.Tag
+	var args mtos.CanSetters
 	if c.Request.Body != nil && c.Request.ContentLength != 0 {
-		b := Body(c.ContentType())
-		err := b.Bind(c, obj)
-		if err != nil {
-			return fmt.Errorf("body bind error: %w", err)
+		switch c.ContentType() {
+		case MIMEPOSTForm:
+			err := c.Request.ParseForm()
+			if err != nil {
+				return err
+			}
+			args = append(args, mtos.KVsSource(c.Request.PostForm))
+			tag = "form"
+		case MIMEMultipartPOSTForm:
+			err := c.Request.ParseMultipartForm(defaultMemory)
+			if err != nil {
+				return err
+			}
+			args = append(args, (*binding.MultipartSource)(c.Request.MultipartForm))
+			tag = "form"
+		default: // case MIMEPOSTForm:
+			err := CustomBody.Bind(c, obj)
+			if err != nil {
+				return fmt.Errorf("body bind error: %w", err)
+			}
+			tag = CustomBody.Name()
 		}
-		tag = b.Name()
 	}
 
-	var args mtos.PeekVsSource
 	if len(c.Params) > 0 {
 		args = append(args, uriSource(c.Params))
 	}
@@ -93,9 +86,11 @@ func Bind(c *gin.Context, obj interface{}) error {
 	if len(c.Request.Header) > 0 {
 		args = append(args, binding.HeaderSource(c.Request.Header))
 	}
-	err := mtos.MappingByTag(obj, args, tag)
-	if err != nil {
-		return fmt.Errorf("args bind error: %w", err)
+	if len(args) > 0 {
+		err := mtos.MappingByTag(obj, args, tag)
+		if err != nil {
+			return fmt.Errorf("args bind error: %w", err)
+		}
 	}
 	return nil
 }

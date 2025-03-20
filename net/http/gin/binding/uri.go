@@ -40,7 +40,16 @@ func (param uriSource) Peek(key string) ([]string, bool) {
 	return nil, false
 }
 
+func (param uriSource) HasValue(key string) bool {
+	for i := range param {
+		if param[i].Key == key {
+			return true
+		}
+	}
+	return false
+}
+
 // TrySet tries to set a value by request's form source (like map[string][]string)
-func (param uriSource) TrySet(value reflect.Value, field *reflect.StructField, tagValue string, opt mtos.SetOptions) (isSet bool, err error) {
-	return mtos.SetValueByKVsWithStructField(value, field, param, tagValue, opt)
+func (param uriSource) TrySet(value reflect.Value, field *reflect.StructField, key string, opt mtos.SetOptions) (isSet bool, err error) {
+	return mtos.SetValueByKVsWithStructField(value, field, param, key, opt)
 }

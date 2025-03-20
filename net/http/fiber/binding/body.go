@@ -15,11 +15,11 @@ type bodyBinding struct {
 	unmarshaller func([]byte, any) error
 }
 
-func (b bodyBinding) Name() string {
+func (b *bodyBinding) Name() string {
 	return b.name
 }
 
-func (b bodyBinding) Bind(ctx fiber.Ctx, obj interface{}) error {
+func (b *bodyBinding) Bind(ctx fiber.Ctx, obj interface{}) error {
 	return b.unmarshaller(ctx.Request().Body(), obj)
 }
 

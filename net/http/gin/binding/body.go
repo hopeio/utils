@@ -19,11 +19,11 @@ type bodyBinding struct {
 	decoder      func(io.Reader) encoding.Decoder
 }
 
-func (b bodyBinding) Name() string {
+func (b *bodyBinding) Name() string {
 	return b.name
 }
 
-func (b bodyBinding) Bind(ctx *gin.Context, obj interface{}) error {
+func (b *bodyBinding) Bind(ctx *gin.Context, obj interface{}) error {
 	if ctx == nil || ctx.Request.Body == nil {
 		return fmt.Errorf("invalid request")
 	}

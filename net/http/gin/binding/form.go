@@ -16,7 +16,7 @@ type formPostBinding struct{}
 type formMultipartBinding struct{}
 
 func (formPostBinding) Name() string {
-	return "form-urlencoded"
+	return "application/x-www-form-urlencoded"
 }
 
 func (formPostBinding) Bind(ctx *gin.Context, obj interface{}) error {
@@ -39,7 +39,7 @@ func (formMultipartBinding) Bind(ctx *gin.Context, obj interface{}) error {
 	if err := ctx.Request.ParseMultipartForm(defaultMemory); err != nil {
 		return err
 	}
-	if err := mtos.MappingByTag(obj, (*binding.MultipartSource)(ctx.Request), binding.Tag); err != nil {
+	if err := mtos.MappingByTag(obj, (*binding.MultipartSource)(ctx.Request.MultipartForm), binding.Tag); err != nil {
 		return err
 	}
 

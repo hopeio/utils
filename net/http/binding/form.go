@@ -19,7 +19,7 @@ const defaultMemory = 32 << 20
 type formPostBinding struct{}
 
 func (formPostBinding) Name() string {
-	return "form-urlencoded"
+	return "application/x-www-form-urlencoded"
 }
 
 func (formPostBinding) Bind(req *http.Request, obj interface{}) error {
@@ -42,24 +42,32 @@ func (formMultipartBinding) Bind(req *http.Request, obj interface{}) error {
 	if err := req.ParseMultipartForm(defaultMemory); err != nil {
 		return err
 	}
-	if err := mtos.MappingByTag(obj, (*MultipartSource)(req), Tag); err != nil {
+	if err := mtos.MappingByTag(obj, (*MultipartSource)(req.MultipartForm), Tag); err != nil {
 		return err
 	}
 
 	return Validate(obj)
 }
 
-type MultipartSource http.Request
+type MultipartSource multipart.Form
 
 var _ mtos.Setter = (*MultipartSource)(nil)
 
+func (ms *MultipartSource) HasValue(key string) bool {
+	if _, ok := ms.File[key]; ok {
+		return true
+	}
+	_, ok := ms.Value[key]
+	return ok
+}
+
 // TrySet tries to set a value by the multipart request with the binding a form file
-func (r *MultipartSource) TrySet(value reflect.Value, field *reflect.StructField, key string, opt mtos.SetOptions) (isSet bool, err error) {
-	if files := r.MultipartForm.File[key]; len(files) != 0 {
+func (ms *MultipartSource) TrySet(value reflect.Value, field *reflect.StructField, key string, opt mtos.SetOptions) (isSet bool, err error) {
+	if files := ms.File[key]; len(files) != 0 {
 		return SetByMultipartFormFile(value, field, files)
 	}
 
-	return mtos.SetValueByKVsWithStructField(value, field, mtos.KVsSource(r.MultipartForm.Value), key, opt)
+	return mtos.SetValueByKVsWithStructField(value, field, mtos.KVsSource(ms.Value), key, opt)
 }
 
 func SetByMultipartFormFile(value reflect.Value, field *reflect.StructField, files []*multipart.FileHeader) (isSet bool, err error) {
@@ -73,7 +81,7 @@ func SetByMultipartFormFile(value reflect.Value, field *reflect.StructField, fil
 	case reflect.Struct:
 		switch value.Interface().(type) {
 		case multipart.FileHeader:
-			value.Set(reflect.ValueOf(*files[0]))
+			value.Set(reflect.ValueOf(files[0]).Elem())
 			return true, nil
 		}
 	case reflect.Slice:
@@ -92,7 +100,7 @@ func SetByMultipartFormFile(value reflect.Value, field *reflect.StructField, fil
 
 func setArrayOfMultipartFormFiles(value reflect.Value, field *reflect.StructField, files []*multipart.FileHeader) (isSet bool, err error) {
 	if value.Len() != len(files) {
-		return false, errors.New("unsupported len of array for []*multipart.FileHeader")
+		return false, errors.New("unsupported len for []*multipart.FileHeader")
 	}
 	for i := range files {
 		setted, err := SetByMultipartFormFile(value.Index(i), field, files[i:i+1])

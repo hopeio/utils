@@ -41,6 +41,10 @@ func (hs HeaderSource) Peek(key string) ([]string, bool) {
 	return v, ok
 }
 
-func (hs HeaderSource) TrySet(value reflect.Value, field *reflect.StructField, tagValue string, opt mtos.SetOptions) (isSet bool, err error) {
-	return mtos.SetValueByKVsWithStructField(value, field, hs, tagValue, opt)
+func (hs HeaderSource) HasValue(key string) bool {
+	_, ok := hs[textproto.CanonicalMIMEHeaderKey(key)]
+	return ok
+}
+func (hs HeaderSource) TrySet(value reflect.Value, field *reflect.StructField, key string, opt mtos.SetOptions) (isSet bool, err error) {
+	return mtos.SetValueByKVsWithStructField(value, field, hs, key, opt)
 }

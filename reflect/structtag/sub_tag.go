@@ -6,14 +6,14 @@
 
 package structtag
 
-// CustomTag 适用于子tag形式等同于struct tag,区别是struct tag使用"而CustomTag使用'
-type CustomTag string
+// SubTag 适用于子tag形式等同于struct tag,区别是struct tag使用"而CustomTag使用'
+type SubTag string
 
-func CustomTagLookup(customTag, key string) (value string, ok bool) {
-	return CustomTag(customTag).Lookup(key)
+func SubTagLookup(customTag, key string) (value string, ok bool) {
+	return SubTag(customTag).Lookup(key)
 }
 
-func (tag CustomTag) Lookup(key string) (value string, ok bool) {
+func (tag SubTag) Lookup(key string) (value string, ok bool) {
 
 	for tag != "" {
 		i := 0

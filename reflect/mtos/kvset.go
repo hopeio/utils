@@ -28,8 +28,8 @@ func (args Args) TrySet(value reflect.Value, field *reflect.StructField, key str
 	return SetByKV(value, field, args, key)
 }
 
-func SetByKV(value reflect.Value, field *reflect.StructField, kv PeekV, tagValue string) (isSet bool, err error) {
-	vs, ok := kv.Peek(tagValue)
+func SetByKV(value reflect.Value, field *reflect.StructField, kv PeekV, key string) (isSet bool, err error) {
+	vs, ok := kv.Peek(key)
 	if !ok {
 		return false, nil
 	}
@@ -48,8 +48,8 @@ func (form KVSource) Peek(key string) (string, bool) {
 }
 
 // TrySet tries to set a value by request's form source (like map[string][]string)
-func (form KVSource) TrySet(value reflect.Value, field *reflect.StructField, tagValue string) (isSet bool, err error) {
-	return SetByKV(value, field, form, tagValue)
+func (form KVSource) TrySet(value reflect.Value, field *reflect.StructField, key string) (isSet bool, err error) {
+	return SetByKV(value, field, form, key)
 }
 
 type KVsSource map[string][]string
@@ -61,9 +61,14 @@ func (form KVsSource) Peek(key string) ([]string, bool) {
 	return v, ok
 }
 
+func (form KVsSource) HasValue(key string) bool {
+	_, ok := form[key]
+	return ok
+}
+
 // TrySet tries to set a value by request's form source (like map[string][]string)
-func (form KVsSource) TrySet(value reflect.Value, field *reflect.StructField, tagValue string, opt SetOptions) (isSet bool, err error) {
-	return SetValueByKVsWithStructField(value, field, form, tagValue, opt)
+func (form KVsSource) TrySet(value reflect.Value, field *reflect.StructField, key string, opt SetOptions) (isSet bool, err error) {
+	return SetValueByKVsWithStructField(value, field, form, key, opt)
 }
 
 type PeekVs interface {
@@ -81,6 +86,15 @@ func (args Args2) Peek(key string) (v []string, ok bool) {
 	return
 }
 
+func (args Args2) HasValue(key string) bool {
+	for i := range args {
+		if _, ok := args[i].Peek(key); ok {
+			return ok
+		}
+	}
+	return false
+}
+
 func (args Args2) TrySet(value reflect.Value, field *reflect.StructField, key string, opt SetOptions) (isSet bool, err error) {
 	return SetValueByKVsWithStructField(value, field, args, key, opt)
 }
@@ -94,6 +108,15 @@ func (args PeekVsSource) Peek(key string) (v []string, ok bool) {
 		}
 	}
 	return
+}
+
+func (args PeekVsSource) HasValue(key string) bool {
+	for i := range args {
+		if _, ok := args[i].Peek(key); ok {
+			return ok
+		}
+	}
+	return false
 }
 
 func (args PeekVsSource) TrySet(value reflect.Value, field *reflect.StructField, key string, opt SetOptions) (isSet bool, err error) {

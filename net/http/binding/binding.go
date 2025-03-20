@@ -15,8 +15,6 @@ import (
 	"net/http"
 )
 
-var defaultTags = []string{"uri", "path", "query", "header", "form", "json"}
-
 var Tag = "json"
 
 func SetTag(tag string) {
@@ -46,30 +44,10 @@ var (
 	Query  = queryBinding{}
 	Header = headerBinding{}
 
-	CustomBody    = bodyBinding{name: "json", unmarshaller: json.Unmarshal}
+	CustomBody    = &bodyBinding{name: "json", unmarshaller: json.Unmarshal}
 	FormPost      = formPostBinding{}
 	FormMultipart = formMultipartBinding{}
 )
-
-// Default returns the appropriate Binding instance based on the HTTP method
-// and the content type.
-func Default(method string, contentType string) Binding {
-	if method == http.MethodGet {
-		return Query
-	}
-	return Body(contentType)
-}
-
-func Body(contentType string) Binding {
-	switch contentType {
-	case consts.ContentTypeForm:
-		return FormPost
-	case consts.ContentTypeMultipart:
-		return FormMultipart
-	default: // case MIMEPOSTForm:
-		return CustomBody
-	}
-}
 
 func Validate(obj interface{}) error {
 	return Validator.ValidateStruct(obj)
@@ -77,16 +55,31 @@ func Validate(obj interface{}) error {
 
 func Bind(r *http.Request, obj interface{}) error {
 	tag := Tag
+	var args mtos.CanSetters
 	if r.Body != nil && r.ContentLength != 0 {
-		b := Body(r.Header.Get("Content-Type"))
-		err := b.Bind(r, obj)
-		if err != nil {
-			return fmt.Errorf("body bind error: %w", err)
+		switch r.Header.Get("Content-Type") {
+		case consts.ContentTypeForm:
+			err := r.ParseForm()
+			if err != nil {
+				return err
+			}
+			args = append(args, mtos.KVsSource(r.PostForm))
+			tag = "form"
+		case consts.ContentTypeMultipart:
+			err := r.ParseMultipartForm(defaultMemory)
+			if err != nil {
+				return err
+			}
+			args = append(args, (*MultipartSource)(r.MultipartForm))
+			tag = "form"
+		default:
+			err := CustomBody.Bind(r, obj)
+			if err != nil {
+				return fmt.Errorf("body bind error: %w", err)
+			}
+			tag = CustomBody.Name()
 		}
-		tag = b.Name()
 	}
-
-	var args mtos.PeekVsSource
 	if r.Pattern != "" {
 		args = append(args, (*UriSource)(r))
 	}
@@ -96,9 +89,11 @@ func Bind(r *http.Request, obj interface{}) error {
 	if len(r.Header) > 0 {
 		args = append(args, HeaderSource(r.Header))
 	}
-	err := mtos.MappingByTag(obj, args, tag)
-	if err != nil {
-		return fmt.Errorf("args bind error: %w", err)
+	if len(args) > 0 {
+		err := mtos.MappingByTag(obj, args, tag)
+		if err != nil {
+			return fmt.Errorf("args bind error: %w", err)
+		}
 	}
 	return nil
 }

@@ -36,3 +36,8 @@ func (q QuerySource) Peek(key string) ([]string, bool) {
 	}
 	return []string{v}, ok
 }
+
+func (q QuerySource) HasValue(key string) bool {
+	_, ok := q[key]
+	return ok
+}

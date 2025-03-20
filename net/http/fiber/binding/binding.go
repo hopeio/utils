@@ -14,7 +14,6 @@ import (
 	"github.com/hopeio/utils/net/http/consts"
 	"github.com/hopeio/utils/reflect/mtos"
 	stringsi "github.com/hopeio/utils/strings"
-	"net/http"
 )
 
 type Binding interface {
@@ -29,7 +28,7 @@ type BindingBody interface {
 }
 
 var (
-	CustomBody    = bodyBinding{name: "json", unmarshaller: json.Unmarshal}
+	CustomBody    = &bodyBinding{name: "json", unmarshaller: json.Unmarshal}
 	Query         = queryBinding{}
 	FormPost      = formPostBinding{}
 	FormMultipart = formMultipartBinding{}
@@ -37,37 +36,30 @@ var (
 	Header        = headerBinding{}
 )
 
-func Default(method string, contentType []byte) Binding {
-	if method == http.MethodGet {
-		return Query
-	}
-
-	return Body(contentType)
-}
-
-func Body(contentType []byte) Binding {
-	switch stringsi.BytesToString(contentType) {
-	case consts.ContentTypeForm:
-		return FormPost
-	case consts.ContentTypeMultipart:
-		return FormMultipart
-	default: // case MIMEPOSTForm:
-		return CustomBody
-	}
-}
-
 func Bind(c fiber.Ctx, obj interface{}) error {
 	tag := binding.Tag
+	var args mtos.CanSetters
 	if data := c.Body(); len(data) > 0 {
-		b := Body(c.Request().Header.ContentType())
-		err := b.Bind(c, obj)
-		if err != nil {
-			return fmt.Errorf("body bind error: %w", err)
+		switch stringsi.BytesToString(c.Request().Header.ContentType()) {
+		case consts.ContentTypeForm:
+			args = append(args, (*ArgsSource)(c.Request().PostArgs()))
+			tag = "form"
+		case consts.ContentTypeMultipart:
+			form, err := c.MultipartForm()
+			if err != nil {
+				return err
+			}
+			args = append(args, (*binding.MultipartSource)(form))
+			tag = "form"
+		default: // case MIMEPOSTForm:
+			err := CustomBody.Bind(c, obj)
+			if err != nil {
+				return fmt.Errorf("body bind error: %w", err)
+			}
+			tag = CustomBody.Name()
 		}
-		tag = b.Name()
-	}
 
-	var args mtos.PeekVsSource
+	}
 
 	args = append(args, (*uriSource)(c.(*fiber.DefaultCtx)))
 
@@ -77,9 +69,11 @@ func Bind(c fiber.Ctx, obj interface{}) error {
 	if headers := c.GetReqHeaders(); len(headers) > 0 {
 		args = append(args, binding.HeaderSource(headers))
 	}
-	err := mtos.MappingByTag(obj, args, tag)
-	if err != nil {
-		return fmt.Errorf("args bind error: %w", err)
+	if len(args) > 0 {
+		err := mtos.MappingByTag(obj, args, tag)
+		if err != nil {
+			return fmt.Errorf("args bind error: %w", err)
+		}
 	}
 	return nil
 }

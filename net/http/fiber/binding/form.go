@@ -18,7 +18,7 @@ type formPostBinding struct{}
 type formMultipartBinding struct{}
 
 func (formMultipartBinding) Name() string {
-	return "multipart/form-data"
+	return "application/x-www-form-urlencoded"
 }
 
 func (formMultipartBinding) Bind(ctx fiber.Ctx, obj interface{}) error {

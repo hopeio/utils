@@ -107,6 +107,7 @@ func tryToSetValue(value reflect.Value, field *reflect.StructField, setter Sette
 		if k, v := head(opt, "="); k == "default" {
 			setOpt.isDefaultExists = true
 			setOpt.defaultValue = v
+			break
 		}
 	}
 
@@ -242,4 +243,20 @@ func head(str, sep string) (head string, tail string) {
 		return str, ""
 	}
 	return str[:idx], str[idx+len(sep):]
+}
+
+type CanSetter interface {
+	Setter
+	HasValue(key string) bool
+}
+
+type CanSetters []CanSetter
+
+func (args CanSetters) TrySet(value reflect.Value, field *reflect.StructField, key string, opt SetOptions) (isSet bool, err error) {
+	for _, arg := range args {
+		if arg.HasValue(key) {
+			return arg.TrySet(value, field, key, opt)
+		}
+	}
+	return false, nil
 }

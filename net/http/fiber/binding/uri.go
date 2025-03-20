@@ -29,11 +29,16 @@ func (uriBinding) Bind(c fiber.Ctx, obj interface{}) error {
 type uriSource fiber.DefaultCtx
 
 // TrySet tries to set a value by request's form source (like map[string][]string)
-func (form *uriSource) TrySet(value reflect.Value, field *reflect.StructField, tagValue string, opt mtos.SetOptions) (isSet bool, err error) {
-	return mtos.SetValueByKVsWithStructField(value, field, form, tagValue, opt)
+func (form *uriSource) TrySet(value reflect.Value, field *reflect.StructField, key string, opt mtos.SetOptions) (isSet bool, err error) {
+	return mtos.SetValueByKVsWithStructField(value, field, form, key, opt)
 }
 
 func (form *uriSource) Peek(key string) ([]string, bool) {
 	v := (*fiber.DefaultCtx)(form).Params(key)
 	return []string{v}, v != ""
+}
+
+func (form *uriSource) HasValue(key string) bool {
+	v := (*fiber.DefaultCtx)(form).Params(key)
+	return v != ""
 }

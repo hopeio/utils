@@ -20,6 +20,7 @@ func TestTag(t *testing.T) {
 	var bar Bar1
 	typ := reflect.TypeOf(bar)
 	t.Log(typ.Field(0).Tag.Get("type"))
-	t.Log(CustomTagLookup(typ.Field(1).Tag.Get("mock"), "type"))
-	t.Log(CustomTagLookup(typ.Field(1).Tag.Get("mock"), "test"))
+	t.Log(SubTagLookup(typ.Field(1).Tag.Get("mock"), "type"))
+	t.Log(SubTagLookup(typ.Field(1).Tag.Get("mock"), "test"))
+	t.Log(SubTagLookup(typ.Field(1).Tag.Get("mock"), "example"))
 }

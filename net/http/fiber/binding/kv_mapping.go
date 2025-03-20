@@ -16,8 +16,8 @@ import (
 type ArgsSource fasthttp.Args
 
 // TrySet tries to set a value by request's form source (like map[string][]string)
-func (form *ArgsSource) TrySet(value reflect.Value, field *reflect.StructField, tagValue string, opt mtos.SetOptions) (isSet bool, err error) {
-	return mtos.SetValueByKVsWithStructField(value, field, form, tagValue, opt)
+func (form *ArgsSource) TrySet(value reflect.Value, field *reflect.StructField, key string, opt mtos.SetOptions) (isSet bool, err error) {
+	return mtos.SetValueByKVsWithStructField(value, field, form, key, opt)
 }
 
 func (form *ArgsSource) Peek(key string) ([]string, bool) {
@@ -25,11 +25,16 @@ func (form *ArgsSource) Peek(key string) ([]string, bool) {
 	return []string{v}, v != ""
 }
 
+func (form *ArgsSource) HasValue(key string) bool {
+	v := stringsi.BytesToString((*fasthttp.Args)(form).Peek(key))
+	return v != ""
+}
+
 type CtxSource fasthttp.RequestCtx
 
 // TrySet tries to set a value by request's form source (like map[string][]string)
-func (form *CtxSource) TrySet(value reflect.Value, field *reflect.StructField, tagValue string, opt mtos.SetOptions) (isSet bool, err error) {
-	return mtos.SetValueByKVsWithStructField(value, field, form, tagValue, opt)
+func (form *CtxSource) TrySet(value reflect.Value, field *reflect.StructField, key string, opt mtos.SetOptions) (isSet bool, err error) {
+	return mtos.SetValueByKVsWithStructField(value, field, form, key, opt)
 }
 
 func (form *CtxSource) Peek(key string) ([]string, bool) {
@@ -40,8 +45,8 @@ func (form *CtxSource) Peek(key string) ([]string, bool) {
 type HeaderSource fasthttp.RequestHeader
 
 // TrySet tries to set a value by request's form source (like map[string][]string)
-func (form *HeaderSource) TrySet(value reflect.Value, field *reflect.StructField, tagValue string, opt mtos.SetOptions) (isSet bool, err error) {
-	return mtos.SetValueByKVsWithStructField(value, field, form, tagValue, opt)
+func (form *HeaderSource) TrySet(value reflect.Value, field *reflect.StructField, key string, opt mtos.SetOptions) (isSet bool, err error) {
+	return mtos.SetValueByKVsWithStructField(value, field, form, key, opt)
 }
 
 func (form *HeaderSource) Peek(key string) ([]string, bool) {

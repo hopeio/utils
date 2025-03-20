@@ -21,11 +21,11 @@ type bodyBinding struct {
 	decoder      func(io.Reader) encoding.Decoder
 }
 
-func (b bodyBinding) Name() string {
+func (b *bodyBinding) Name() string {
 	return b.name
 }
 
-func (b bodyBinding) Bind(req *http.Request, obj interface{}) error {
+func (b *bodyBinding) Bind(req *http.Request, obj interface{}) error {
 	if b.decoder != nil {
 		return b.decoder(req.Body).Decode(obj)
 	}
