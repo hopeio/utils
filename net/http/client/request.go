@@ -338,7 +338,6 @@ Retry:
 		return err
 	}
 
-	var respBytes []byte
 	if c.responseHandler != nil {
 		var retry bool
 		retry, reader, err = c.responseHandler(resp)
@@ -367,15 +366,15 @@ Retry:
 		return err
 	}
 
-	if len(respBytes) > 0 && response != nil {
+	if len(respBody) > 0 && response != nil {
 		contentType := resp.Header.Get(consts.HeaderContentType)
 
 		if raw, ok := response.(*RawBytes); ok {
-			*raw = respBytes
+			*raw = respBody
 			return nil
 		}
 		if req.client.customResUnMarshal != nil {
-			err = req.client.customResUnMarshal(respBytes, response)
+			err = req.client.customResUnMarshal(respBody, response)
 			if err != nil {
 				return fmt.Errorf("json.Unmarshal error: %w", err)
 			}
@@ -384,7 +383,7 @@ Retry:
 			case consts.ContentTypeForm:
 			default:
 				// 默认json
-				err = json.Unmarshal(respBytes, response)
+				err = json.Unmarshal(respBody, response)
 				if err != nil {
 					return fmt.Errorf("json.Unmarshal error: %w", err)
 				}
