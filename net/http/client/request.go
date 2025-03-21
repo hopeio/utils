@@ -12,7 +12,6 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
-	"encoding/xml"
 	"errors"
 	"fmt"
 	"github.com/andybalholm/brotli"
@@ -165,7 +164,7 @@ func (req *Request) Do(param, response any, opts ...RequestOption) error {
 	c := req.client
 
 	var accessLogParam AccessLogParam
-	var reqBody, respBody *Body
+	var reqBody, respBody []byte
 	var reqTimes int
 	var err error
 	reqTime := time.Now()
@@ -190,50 +189,47 @@ func (req *Request) Do(param, response any, opts ...RequestOption) error {
 	if req.Method == http.MethodGet {
 		req.Url = url2.AppendQueryParam(req.Url, param)
 	} else {
-		reqBody = &Body{}
 		if param != nil {
 			switch paramType := param.(type) {
 			case string:
-				reqBody.Data = stringsi.ToBytes(paramType)
+				reqBody = stringsi.ToBytes(paramType)
 			case []byte:
-				reqBody.Data = paramType
+				reqBody = paramType
 			case io.Reader:
 				var reqBytes []byte
 				reqBytes, err = io.ReadAll(paramType)
-				reqBody.Data = reqBytes
+				reqBody = reqBytes
 			default:
-				switch req.contentType {
-				case ContentTypeForm:
-					params := url2.QueryParam(param)
-					reqBody.Data = stringsi.ToBytes(params)
-				case ContentTypeXml:
-					var reqBytes []byte
-					reqBytes, err = xml.Marshal(param)
+				if c.customReqMarshal != nil {
+					reqBody, err = c.customReqMarshal(param)
 					if err != nil {
 						return err
 					}
-					reqBody.Data = reqBytes
-				default:
-					var reqBytes []byte
-					reqBytes, err = json.Marshal(param)
-					if err != nil {
-						return err
+				} else {
+					switch req.contentType {
+					case ContentTypeForm:
+						params := url2.QueryParam(param)
+						reqBody = stringsi.ToBytes(params)
+					default:
+						var reqBytes []byte
+						reqBytes, err = json.Marshal(param)
+						if err != nil {
+							return err
+						}
+						reqBody = reqBytes
 					}
-					reqBody.Data = reqBytes
-					reqBody.ContentType = ContentTypeJson
 				}
+
 			}
 		}
 	}
 
 	var body io.Reader
-	var reqBytes []byte
-	if reqBody != nil {
-		reqBytes = reqBody.Data
-		if c.reqDataHandler != nil {
-			reqBytes, err = c.reqDataHandler(reqBody.Data)
+	if len(reqBody) > 0 {
+		if c.customReqMarshal != nil {
+			reqBody, err = c.customReqMarshal(reqBody)
 		}
-		body = bytes.NewReader(reqBytes)
+		body = bytes.NewReader(reqBody)
 	}
 
 	request, err = http.NewRequestWithContext(req.ctx, req.Method, req.Url, body)
@@ -249,8 +245,8 @@ Retry:
 			time.Sleep(c.retryInterval)
 		}
 		reqTime = time.Now()
-		if reqBytes != nil {
-			request.Body = io.NopCloser(bytes.NewReader(reqBytes))
+		if reqBody != nil {
+			request.Body = io.NopCloser(bytes.NewReader(reqBody))
 		}
 		if c.retryHandler != nil {
 			c.retryHandler(request)
@@ -277,19 +273,16 @@ Retry:
 		}
 	}
 
-	respBody = &Body{}
 	if resp.StatusCode < 200 || resp.StatusCode > 300 {
-		respBody.ContentType = ContentTypeText
 		if resp.StatusCode == http.StatusNotFound {
 			err = ErrNotFound
 		} else {
-			var msg []byte
-			msg, err = io.ReadAll(resp.Body)
+			respBody, err = io.ReadAll(resp.Body)
 			resp.Body.Close()
 			if err != nil {
 				return err
 			}
-			err = errors.New("status:" + resp.Status + " " + unicode.ToUtf8(msg))
+			err = errors.New("status:" + resp.Status + " " + unicode.ToUtf8(respBody))
 		}
 		return err
 	}
@@ -368,36 +361,35 @@ Retry:
 		}
 	}
 
-	respBytes, err = io.ReadAll(reader)
+	respBody, err = io.ReadAll(reader)
 	resp.Body.Close()
 	if err != nil {
 		return err
 	}
 
-	respBody.Data = respBytes
 	if len(respBytes) > 0 && response != nil {
 		contentType := resp.Header.Get(consts.HeaderContentType)
-		respBody.ContentType.Decode(contentType)
 
 		if raw, ok := response.(*RawBytes); ok {
 			*raw = respBytes
 			return nil
 		}
-		switch respBody.ContentType {
-		case ContentTypeForm:
-		case ContentTypeXml:
-			err = xml.Unmarshal(respBytes, response)
-			if err != nil {
-				return fmt.Errorf("xml.Unmarshal error: %w", err)
-			}
-		default:
-			// 默认json
-			err = json.Unmarshal(respBytes, response)
+		if req.client.customResUnMarshal != nil {
+			err = req.client.customResUnMarshal(respBytes, response)
 			if err != nil {
 				return fmt.Errorf("json.Unmarshal error: %w", err)
 			}
+		} else {
+			switch contentType {
+			case consts.ContentTypeForm:
+			default:
+				// 默认json
+				err = json.Unmarshal(respBytes, response)
+				if err != nil {
+					return fmt.Errorf("json.Unmarshal error: %w", err)
+				}
+			}
 		}
-
 		if v, ok := response.(ResponseBodyCheck); ok {
 			err = v.CheckError()
 		}

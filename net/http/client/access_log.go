@@ -31,48 +31,33 @@ func NewBody(data []byte, contentType ContentType) *Body {
 	return &Body{Data: data, ContentType: contentType}
 }
 
-func (b *Body) IsJson() bool {
-	return b.ContentType == ContentTypeJson
-}
-
-func (b *Body) IsProtobuf() bool {
-	return b.ContentType == ContentTypeGrpc
-}
-
 type AccessLogParam struct {
 	Method, Url       string
 	Request           *http.Request
 	Response          *http.Response
-	ReqBody, RespBody *Body
+	ReqBody, RespBody []byte
 	ProcessTime       time.Duration
 }
 type AccessLog func(param *AccessLogParam, err error)
 
 func DefaultLogger(param *AccessLogParam, err error) {
 	reqField, respField, statusField := zap.Skip(), zap.Skip(), zap.Skip()
-	if param.ReqBody != nil {
+	if len(param.ReqBody) > 0 {
 		key := "body"
 		if param.ReqBody.IsJson() {
-			reqField = zap.Reflect(key, log.RawJson(param.ReqBody.Data))
-		} else if param.ReqBody.IsProtobuf() {
-			reqField = zap.Binary(key, param.ReqBody.Data)
+			reqField = zap.Reflect(key, log.RawJson(param.ReqBody))
 		} else {
-			reqField = zap.String(key, stringsi.BytesToString(param.ReqBody.Data))
+			reqField = zap.String(key, stringsi.BytesToString(param.ReqBody))
 		}
 	}
-	if param.RespBody != nil && param.RespBody.Data != nil {
+	if len(param.RespBody) > 0 {
 		key := "result"
-		if param.RespBody.IsJson() {
-			respField = zap.Reflect(key, log.RawJson(param.RespBody.Data))
-		} else if param.RespBody.IsProtobuf() {
-			respField = zap.Binary(key, param.RespBody.Data)
+		if len(param.RespBody) > 500 {
+			respField = zap.String(key, "result is too long")
 		} else {
-			if len(param.RespBody.Data) > 500 {
-				respField = zap.String(key, "result is too long")
-			} else {
-				respField = zap.String(key, stringsi.BytesToString(param.RespBody.Data))
-			}
+			respField = zap.Reflect(key, log.RawJson(param.RespBody))
 		}
+
 	}
 	if param.Response != nil {
 		statusField = zap.Int("status", param.Response.StatusCode)
