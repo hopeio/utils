@@ -54,7 +54,7 @@ func NewProductionEncoderConfig() zapcore.EncoderConfig {
 		StacktraceKey:  FieldStack,
 		LineEnding:     zapcore.DefaultLineEnding,
 		EncodeLevel:    zapcore.LowercaseLevelEncoder,
-		EncodeTime:     zapcore.EpochTimeEncoder,
+		EncodeTime:     zapcore.RFC3339TimeEncoder,
 		EncodeDuration: zapcore.SecondsDurationEncoder,
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
@@ -85,7 +85,7 @@ func NewDevelopmentEncoderConfig() zapcore.EncoderConfig {
 		StacktraceKey:  "S",
 		LineEnding:     zapcore.DefaultLineEnding,
 		EncodeLevel:    zapcore.CapitalLevelEncoder,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeTime:     zapcore.RFC3339TimeEncoder,
 		EncodeDuration: zapcore.StringDurationEncoder,
 		EncodeCaller:   zapcore.FullCallerEncoder,
 		EncodeName:     zapcore.FullNameEncoder,
@@ -107,6 +107,7 @@ type Config struct {
 	InitialFields map[string]interface{} `json:"initialFields" yaml:"initialFields"`
 	zapcore.EncoderConfig
 	EncodeLevelType string `json:"encodeLevelType,omitempty" comment:"capital;capitalColor;color"`
+	TimeLayout      string
 }
 
 func (lc *Config) Init() {
@@ -183,8 +184,12 @@ func (lc *Config) Init() {
 	}
 
 	if lc.EncoderConfig.EncodeTime == nil {
-		lc.EncoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-			enc.AppendString(t.Format("2006/01/02 15:04:05.000"))
+		if lc.TimeLayout != "" {
+			lc.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout(lc.TimeLayout)
+		} else {
+			lc.EncoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+				enc.AppendString(t.Format("2006-01-02 15:04:05.000"))
+			}
 		}
 	}
 	if lc.EncoderConfig.EncodeDuration == nil {
