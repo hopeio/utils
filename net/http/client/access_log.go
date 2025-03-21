@@ -10,6 +10,7 @@ import (
 	"github.com/hopeio/utils/log"
 	stringsi "github.com/hopeio/utils/strings"
 	"go.uber.org/zap"
+	"net/http"
 	"time"
 )
 
@@ -38,41 +39,51 @@ func (b *Body) IsProtobuf() bool {
 	return b.ContentType == ContentTypeGrpc
 }
 
-type AccessLog func(method, url, auth string, reqBody, respBody *Body, status int, process time.Duration, err error)
+type AccessLogParam struct {
+	Method, Url       string
+	Request           *http.Request
+	Response          *http.Response
+	ReqBody, RespBody *Body
+	ProcessTime       time.Duration
+}
+type AccessLog func(param *AccessLogParam, err error)
 
-func DefaultLogger(method, url, auth string, reqBody, respBody *Body, status int, process time.Duration, err error) {
-	reqField, respField := zap.Skip(), zap.Skip()
-	if reqBody != nil {
+func DefaultLogger(param *AccessLogParam, err error) {
+	reqField, respField, statusField := zap.Skip(), zap.Skip(), zap.Skip()
+	if param.ReqBody != nil {
 		key := "body"
-		if reqBody.IsJson() {
-			reqField = zap.Reflect(key, log.RawJson(reqBody.Data))
-		} else if reqBody.IsProtobuf() {
-			reqField = zap.Binary(key, reqBody.Data)
+		if param.ReqBody.IsJson() {
+			reqField = zap.Reflect(key, log.RawJson(param.ReqBody.Data))
+		} else if param.ReqBody.IsProtobuf() {
+			reqField = zap.Binary(key, param.ReqBody.Data)
 		} else {
-			reqField = zap.String(key, stringsi.BytesToString(reqBody.Data))
+			reqField = zap.String(key, stringsi.BytesToString(param.ReqBody.Data))
 		}
 	}
-	if respBody != nil && respBody.Data != nil {
+	if param.RespBody != nil && param.RespBody.Data != nil {
 		key := "result"
-		if respBody.IsJson() {
-			respField = zap.Reflect(key, log.RawJson(respBody.Data))
-		} else if respBody.IsProtobuf() {
-			respField = zap.Binary(key, respBody.Data)
+		if param.RespBody.IsJson() {
+			respField = zap.Reflect(key, log.RawJson(param.RespBody.Data))
+		} else if param.RespBody.IsProtobuf() {
+			respField = zap.Binary(key, param.RespBody.Data)
 		} else {
-			if len(respBody.Data) > 500 {
+			if len(param.RespBody.Data) > 500 {
 				respField = zap.String(key, "result is too long")
 			} else {
-				respField = zap.String(key, stringsi.BytesToString(respBody.Data))
+				respField = zap.String(key, stringsi.BytesToString(param.RespBody.Data))
 			}
 		}
 	}
+	if param.Response != nil {
+		statusField = zap.Int("status", param.Response.StatusCode)
+	}
 
-	log.Default().Logger.Info("http request", zap.String("url", url),
-		zap.String("method", method),
+	log.Default().Logger.Info("http request", zap.String("url", param.Url),
+		zap.String("method", param.Method),
 		reqField,
-		zap.Duration("processTime", process),
+		zap.Duration("duration", param.ProcessTime),
 		respField,
-		zap.String("other", auth),
-		zap.Int("status", status),
-		zap.Error(err))
+		statusField,
+		zap.Error(err),
+	)
 }

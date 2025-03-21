@@ -164,15 +164,26 @@ func (req *Request) Do(param, response any, opts ...RequestOption) error {
 	}
 	c := req.client
 
+	var accessLogParam AccessLogParam
 	var reqBody, respBody *Body
-	var statusCode, reqTimes int
+	var reqTimes int
 	var err error
-	var auth string
 	reqTime := time.Now()
+	var request *http.Request
+	var resp *http.Response
 	// 日志记录
 	defer func(now time.Time) {
 		if c.logLevel == LogLevelInfo || (err != nil && c.logLevel == LogLevelError) {
-			c.logger(req.Method, req.Url, auth, reqBody, respBody, statusCode, time.Since(now), err)
+			accessLogParam.ProcessTime = time.Since(reqTime)
+			c.logger(&AccessLogParam{
+				Method:      req.Method,
+				Url:         req.Url,
+				ProcessTime: time.Since(reqTime),
+				ReqBody:     reqBody,
+				RespBody:    respBody,
+				Request:     request,
+				Response:    resp,
+			}, err)
 		}
 	}(reqTime)
 
@@ -214,7 +225,7 @@ func (req *Request) Do(param, response any, opts ...RequestOption) error {
 			}
 		}
 	}
-	var request *http.Request
+
 	var body io.Reader
 	var reqBytes []byte
 	if reqBody != nil {
@@ -230,9 +241,8 @@ func (req *Request) Do(param, response any, opts ...RequestOption) error {
 		return err
 	}
 
-	auth = req.addHeader(request, c)
+	req.addHeader(request, c)
 
-	var resp *http.Response
 Retry:
 	if reqTimes > 0 {
 		if c.retryInterval != 0 {
@@ -253,7 +263,15 @@ Retry:
 			return err
 		} else {
 			if c.logLevel > LogLevelSilent {
-				c.logger(req.Method, req.Url, auth, reqBody, respBody, statusCode, time.Since(reqTime), errors.New(err.Error()+";will retry"))
+				c.logger(&AccessLogParam{
+					Method:      req.Method,
+					Url:         req.Url,
+					ProcessTime: time.Since(reqTime),
+					ReqBody:     reqBody,
+					RespBody:    respBody,
+					Request:     request,
+					Response:    resp,
+				}, errors.New(err.Error()+";will retry"))
 			}
 			goto Retry
 		}
@@ -326,7 +344,6 @@ Retry:
 		*httpresp = reader
 		return err
 	}
-	statusCode = resp.StatusCode
 
 	var respBytes []byte
 	if c.responseHandler != nil {
@@ -335,7 +352,15 @@ Retry:
 
 		if retry {
 			if c.logLevel > LogLevelSilent {
-				c.logger(req.Method, req.Url, auth, reqBody, respBody, statusCode, time.Since(reqTime), err)
+				c.logger(&AccessLogParam{
+					Method:      req.Method,
+					Url:         req.Url,
+					ProcessTime: time.Since(reqTime),
+					ReqBody:     reqBody,
+					RespBody:    respBody,
+					Request:     request,
+					Response:    resp,
+				}, err)
 			}
 			goto Retry
 		} else if err != nil {
