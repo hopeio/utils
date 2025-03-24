@@ -67,7 +67,7 @@ type Client struct {
 	customReqMarshal   func(v any) ([]byte, error)
 
 	// response
-	responseHandler    func(response *http.Response) (retry bool, reader io.Reader, err error)
+	responseHandler    func(response *http.Response) (retry bool, reader io.ReadCloser, err error)
 	resDataHandler     func(data []byte) ([]byte, error)
 	customResUnMarshal func(data []byte, v any) error
 
@@ -125,7 +125,7 @@ func (d *Client) ParseTag(tag string) *Client {
 }
 
 // handler 返回值:是否重试,返回数据,错误
-func (d *Client) ResponseHandler(handler func(response *http.Response) (retry bool, reader io.Reader, err error)) *Client {
+func (d *Client) ResponseHandler(handler func(response *http.Response) (retry bool, reader io.ReadCloser, err error)) *Client {
 	d.responseHandler = handler
 	return d
 }

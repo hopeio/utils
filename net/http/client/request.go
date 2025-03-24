@@ -341,7 +341,6 @@ Retry:
 	if c.responseHandler != nil {
 		var retry bool
 		retry, reader, err = c.responseHandler(resp)
-
 		if retry {
 			if c.logLevel > LogLevelSilent {
 				c.logger(&AccessLogParam{

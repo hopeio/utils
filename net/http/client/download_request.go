@@ -151,14 +151,14 @@ Retry:
 	d := dReq.downloader
 	reader := resp.Body
 	if d.responseHandler != nil {
-		retry, reader2, err := d.responseHandler(resp)
+		var retry bool
+		retry, reader, err = d.responseHandler(resp)
 		if retry {
 			goto Retry
 		}
 		if err != nil {
 			return nil, nil, err
 		}
-		reader = ioi.WrapCloser(reader2)
 	}
 	if d.resDataHandler != nil {
 		data, err := io.ReadAll(reader)
