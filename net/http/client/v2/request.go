@@ -29,16 +29,11 @@ func (req *Request[RES]) Client(client2 *client.Client) *Request[RES] {
 	return req
 }
 
-func (req *Request[RES]) SetClient(set func(c *client.Client)) *Request[RES] {
-	(*client.Request)(req).SetClient(set)
-	return req
-}
-
 func (req *Request[RES]) Origin() *client.Request {
 	return (*client.Request)(req)
 }
 
-func (req *Request[RES]) Header(header httpi.SliceHeader) *Request[RES] {
+func (req *Request[RES]) Header(header httpi.Header) *Request[RES] {
 	(*client.Request)(req).Header(header)
 	return req
 }

@@ -58,9 +58,6 @@ type Client struct {
 	// httpClient settings
 	httpClient    *http.Client
 	newHttpClient bool
-
-	parseTag string // 默认json
-
 	// request
 	httpRequestOptions []HttpRequestOption
 	header             http.Header //公共请求头
@@ -116,11 +113,6 @@ func (d *Client) DisableLog() *Client {
 
 func (d *Client) LogLevel(lvl LogLevel) *Client {
 	d.logLevel = lvl
-	return d
-}
-
-func (d *Client) ParseTag(tag string) *Client {
-	d.parseTag = tag
 	return d
 }
 

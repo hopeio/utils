@@ -41,21 +41,3 @@ func Put[RES any](url string, param any) (*RES, error) {
 func Delete[RES any](url string, param any) (*RES, error) {
 	return DeleteRequest[RES](url).Do(param)
 }
-
-func GetSubData[RES ResponseInterface[T], T any](url string, param any) (T, error) {
-	return NewSubDataRequest[RES, T](client.GetRequest(url)).SubData(param)
-}
-
-func GetWithOptions[RES ResponseInterface[T], T any](url string, param any, options ...client.Option) (T, error) {
-	var response RES
-	req := new(client.Client)
-	for _, opt := range options {
-		opt(req)
-	}
-	err := req.Get(url, param, &response)
-	if err != nil {
-		return response.SubData(), err
-	}
-	return response.SubData(), nil
-
-}

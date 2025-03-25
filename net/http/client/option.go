@@ -11,20 +11,19 @@ import (
 	"net/http"
 )
 
-type Option func(req *Client) *Client
+type Option func(req *Client)
 
 type HttpRequestOption func(req *http.Request)
 
 func (o HttpRequestOption) ToOption() Option {
-	return func(c *Client) *Client {
+	return func(c *Client) {
 		c.HttpRequestOptions(o)
-		return c
 	}
 }
 
 func AddHeader(k, v string) HttpRequestOption {
 	return func(req *http.Request) {
-		req.Header.Set(k, v)
+		req.Header.Add(k, v)
 	}
 }
 
@@ -53,6 +52,5 @@ func setRequest(p any, req *http.Request) {
 }
 
 type HttpClientOption func(client *http.Client)
-type ResponseHandler func(client *http.Response)
 
-type RequestOption func(req *Request) *Request
+type RequestOption func(req *Request)
