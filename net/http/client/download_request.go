@@ -41,8 +41,8 @@ type DownloadReq struct {
 	Url        string
 	downloader *Downloader
 	ctx        context.Context
-	header     httpi.SliceHeader //请求级请求头
-	mode       DownloadMode      // 模式，0-强制覆盖，1-不存在下载，2-断续下载
+	header     http.Header  //请求级请求头
+	mode       DownloadMode // 模式，0-强制覆盖，1-不存在下载，2-断续下载
 	rangeSize  int64
 }
 
@@ -64,9 +64,19 @@ func (dReq *DownloadReq) SetDownloader(set func(c *Downloader)) *DownloadReq {
 	set(dReq.downloader)
 	return dReq
 }
+func (req *DownloadReq) Header(header httpi.Header) *DownloadReq {
+	if req.header == nil {
+		req.header = make(http.Header)
+	}
+	httpi.HeaderIntoHttpHeader(header, req.header)
+	return req
+}
 
 func (dReq *DownloadReq) AddHeader(k, v string) *DownloadReq {
-	dReq.header.Set(k, v)
+	if dReq.header == nil {
+		dReq.header = make(http.Header)
+	}
+	dReq.header.Add(k, v)
 	return dReq
 }
 
@@ -97,9 +107,11 @@ func (dReq *DownloadReq) GetResponse(options ...func(*http.Request)) (*http.Resp
 	req.Header.Set(consts.HeaderAcceptLanguage, "zh-CN,zh;q=0.9;charset=utf-8")
 	req.Header.Set(consts.HeaderConnection, "keep-alive")
 	req.Header.Set(consts.HeaderUserAgent, UserAgentChrome117)
+	if dReq.header != nil {
+		httpi.CopyHttpHeader(dReq.header, req.Header)
+		req.Header = dReq.header
+	}
 
-	httpi.CopyHttpHeader(req.Header, d.header)
-	dReq.header.IntoHttpHeader(req.Header)
 	for _, opt := range d.httpRequestOptions {
 		opt(req)
 	}
@@ -274,7 +286,7 @@ func (dReq *DownloadReq) continuationDownload(filepath string) error {
 	offset := fileinfo.Size()
 	var reader io.ReadCloser
 	for range dReq.downloader.retryTimes {
-		dReq.header = append(dReq.header, consts.HeaderRange, httpi.FormatRange(offset, 0))
+		dReq.header.Set(consts.HeaderRange, httpi.FormatRange(offset, 0))
 
 		reader, err = dReq.GetReader()
 		if err != nil {

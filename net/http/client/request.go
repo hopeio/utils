@@ -37,7 +37,7 @@ type Request struct {
 	ctx         context.Context
 	Method, Url string
 	contentType ContentType
-	header      httpi.SliceHeader //请求级请求头
+	header      http.Header //请求级请求头
 	client      *Client
 }
 
@@ -61,13 +61,19 @@ func (req *Request) SetClient(set func(c *Client)) *Request {
 	return req
 }
 
-func (req *Request) Header(header httpi.SliceHeader) *Request {
-	req.header = header
+func (req *Request) Header(header httpi.Header) *Request {
+	if req.header == nil {
+		req.header = make(http.Header)
+	}
+	httpi.HeaderIntoHttpHeader(header, req.header)
 	return req
 }
 
 func (req *Request) AddHeader(k, v string) *Request {
-	req.header.Set(k, v)
+	if req.header == nil {
+		req.header = make(http.Header)
+	}
+	req.header.Add(k, v)
 	return req
 }
 
@@ -109,37 +115,6 @@ func (req *Request) DoStream(param any) (io.ReadCloser, error) {
 		return nil, err
 	}
 	return resp.Body, nil
-}
-
-func (req *Request) addHeader(request *http.Request, c *Client) string {
-	var auth string
-	nv := 0
-	for _, vv := range c.header {
-		nv += len(vv)
-	}
-	sv := make([]string, nv) // shared backing array for header' values
-
-	for k, vv := range c.header {
-		if k == consts.HeaderAuthorization {
-			auth = vv[0]
-		}
-		if vv == nil {
-			continue
-		}
-		n := copy(sv, vv)
-		request.Header[k] = sv[:n:n]
-		sv = sv[n:]
-	}
-
-	for i := 0; i+1 < len(req.header); i += 2 {
-		request.Header.Set(req.header[i], req.header[i+1])
-		if req.header[i] == consts.HeaderAuthorization {
-			auth = req.header[i+1]
-		}
-	}
-
-	request.Header.Set(consts.HeaderContentType, req.contentType.String())
-	return auth
 }
 
 // Do create a HTTP request
@@ -236,8 +211,10 @@ func (req *Request) Do(param, response any, opts ...RequestOption) error {
 	if err != nil {
 		return err
 	}
-
-	req.addHeader(request, c)
+	if req.header != nil {
+		request.Header = req.header
+	}
+	request.Header.Set(consts.HeaderContentType, req.contentType.String())
 
 Retry:
 	if reqTimes > 0 {
