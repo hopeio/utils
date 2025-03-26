@@ -143,15 +143,15 @@ func (req *Request) Do(param, response any) error {
 	// 日志记录
 	defer func(now time.Time) {
 		if c.logLevel == LogLevelInfo || (err != nil && c.logLevel == LogLevelError) {
-			accessLogParam.ProcessTime = time.Since(reqTime)
+			accessLogParam.Duration = time.Since(reqTime)
 			c.logger(&AccessLogParam{
-				Method:      req.Method,
-				Url:         req.Url,
-				ProcessTime: time.Since(reqTime),
-				ReqBody:     reqBody,
-				RespBody:    respBody,
-				Request:     request,
-				Response:    resp,
+				Method:   req.Method,
+				Url:      req.Url,
+				Duration: time.Since(reqTime),
+				ReqBody:  reqBody,
+				RespBody: respBody,
+				Request:  request,
+				Response: resp,
 			}, err)
 		}
 	}(reqTime)
@@ -232,13 +232,13 @@ Retry:
 		} else {
 			if c.logLevel > LogLevelSilent {
 				c.logger(&AccessLogParam{
-					Method:      req.Method,
-					Url:         req.Url,
-					ProcessTime: time.Since(reqTime),
-					ReqBody:     reqBody,
-					RespBody:    respBody,
-					Request:     request,
-					Response:    resp,
+					Method:   req.Method,
+					Url:      req.Url,
+					Duration: time.Since(reqTime),
+					ReqBody:  reqBody,
+					RespBody: respBody,
+					Request:  request,
+					Response: resp,
 				}, errors.New(err.Error()+";will retry"))
 			}
 			goto Retry
@@ -316,13 +316,13 @@ Retry:
 		if retry {
 			if c.logLevel > LogLevelSilent {
 				c.logger(&AccessLogParam{
-					Method:      req.Method,
-					Url:         req.Url,
-					ProcessTime: time.Since(reqTime),
-					ReqBody:     reqBody,
-					RespBody:    respBody,
-					Request:     request,
-					Response:    resp,
+					Method:   req.Method,
+					Url:      req.Url,
+					Duration: time.Since(reqTime),
+					ReqBody:  reqBody,
+					RespBody: respBody,
+					Request:  request,
+					Response: resp,
 				}, err)
 			}
 			goto Retry
