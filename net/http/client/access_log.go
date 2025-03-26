@@ -7,6 +7,7 @@
 package client
 
 import (
+	"encoding/json"
 	"github.com/hopeio/utils/log"
 	"github.com/hopeio/utils/net/http/consts"
 	stringsi "github.com/hopeio/utils/strings"
@@ -38,7 +39,7 @@ type AccessLogParam struct {
 	Request           *http.Request
 	Response          *http.Response
 	ReqBody, RespBody []byte
-	ProcessTime       time.Duration
+	Duration          time.Duration
 }
 type AccessLog func(param *AccessLogParam, err error)
 
@@ -47,7 +48,7 @@ func DefaultLogger(param *AccessLogParam, err error) {
 	if len(param.ReqBody) > 0 {
 		key := "body"
 		if strings.HasPrefix(param.Request.Header.Get(consts.HeaderContentType), consts.ContentTypeJson) {
-			reqField = zap.Reflect(key, log.RawJson(param.ReqBody))
+			reqField = zap.Reflect(key, json.RawMessage(param.ReqBody))
 		} else {
 			reqField = zap.String(key, stringsi.BytesToString(param.ReqBody))
 		}
@@ -55,9 +56,14 @@ func DefaultLogger(param *AccessLogParam, err error) {
 	if len(param.RespBody) > 0 {
 		key := "result"
 		if len(param.RespBody) > 500 {
-			respField = zap.String(key, "result is too long")
+			respField = zap.String(key, "<result is too long>")
 		} else {
-			respField = zap.Reflect(key, log.RawJson(param.RespBody))
+			if strings.HasPrefix(param.Response.Header.Get(consts.HeaderContentType), consts.ContentTypeJson) {
+				respField = zap.Reflect(key, json.RawMessage(param.RespBody))
+			} else {
+				respField = zap.String(key, stringsi.BytesToString(param.RespBody))
+			}
+
 		}
 
 	}
@@ -68,7 +74,7 @@ func DefaultLogger(param *AccessLogParam, err error) {
 	log.Default().Logger.Info("http request", zap.String("url", param.Url),
 		zap.String("method", param.Method),
 		reqField,
-		zap.Duration("duration", param.ProcessTime),
+		zap.Duration("duration", param.Duration),
 		respField,
 		statusField,
 		zap.Error(err),
