@@ -11,7 +11,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	ioi "github.com/hopeio/utils/io"
 	"github.com/hopeio/utils/log"
 	httpi "github.com/hopeio/utils/net/http"
 	"github.com/hopeio/utils/net/http/consts"
@@ -182,7 +181,7 @@ Retry:
 			return nil, nil, err
 		}
 		resp.Body.Close()
-		reader = ioi.WrapCloser(bytes.NewBuffer(data))
+		reader = io.NopCloser(bytes.NewBuffer(data))
 	}
 	return resp, reader, nil
 }

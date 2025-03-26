@@ -9,7 +9,7 @@ package http
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/textproto"
 	"strconv"
@@ -166,7 +166,7 @@ func (rw *ResponseRecorder) Result() *http.Response {
 	}
 	res.Status = fmt.Sprintf("%03d %s", res.StatusCode, http.StatusText(res.StatusCode))
 	if rw.Body != nil {
-		res.Body = ioutil.NopCloser(bytes.NewReader(rw.Body.Bytes()))
+		res.Body = io.NopCloser(bytes.NewReader(rw.Body.Bytes()))
 	} else {
 		res.Body = http.NoBody
 	}
