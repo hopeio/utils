@@ -13,7 +13,7 @@ import (
 	"net/url"
 )
 
-func Director(addr string) error {
+func Director() *httputil.ReverseProxy {
 	proxy := &httputil.ReverseProxy{
 		Director: func(r *http.Request) {
 			targets := r.Header["Target-Url"]
@@ -38,7 +38,10 @@ func Director(addr string) error {
 			return nil
 		},
 	}
-	server := cors.AllowAll()
+	return proxy
+}
 
-	return http.ListenAndServe(addr, server.Handler(proxy))
+func DirectorServer(addr string) error {
+	server := cors.AllowAll()
+	return http.ListenAndServe(addr, server.Handler(Director()))
 }

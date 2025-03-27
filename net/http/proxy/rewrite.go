@@ -13,7 +13,7 @@ import (
 	"net/url"
 )
 
-func Rewrite(addr string) error {
+func Rewrite() *httputil.ReverseProxy {
 	proxy := &httputil.ReverseProxy{
 		Rewrite: func(r *httputil.ProxyRequest) {
 			targets := r.In.Header["Target-Url"]
@@ -39,7 +39,10 @@ func Rewrite(addr string) error {
 			return nil
 		},
 	}
-	server := cors.AllowAll()
+	return proxy
+}
 
-	return http.ListenAndServe(addr, server.Handler(proxy))
+func RewriteServer(addr string) error {
+	server := cors.AllowAll()
+	return http.ListenAndServe(addr, server.Handler(Rewrite()))
 }
