@@ -103,14 +103,19 @@ func (dReq *DownloadReq) GetResponse(options ...func(*http.Request)) (*http.Resp
 
 	// 如果自己设置了接受编码，http库不会自动gzip解压，需要自己处理，不加Accept-Encoding和Range头会自动设置gzip
 	//req.Header.Set("Accept-Encoding", "gzip, deflate")
-	req.Header.Set(consts.HeaderAcceptLanguage, "zh-CN,zh;q=0.9;charset=utf-8")
-	req.Header.Set(consts.HeaderConnection, "keep-alive")
-	req.Header.Set(consts.HeaderUserAgent, UserAgentChrome117)
 	if dReq.header != nil {
-		httpi.CopyHttpHeader(dReq.header, req.Header)
 		req.Header = dReq.header
 	}
-
+	if _, ok := req.Header[consts.HeaderAcceptLanguage]; !ok {
+		req.Header.Set(consts.HeaderAcceptLanguage, "zh-CN,zh;q=0.9;charset=utf-8")
+	}
+	if _, ok := req.Header[consts.HeaderConnection]; !ok {
+		req.Header.Set(consts.HeaderConnection, "keep-alive")
+	}
+	if _, ok := req.Header[consts.HeaderUserAgent]; !ok {
+		req.Header.Set(consts.HeaderUserAgent, UserAgentChrome117)
+	}
+	httpi.CopyHttpHeader(req.Header, d.header)
 	for _, opt := range d.httpRequestOptions {
 		opt(req)
 	}

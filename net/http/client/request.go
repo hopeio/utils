@@ -210,6 +210,7 @@ func (req *Request) Do(param, response any) error {
 		request.Header = req.header
 	}
 	request.Header.Set(consts.HeaderContentType, req.contentType.String())
+	httpi.CopyHttpHeader(request.Header, c.header)
 
 Retry:
 	if reqTimes > 0 {

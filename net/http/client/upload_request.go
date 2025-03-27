@@ -42,7 +42,7 @@ type UploadReq struct {
 	Url       string
 	uploader  *Uploader
 	ctx       context.Context
-	header    httpi.SliceHeader //请求级请求头
+	header    http.Header //请求级请求头
 	boundary  string
 	mode      UploadMode
 	chunkSize int
@@ -187,20 +187,21 @@ func (r *UploadReq) UploadMultipart(formData map[string]string, files ...*Multip
 			}
 		}
 	}
-	r.header.Set(consts.HeaderContentType, w.FormDataContentType())
-	err := w.Close()
+
+	req, err := http.NewRequest(http.MethodPost, r.Url, body)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, r.Url, body)
+	if r.header != nil {
+		req.Header = r.header
+	}
+	r.header.Set(consts.HeaderContentType, w.FormDataContentType())
+	err = w.Close()
 	if err != nil {
 		return err
 	}
 	d := r.uploader
 	httpi.CopyHttpHeader(req.Header, d.header)
-	for i := 0; i+1 < len(r.header); i += 2 {
-		req.Header.Set(r.header[i], r.header[i+1])
-	}
 	for _, opt := range d.httpRequestOptions {
 		opt(req)
 	}
@@ -330,8 +331,10 @@ func (r *UploadReq) UploadRaw(reader io.Reader, name string) error {
 	if err != nil {
 		return err
 	}
+	if r.header != nil {
+		req.Header = r.header
+	}
 	httpi.CopyHttpHeader(req.Header, u.header)
-	r.header.IntoHttpHeader(req.Header)
 	name = escapeQuotes(name)
 	req.Header.Set(consts.HeaderContentType, consts.ContentTypeOctetStream)
 	req.Header.Set(consts.HeaderContentDisposition, fmt.Sprintf(consts.FormDataFileTmpl,
