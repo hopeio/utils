@@ -9,6 +9,7 @@ package engine
 import (
 	"context"
 	"fmt"
+	"golang.org/x/time/rate"
 	"testing"
 	"time"
 )
@@ -83,4 +84,12 @@ func genTask3(typ string, id int) *Task[int] {
 			return tasks, nil
 		},
 	}
+}
+
+func TestEngineLimit(t *testing.T) {
+	engine := NewEngine[int](12)
+	engine.ErrHandlerUtilSuccess()
+	engine.TaskSource(taskSourceFunc)
+	engine.Limiter(rate.Limit(1), 1)
+	engine.Run()
 }

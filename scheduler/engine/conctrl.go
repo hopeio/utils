@@ -183,6 +183,9 @@ func (e *Engine[KEY]) addTasks(ctx context.Context, priority int, tasks ...*Task
 		if ctx != nil {
 			task.ctx = ctx
 		}
+		if task.ctx == nil {
+			task.ctx = e.ctx
+		}
 		task.Priority = priority
 		task.id = id2.NewOrderID()
 		e.readyTaskHeap.Push(task)
@@ -260,6 +263,9 @@ func (e *Engine[KEY]) AddFixedTasks(workerId int, generation int, tasks ...*Task
 			atomic.AddUint64(&e.taskTotalCount, ^uint64(0))
 			e.wg.Done()
 			continue
+		}
+		if task.ctx == nil {
+			task.ctx = e.ctx
 		}
 		task.Priority += generation
 		task.id = id2.NewOrderID()
