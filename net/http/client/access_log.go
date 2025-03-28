@@ -71,7 +71,7 @@ func DefaultLogger(param *AccessLogParam, err error) {
 		statusField = zap.Int("status", param.Response.StatusCode)
 	}
 
-	log.Default().Logger.Info("http request", zap.String("url", param.Url),
+	log.NoCallerLogger().Logger.Info("http request", zap.String("url", param.Url),
 		zap.String("method", param.Method),
 		reqField,
 		zap.Duration("duration", param.Duration),

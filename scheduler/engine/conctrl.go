@@ -78,7 +78,7 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 						if counter == 1 {
 							emptyTimes++
 							if emptyTimes > 2 {
-								log.GetNoCallerLogger().Debug("the task is about to end.")
+								log.NoCallerLogger().Debug("the task is about to end.")
 								e.wg.Done()
 								e.isRunning = false
 								e.mu.Unlock()
@@ -103,7 +103,7 @@ func (e *Engine[KEY]) Run(tasks ...*Task[KEY]) {
 	}
 	e.mu.Unlock()
 	e.wg.Wait()
-	log.GetNoCallerLogger().Infof("[END] task:D:%d/T:%d/S:%d/H:%d/F:%d/E:%d", e.taskDoneCount, e.taskTotalCount, e.taskSkipCount, e.taskErrHandleCount, e.taskFailedCount, e.taskErrorTimes)
+	log.NoCallerLogger().Infof("[END] task:D:%d/T:%d/S:%d/H:%d/F:%d/E:%d", e.taskDoneCount, e.taskTotalCount, e.taskSkipCount, e.taskErrHandleCount, e.taskFailedCount, e.taskErrorTimes)
 }
 
 func (e *Engine[KEY]) newWorker(readyTask *Task[KEY]) {

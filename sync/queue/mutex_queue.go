@@ -4,7 +4,7 @@ import "sync"
 
 type MutexQueue[T any] struct {
 	v  []T
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 func NewMutexQueue[T any]() *MutexQueue[T] {

@@ -19,10 +19,11 @@ func (s *MutexMap[K, V]) Set(key K, value V) {
 	s.m[key] = value
 }
 
-func (s *MutexMap[K, V]) Get(key K) V {
+func (s *MutexMap[K, V]) Get(key K) (V, bool) {
 	s.l.RLock()
 	defer s.l.RUnlock()
-	return s.m[key]
+	v, ok := s.m[key]
+	return v, ok
 }
 
 func New[K comparable, V any]() *MutexMap[K, V] {

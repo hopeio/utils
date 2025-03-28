@@ -13,5 +13,5 @@ import (
 )
 
 func init() {
-	grpclog.SetLoggerV2(zapgrpc.NewLogger(log.GetCallerSkipLogger(4).Logger))
+	grpclog.SetLoggerV2(zapgrpc.NewLogger(log.CallerSkipLogger(4).Logger))
 }

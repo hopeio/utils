@@ -15,11 +15,7 @@ type List[T any] struct {
 }
 
 func New[T any]() *List[T] {
-	l := List[T]{}
-	l.head = nil //head指向头部结点
-	l.tail = nil //tail指向尾部结点
-	l.size = 0
-	return &l
+	return &List[T]{}
 }
 
 func (l *List[T]) Len() uint {

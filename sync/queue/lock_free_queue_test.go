@@ -57,6 +57,7 @@ type queueInterface[T any] interface {
 	Dequeue() (T, bool)
 }
 
+// 数组锁比链表无锁快
 func BenchmarkQueue(b *testing.B) {
 	length := 1 << 12
 	inputs := make([]int, length)

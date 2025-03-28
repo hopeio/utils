@@ -15,11 +15,11 @@ type LockFreeList[T any] struct {
 	size uint64
 }
 
-func New[T any]() *LockFreeList[T] {
+func NewLockFreeList[T any]() *LockFreeList[T] {
 	return &LockFreeList[T]{}
 }
 
-func (l *LockFreeList[T]) Push(v interface{}) {
+func (l *LockFreeList[T]) Push(v T) {
 	node := &sync.Node[T]{V: v}
 	if atomic.LoadUint64(&l.size) == 0 {
 		l.head.Store(node)

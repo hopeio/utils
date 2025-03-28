@@ -60,7 +60,7 @@ func LoggerWithConfig(conf log2.LoggerConfig) gin.HandlerFunc {
 
 	logger := conf.Logger
 	if logger == nil {
-		logger = log.Default()
+		logger = log.DefaultLogger()
 	}
 
 	notlogged := conf.SkipPaths

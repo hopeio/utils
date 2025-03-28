@@ -277,8 +277,4 @@ func (d *Client) GetStreamX(url string) (io.ReadCloser, error) {
 	return NewRequest(http.MethodGet, url).Client(d).DoStream(nil)
 }
 
-type ResponseBodyCheck interface {
-	CheckError() error
-}
-
 type RawBytes = []byte

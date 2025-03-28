@@ -23,3 +23,7 @@ type SetRequest interface {
 type FromResponse interface {
 	FromResponse(response *http.Response)
 }
+
+type ResponseBodyCheck interface {
+	CheckError() error
+}

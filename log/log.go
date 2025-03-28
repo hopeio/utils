@@ -30,8 +30,7 @@ var (
 	mu             sync.Mutex
 )
 
-//go:nosplit
-func Default() *Logger {
+func DefaultLogger() *Logger {
 	return defaultLogger
 }
 
@@ -52,7 +51,7 @@ func SetDefaultLogger(lf *Config, cores ...zapcore.Core) {
 }
 
 // range -3~6
-func GetCallerSkipLogger(skip int) *Logger {
+func CallerSkipLogger(skip int) *Logger {
 	if skip < -3 {
 		panic("skip not less than -3")
 	}
@@ -69,10 +68,10 @@ func GetCallerSkipLogger(skip int) *Logger {
 	return skipLoggers[idx].Logger
 }
 
-func GetNoCallerLogger() *Logger {
+func NoCallerLogger() *Logger {
 	return noCallerLogger
 }
-func GetStackLogger() *Logger {
+func StackLogger() *Logger {
 	return stackLogger
 }
 func Sync() error {
