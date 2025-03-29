@@ -19,11 +19,11 @@ import (
 	"github.com/hopeio/utils/net/http/consts"
 	url2 "github.com/hopeio/utils/net/url"
 	stringsi "github.com/hopeio/utils/strings"
-	"github.com/hopeio/utils/strings/ascii"
 	"github.com/hopeio/utils/strings/unicode"
 	"github.com/klauspost/compress/zstd"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -116,7 +116,7 @@ func (req *Request) DoStream(param any) (io.ReadCloser, error) {
 }
 
 // Do create a HTTP request
-// param: 请求参数 目前只支持编码为json 或 Url-encoded
+// param: 请求参数 目前只支持编码为json 或 url-encoded
 func (req *Request) Do(param, response any) error {
 	if req.Method == "" {
 		return errors.New("not set method")
@@ -155,7 +155,7 @@ func (req *Request) Do(param, response any) error {
 			}, err)
 		}
 	}(reqTime)
-
+	var body io.Reader
 	if req.Method == http.MethodGet {
 		req.Url = url2.AppendQueryParam(req.Url, param)
 	} else {
@@ -166,9 +166,11 @@ func (req *Request) Do(param, response any) error {
 			case []byte:
 				reqBody = paramType
 			case io.Reader:
-				var reqBytes []byte
-				reqBytes, err = io.ReadAll(paramType)
-				reqBody = reqBytes
+				if c.logLevel == LogLevelSilent {
+					body = paramType
+				} else {
+					reqBody, err = io.ReadAll(paramType)
+				}
 			default:
 				if c.customReqMarshal != nil {
 					reqBody, err = c.customReqMarshal(param)
@@ -181,25 +183,22 @@ func (req *Request) Do(param, response any) error {
 						params := url2.QueryParam(param)
 						reqBody = stringsi.ToBytes(params)
 					default:
-						var reqBytes []byte
-						reqBytes, err = json.Marshal(param)
+						reqBody, err = json.Marshal(param)
 						if err != nil {
 							return err
 						}
-						reqBody = reqBytes
 					}
 				}
 
 			}
 		}
-	}
 
-	var body io.Reader
-	if len(reqBody) > 0 {
-		if c.customReqMarshal != nil {
-			reqBody, err = c.customReqMarshal(reqBody)
+		if len(reqBody) > 0 {
+			if c.customReqMarshal != nil {
+				reqBody, err = c.customReqMarshal(reqBody)
+			}
+			body = bytes.NewReader(reqBody)
 		}
-		body = bytes.NewReader(reqBody)
 	}
 
 	request, err = http.NewRequestWithContext(req.ctx, req.Method, req.Url, body)
@@ -275,28 +274,32 @@ Retry:
 	// go1.22 发现没有处理(并不是,是请求时header标明Content-Encoding时不会处理)
 	encoding := resp.Header.Get(consts.HeaderContentEncoding)
 	var compress bool
-	switch {
-	case ascii.EqualFold(encoding, "gzip"):
-		reader, err = gzip.NewReader(resp.Body)
-		if err != nil {
-			resp.Body.Close()
-			return err
+	if encoding != "" {
+		switch strings.ToLower(encoding) {
+		case "gzip":
+			reader, err = gzip.NewReader(resp.Body)
+			if err != nil {
+				resp.Body.Close()
+				return err
+			}
+			compress = true
+		case "br":
+			reader = brotli.NewReader(resp.Body)
+			compress = true
+		case "deflate":
+			reader = flate.NewReader(resp.Body)
+			compress = true
+		case "zstd":
+			reader, err = zstd.NewReader(resp.Body)
+			if err != nil {
+				resp.Body.Close()
+				return err
+			}
+			compress = true
+		default:
+			reader = resp.Body
 		}
-		compress = true
-	case ascii.EqualFold(encoding, "br"):
-		reader = brotli.NewReader(resp.Body)
-		compress = true
-	case ascii.EqualFold(encoding, "deflate"):
-		reader = flate.NewReader(resp.Body)
-		compress = true
-	case ascii.EqualFold(encoding, "zstd"):
-		reader, err = zstd.NewReader(resp.Body)
-		if err != nil {
-			resp.Body.Close()
-			return err
-		}
-		compress = true
-	default:
+	} else {
 		reader = resp.Body
 	}
 	if compress {
@@ -339,7 +342,7 @@ Retry:
 	}
 
 	if len(respBody) > 0 && response != nil {
-		contentType := resp.Header.Get(consts.HeaderContentType)
+		//contentType := resp.Header.Get(consts.HeaderContentType)
 
 		if raw, ok := response.(*RawBytes); ok {
 			*raw = respBody
@@ -351,14 +354,10 @@ Retry:
 				return fmt.Errorf("json.Unmarshal error: %w", err)
 			}
 		} else {
-			switch contentType {
-			case consts.ContentTypeForm:
-			default:
-				// 默认json
-				err = json.Unmarshal(respBody, response)
-				if err != nil {
-					return fmt.Errorf("json.Unmarshal error: %w", err)
-				}
+			// 默认json
+			err = json.Unmarshal(respBody, response)
+			if err != nil {
+				return fmt.Errorf("json.Unmarshal error: %w", err)
 			}
 		}
 		if v, ok := response.(ResponseBodyCheck); ok {
