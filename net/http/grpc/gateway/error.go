@@ -8,26 +8,30 @@ package gateway
 
 import (
 	"fmt"
-	httpi "github.com/hopeio/utils/net/http/consts"
+	"github.com/hopeio/utils/net/http/consts"
 	"github.com/hopeio/utils/net/http/grpc"
 	"google.golang.org/grpc/metadata"
 	"net/http"
 	"net/textproto"
+	"slices"
 )
 
-func OutgoingHeaderMatcher(key string) (string, bool) {
-	switch key {
-	case
-		httpi.HeaderSetCookie:
+func InComingHeaderMatcher(key string) (string, bool) {
+	if slices.Contains(InComingHeader, key) {
 		return key, true
 	}
 	return "", false
 }
 
-var headerMatcher = []string{httpi.HeaderSetCookie}
+func OutgoingHeaderMatcher(key string) (string, bool) {
+	if slices.Contains(OutgoingHeader, key) {
+		return key, true
+	}
+	return "", false
+}
 
 func HandleForwardResponseServerMetadata(w http.ResponseWriter, md metadata.MD) {
-	for _, k := range headerMatcher {
+	for _, k := range OutgoingHeader {
 		if vs, ok := md[k]; ok {
 			for _, v := range vs {
 				w.Header().Add(k, v)
@@ -39,7 +43,7 @@ func HandleForwardResponseServerMetadata(w http.ResponseWriter, md metadata.MD) 
 func HandleForwardResponseTrailerHeader(w http.ResponseWriter, md metadata.MD) {
 	for k := range md {
 		tKey := textproto.CanonicalMIMEHeaderKey(fmt.Sprintf("%s%s", grpc.MetadataTrailerPrefix, k))
-		w.Header().Add("Trailer", tKey)
+		w.Header().Add(consts.HeaderTrailer, tKey)
 	}
 }
 

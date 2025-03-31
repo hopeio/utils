@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/hopeio/utils/encoding/protobuf/jsonpb"
 	httpi "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/utils/net/http/consts"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/protobuf/proto"
 	"net/http"
@@ -42,4 +43,8 @@ type xxxResponseBody interface {
 
 type responseBody interface {
 	ResponseBody() interface{}
+}
+
+var OutGoingHeader = []string{
+	consts.HeaderSetCookie,
 }

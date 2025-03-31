@@ -8,42 +8,23 @@ package gin
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/hopeio/utils/encoding/protobuf/jsonpb"
 	"github.com/hopeio/utils/errors/errcode"
 	httpi "github.com/hopeio/utils/net/http/consts"
-	"google.golang.org/grpc/codes"
-
-	"github.com/hopeio/utils/encoding/protobuf/jsonpb"
-	"github.com/hopeio/utils/net/http/grpc/reconn"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/status"
 	"io"
 	"net/http"
-	"strings"
 )
 
 func HttpError(ctx *gin.Context, err error) {
-
-	s, ok := status.FromError(err)
-	if ok && s.Code() == 14 && strings.HasSuffix(s.Message(), `refused it."`) {
-		//提供一个思路，这里应该是哪条连接失败重连哪条，不能这么粗暴，map的key是个关键
-		if len(reconn.ReConnectMap) > 0 {
-			for _, f := range reconn.ReConnectMap {
-				f()
-			}
-		}
-	}
-
+	s, _ := status.FromError(err)
 	const fallback = `{"code": 14, "message": "failed to marshal error message"}`
 
 	delete(ctx.Request.Header, httpi.HeaderTrailer)
-	contentType := jsonpb.JsonPb.ContentType(nil)
-	ctx.Header(httpi.HeaderContentType, contentType)
+	ctx.Header(httpi.HeaderContentType, jsonpb.JsonPb.ContentType(nil))
 
 	se := &errcode.ErrRep{Code: errcode.ErrCode(s.Code()), Msg: s.Message()}
-	if !ok {
-		se.Code = errcode.ErrCode(codes.Unknown)
-		se.Msg = err.Error()
-	}
 	buf, merr := jsonpb.JsonPb.Marshal(se)
 	if merr != nil {
 		grpclog.Infof("Failed to marshal error message %q: %v", se, merr)

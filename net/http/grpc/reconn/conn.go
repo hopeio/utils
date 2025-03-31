@@ -23,7 +23,7 @@ func ReConnect(v interface{}, getEndPort func() string, opts []grpc.DialOption) 
 	return func() error {
 		conn.Close()
 		endPort := getEndPort()
-		newConn, err := grpc.Dial(endPort, opts...)
+		newConn, err := grpc.NewClient(endPort, opts...)
 		if err != nil {
 			return err
 		}
