@@ -24,19 +24,19 @@ func HandlerWrap[REQ, RES any](service GinService[*REQ, *RES]) gin.HandlerFunc {
 		req := new(REQ)
 		err := binding.Bind(ctx, req)
 		if err != nil {
-			ctx.JSON(http.StatusOK, errcode.InvalidArgument.Wrap(err))
+			ctx.JSON(http.StatusBadRequest, errcode.InvalidArgument.Wrap(err))
 			return
 		}
 		res, reserr := service(ctx, req)
 		if reserr != nil {
-			ctx.JSON(http.StatusOK, reserr)
+			reserr.Response(ctx.Writer)
 			return
 		}
 		if httpres, ok := any(res).(httpi.IHttpResponse); ok {
-			httpi.ResponseWrite(ctx.Writer, httpres)
+			httpi.RespWrite(ctx.Writer, httpres)
 			return
 		}
-		ctx.JSON(http.StatusOK, httpi.NewSuccessResData(res))
+		httpi.NewSuccessRespData(res).Response(ctx.Writer)
 	}
 }
 
@@ -45,18 +45,18 @@ func HandlerWrapCompatibleGRPC[REQ, RES any](service types.GrpcServiceMethod[*RE
 		req := new(REQ)
 		err := binding.Bind(ctx, req)
 		if err != nil {
-			ctx.JSON(http.StatusOK, errcode.InvalidArgument.Wrap(err))
+			ctx.JSON(http.StatusBadRequest, errcode.InvalidArgument.Wrap(err))
 			return
 		}
 		res, err := service(httpi.WarpContext(ctx), req)
 		if err != nil {
-			ctx.JSON(http.StatusOK, httpi.ErrRepFrom(err))
+			httpi.ErrRepFrom(err).Response(ctx.Writer)
 			return
 		}
 		if httpres, ok := any(res).(httpi.IHttpResponse); ok {
-			httpi.ResponseWrite(ctx.Writer, httpres)
+			httpi.RespWrite(ctx.Writer, httpres)
 			return
 		}
-		ctx.JSON(http.StatusOK, httpi.NewSuccessResData(res))
+		httpi.NewSuccessRespData(res).Response(ctx.Writer)
 	}
 }

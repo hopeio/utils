@@ -17,81 +17,95 @@ import (
 
 type Body map[string]any
 
-// ResData 主要用来接收返回，发送请使用ResAnyData
-type ResData[T any] struct {
+// RespData 主要用来接收返回，发送请使用ResAnyData
+type RespData[T any] struct {
 	Code errcode.ErrCode `json:"code"`
 	Msg  string          `json:"msg,omitempty"`
 	//验证码
 	Data T `json:"data,omitempty"`
 }
 
-func (res *ResData[T]) Response(w http.ResponseWriter, statusCode int) (int, error) {
+func (res *RespData[T]) Response(w http.ResponseWriter) (int, error) {
+	w.Header().Set(consts.HeaderContentType, "application/json; charset=utf-8")
+	jsonBytes, _ := json.Marshal(res)
+	return w.Write(jsonBytes)
+}
+
+func (res *RespData[T]) ResponseStatus(w http.ResponseWriter, statusCode int) (int, error) {
 	w.WriteHeader(statusCode)
 	w.Header().Set(consts.HeaderContentType, "application/json; charset=utf-8")
 	jsonBytes, _ := json.Marshal(res)
 	return w.Write(jsonBytes)
 }
 
-func NewResData[T any](code errcode.ErrCode, msg string, data T) *ResData[T] {
-	return &ResData[T]{
+func NewRespData[T any](code errcode.ErrCode, msg string, data T) *RespData[T] {
+	return &RespData[T]{
 		Code: code,
 		Msg:  msg,
 		Data: data,
 	}
 }
 
-type ResAnyData = ResData[any]
+type RespAnyData = RespData[any]
 
-func NewResAnyData(code errcode.ErrCode, msg string, data any) *ResAnyData {
-	return &ResAnyData{
+func NewRespAnyData(code errcode.ErrCode, msg string, data any) *RespAnyData {
+	return &RespAnyData{
 		Code: code,
 		Msg:  msg,
 		Data: data,
 	}
 }
 
-func NewSuccessResData(data any) *ResAnyData {
-	return &ResAnyData{
+func NewSuccessRespData(data any) *RespAnyData {
+	return &RespAnyData{
 		Data: data,
 	}
 }
 
-func NewErrorResData(code errcode.ErrCode, msg string) *ResAnyData {
-	return &ResAnyData{
+func NewErrorRespData(code errcode.ErrCode, msg string) *ErrRep {
+	return &ErrRep{
 		Code: code,
 		Msg:  msg,
 	}
-}
-
-func RespErrCode(w http.ResponseWriter, code errcode.ErrCode) {
-	NewResData[any](code, code.Error(), nil).Response(w, http.StatusOK)
 }
 
 func RespErrCodeMsg(w http.ResponseWriter, code errcode.ErrCode, msg string) {
-	NewResData[any](code, msg, nil).Response(w, http.StatusOK)
-}
-
-func RespSuccess[T any](w http.ResponseWriter, msg string, data T) (int, error) {
-	return NewResData(errcode.Success, msg, data).Response(w, http.StatusOK)
-}
-
-func RespSuccessMsg(w http.ResponseWriter, msg string) (int, error) {
-	return NewResData[any](errcode.Success, msg, nil).Response(w, http.StatusOK)
-}
-
-func RespSuccessData(w http.ResponseWriter, data any) (int, error) {
-	return NewResData[any](errcode.Success, errcode.Success.String(), data).Response(w, http.StatusOK)
+	NewRespData[any](code, msg, nil).Response(w)
 }
 
 func RespErrRep(w http.ResponseWriter, rep *errcode.ErrRep) (int, error) {
-	return NewResData[any](rep.Code, rep.Msg, nil).Response(w, http.StatusOK)
+	return (*ErrRep)(rep).Response(w)
+}
+
+func RespErrRepStatus(w http.ResponseWriter, rep *errcode.ErrRep, statusCode int) (int, error) {
+	return (*ErrRep)(rep).ResponseStatus(w, statusCode)
+}
+
+func RespError(w http.ResponseWriter, err error) (int, error) {
+	return ErrRepFrom(err).Response(w)
+}
+
+func RespSuccess[T any](w http.ResponseWriter, msg string, data T) (int, error) {
+	return NewRespData(errcode.Success, msg, data).Response(w)
+}
+
+func RespSuccessMsg(w http.ResponseWriter, msg string) (int, error) {
+	return NewRespData[any](errcode.Success, msg, nil).Response(w)
+}
+
+func RespSuccessData(w http.ResponseWriter, data any) (int, error) {
+	return NewRespData[any](errcode.Success, errcode.Success.String(), data).Response(w)
 }
 
 func Response[T any](w http.ResponseWriter, code errcode.ErrCode, msg string, data T) (int, error) {
-	return NewResData(code, msg, data).Response(w, http.StatusOK)
+	return NewRespData(code, msg, data).Response(w)
 }
 
-func ResponseStreamWrite(w http.ResponseWriter, dataSource iter.Seq[[]byte]) {
+func ResponseStatus[T any](w http.ResponseWriter, code errcode.ErrCode, msg string, data T, statusCode int) (int, error) {
+	return NewRespData(code, msg, data).ResponseStatus(w, statusCode)
+}
+
+func RespStreamWrite(w http.ResponseWriter, dataSource iter.Seq[[]byte]) {
 	w.Header().Set(consts.HeaderXAccelBuffering, "no") //nginx的锅必须加
 	w.Header().Set(consts.HeaderTransferEncoding, "chunked")
 	notifyClosed := w.(http.CloseNotifier).CloseNotify()
@@ -110,7 +124,7 @@ func ResponseStreamWrite(w http.ResponseWriter, dataSource iter.Seq[[]byte]) {
 var ResponseSysErr = json.RawMessage(`{"code":-1,"msg":"system error"}`)
 var ResponseOk = json.RawMessage(`{"code":0}`)
 
-type ReceiveData = ResData[json.RawMessage]
+type ReceiveData = RespData[json.RawMessage]
 
 func NewReceiveData(code errcode.ErrCode, msg string, data any) *ReceiveData {
 	jsonBytes, _ := json.Marshal(data)
@@ -128,7 +142,7 @@ type IHttpResponse interface {
 	io.Closer
 }
 
-func ResponseWrite(w http.ResponseWriter, httpres IHttpResponse) (int, error) {
+func RespWrite(w http.ResponseWriter, httpres IHttpResponse) (int, error) {
 	w.WriteHeader(httpres.StatusCode())
 	header := w.Header()
 	httpres.Header().Range(header.Set)
@@ -221,24 +235,20 @@ func (res *HttpResponse) Response(w http.ResponseWriter) (int, error) {
 type ErrRep errcode.ErrRep
 
 func ErrRepFrom(err error) *ErrRep {
-	if errrep, ok := err.(*errcode.ErrRep); ok {
-		return (*ErrRep)(errrep)
-	}
-	if errcode, ok := err.(errcode.ErrCode); ok {
-		return &ErrRep{Code: errcode, Msg: errcode.Error()}
-	}
-	return &ErrRep{Code: errcode.Unknown, Msg: err.Error()}
+	return (*ErrRep)(errcode.ErrRepFrom(err))
 }
 
-func (res *ErrRep) Response(w http.ResponseWriter, statusCode int) (int, error) {
-	w.WriteHeader(statusCode)
+func (res *ErrRep) Response(w http.ResponseWriter) (int, error) {
 	w.Header().Set(consts.HeaderContentType, consts.ContentTypeJsonUtf8)
 	jsonBytes, _ := json.Marshal(res)
 	return w.Write(jsonBytes)
 }
 
-func ResponseError(w http.ResponseWriter, err error) {
-	ErrRepFrom(err).Response(w, http.StatusOK)
+func (res *ErrRep) ResponseStatus(w http.ResponseWriter, statusCode int) (int, error) {
+	w.WriteHeader(statusCode)
+	w.Header().Set(consts.HeaderContentType, consts.ContentTypeJsonUtf8)
+	jsonBytes, _ := json.Marshal(res)
+	return w.Write(jsonBytes)
 }
 
 type IHttpResponseTo interface {

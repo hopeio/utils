@@ -11,7 +11,7 @@ import (
 	httpi "github.com/hopeio/utils/net/http"
 )
 
-type ResponseBody httpi.ResAnyData
+type ResponseBody httpi.RespAnyData
 
 func CommonResponse(response interface{}) ResponseBodyCheck {
 	return &ResponseBody{Data: response}

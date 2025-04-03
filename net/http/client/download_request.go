@@ -176,12 +176,12 @@ Retry:
 			return nil, nil, err
 		}
 	}
-	if d.resDataHandler != nil {
+	if d.respDataHandler != nil {
 		data, err := io.ReadAll(reader)
 		if err != nil {
 			return nil, nil, err
 		}
-		data, err = d.resDataHandler(data)
+		data, err = d.respDataHandler(data)
 		if err != nil {
 			return nil, nil, err
 		}

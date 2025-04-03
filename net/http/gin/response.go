@@ -12,10 +12,6 @@ import (
 	httpi "github.com/hopeio/utils/net/http"
 )
 
-func RespErrcode(ctx *gin.Context, code errcode.ErrCode) {
-	httpi.RespErrCode(ctx.Writer, code)
-}
-
 func RespSuccessMsg(ctx *gin.Context, msg string) {
 	httpi.RespSuccessMsg(ctx.Writer, msg)
 }

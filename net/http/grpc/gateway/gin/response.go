@@ -19,7 +19,7 @@ import (
 
 func ForwardResponseMessage(ctx *gin.Context, md grpc.ServerMetadata, message proto.Message) {
 	if res, ok := message.(httpi.IHttpResponse); ok {
-		httpi.ResponseWrite(ctx.Writer, res)
+		httpi.RespWrite(ctx.Writer, res)
 		return
 	}
 	gateway.HandleForwardResponseServerMetadata(ctx.Writer, md.HeaderMD)

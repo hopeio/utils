@@ -13,6 +13,10 @@ import (
 	"strconv"
 )
 
+type IErrRep interface {
+	ErrRep() *ErrRep
+}
+
 type ErrRep struct {
 	Code ErrCode `json:"code"`
 	Msg  string  `json:"msg,omitempty"`
@@ -46,13 +50,13 @@ func (x *ErrRep) Wrap(err error) *WrapErrRep {
 	return &WrapErrRep{*x, err}
 }
 
-func FromError(err error) (s *ErrRep, ok bool) {
+func ErrRepFrom(err error) *ErrRep {
 	if err == nil {
-		return nil, true
+		return nil
 	}
 	type errrep interface{ ErrRep() *ErrRep }
 	if se, ok := err.(errrep); ok {
-		return se.ErrRep(), true
+		return se.ErrRep()
 	}
-	return NewErrRep(Unknown, err.Error()), false
+	return NewErrRep(Unknown, err.Error())
 }

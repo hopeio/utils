@@ -60,20 +60,18 @@ func HandlerWrap[REQ, RES any](service Service[*REQ, *RES]) http.Handler {
 		}
 		res, errRep := service(ReqResp{r, w}, req)
 		if err != nil {
-			errRep.Response(w, http.StatusOK)
+			errRep.Response(w)
 			return
 		}
 		anyres := any(res)
 		if httpres, ok := anyres.(IHttpResponse); ok {
-			ResponseWrite(w, httpres)
+			RespWrite(w, httpres)
 			return
 		}
 		if httpres, ok := anyres.(IHttpResponseTo); ok {
 			httpres.Response(w)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
-		w.Header().Set(consts.HeaderContentType, consts.ContentTypeJsonUtf8)
 		json.NewEncoder(w).Encode(res)
 	})
 }
@@ -87,19 +85,18 @@ func HandlerWrapCompatibleGRPC[REQ, RES any](method types.GrpcServiceMethod[*REQ
 		}
 		res, err := method(WarpContext(ReqResp{r, w}), req)
 		if err != nil {
-			ErrRepFrom(err).Response(w, http.StatusOK)
+			ErrRepFrom(err).Response(w)
 			return
 		}
 		anyres := any(res)
 		if httpres, ok := anyres.(IHttpResponse); ok {
-			ResponseWrite(w, httpres)
+			RespWrite(w, httpres)
 			return
 		}
 		if httpres, ok := anyres.(IHttpResponseTo); ok {
 			httpres.Response(w)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
 		w.Header().Set(consts.HeaderContentType, consts.ContentTypeJsonUtf8)
 		json.NewEncoder(w).Encode(res)
 	})

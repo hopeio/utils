@@ -65,7 +65,7 @@ type Client struct {
 
 	// response
 	responseHandler    func(response *http.Response) (retry bool, reader io.ReadCloser, err error)
-	resDataHandler     func(data []byte) ([]byte, error)
+	respDataHandler    func(data []byte) ([]byte, error)
 	customResUnMarshal func(data []byte, v any) error
 
 	// logger
@@ -122,8 +122,8 @@ func (d *Client) ResponseHandler(handler func(response *http.Response) (retry bo
 	return d
 }
 
-func (d *Client) ResDataHandler(handler func(data []byte) ([]byte, error)) *Client {
-	d.resDataHandler = handler
+func (d *Client) RespDataHandler(handler func(data []byte) ([]byte, error)) *Client {
+	d.respDataHandler = handler
 	return d
 }
 

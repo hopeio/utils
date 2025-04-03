@@ -25,7 +25,7 @@ func (*JSONPb) ContentType(_ interface{}) string {
 
 func (j *JSONPb) Marshal(v any) ([]byte, error) {
 	if err, ok := v.(error); ok {
-		return json.Marshal(&responsei.ResAnyData{
+		return json.Marshal(&responsei.RespAnyData{
 			Code: errcode.ErrCode(codes.Unknown),
 			Msg:  err.Error(),
 		})
@@ -33,7 +33,7 @@ func (j *JSONPb) Marshal(v any) ([]byte, error) {
 	if msg, ok := v.(*wrapperspb.StringValue); ok {
 		v = msg.Value
 	}
-	return json.Marshal(&responsei.ResAnyData{
+	return json.Marshal(&responsei.RespAnyData{
 		Data: v,
 	})
 }

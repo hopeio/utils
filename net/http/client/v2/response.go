@@ -12,19 +12,19 @@ import (
 	"github.com/hopeio/utils/net/http/client"
 )
 
-type ResData[RES any] httpi.ResData[RES]
+type RespData[RES any] httpi.RespData[RES]
 
 func CommonResponse[RES any]() client.ResponseBodyCheck {
-	return &ResData[RES]{}
+	return &RespData[RES]{}
 }
 
-func (res *ResData[RES]) CheckError() error {
+func (res *RespData[RES]) CheckError() error {
 	if res.Code != 0 {
 		return fmt.Errorf("code: %d, msg: %s", res.Code, res.Msg)
 	}
 	return nil
 }
 
-func (res *ResData[RES]) GetData() *RES {
+func (res *RespData[RES]) GetData() *RES {
 	return &res.Data
 }

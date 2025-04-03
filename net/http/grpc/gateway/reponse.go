@@ -12,7 +12,7 @@ import (
 
 func Response(ctx context.Context, writer http.ResponseWriter, message proto.Message) error {
 	if v, ok := message.(httpi.IHttpResponse); ok {
-		_, err := httpi.ResponseWrite(writer, v)
+		_, err := httpi.RespWrite(writer, v)
 		return err
 	}
 	var buf []byte

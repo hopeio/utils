@@ -31,7 +31,7 @@ func (j *JSONPb) Marshal(v any) ([]byte, error) {
 	if msg, ok := v.(*wrapperspb.StringValue); ok {
 		v = msg.Value
 	}
-	return json.Marshal(&responsei.ResAnyData{
+	return json.Marshal(&responsei.RespAnyData{
 		Data: v,
 	})
 }
