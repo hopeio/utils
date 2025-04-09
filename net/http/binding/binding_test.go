@@ -1,6 +1,7 @@
 package binding
 
 import (
+	"bytes"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
@@ -8,8 +9,10 @@ import (
 )
 
 type User struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID    int    `uri:"id"`
+	Name  string `json:"name"`
+	Age   int    `header:"age"`
+	Phone string `query:"phone"`
 }
 
 func TestBind(t *testing.T) {
@@ -21,7 +24,8 @@ func TestBind(t *testing.T) {
 			t.Error(err)
 		}
 		t.Log(u)
-		assert.Equal(t, u.ID, 1)
+		assert.Equal(t, 1, u.ID)
+		assert.Equal(t, "test", u.Name)
 		done <- struct{}{}
 	})
 	go func() {
@@ -30,7 +34,13 @@ func TestBind(t *testing.T) {
 		}
 	}()
 	time.Sleep(time.Second)
-	_, err := http.Get("http://localhost:8080/user/1")
+	req, err := http.NewRequest("POST", "http://localhost:8080/user/1?phone=123", bytes.NewBufferString(`{"name":"test"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Age", "16")
+	_, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -8,29 +8,9 @@ package binding
 
 import (
 	"github.com/hopeio/utils/reflect/mtos"
-	"net/http"
 	"net/textproto"
 	"reflect"
 )
-
-type headerBinding struct{}
-
-func (headerBinding) Name() string {
-	return "header"
-}
-
-func (headerBinding) Bind(req *http.Request, obj interface{}) error {
-
-	if err := mtos.Decode(obj, req.Header); err != nil {
-		return err
-	}
-
-	return Validate(obj)
-}
-
-func MapHeader(ptr interface{}, h map[string][]string) error {
-	return mtos.MappingByTag(ptr, HeaderSource(h), "header")
-}
 
 type HeaderSource map[string][]string
 

@@ -12,20 +12,6 @@ import (
 	"reflect"
 )
 
-// support go 1.22
-type uriBinding struct{}
-
-func (uriBinding) Name() string {
-	return "uri"
-}
-
-func (uriBinding) Bind(req *http.Request, obj interface{}) error {
-	if err := mtos.MappingByTag(obj, (*UriSource)(req), "uri"); err != nil {
-		return err
-	}
-	return Validate(obj)
-}
-
 type UriSource http.Request
 
 var _ mtos.Setter = (*UriSource)(nil)

@@ -8,24 +8,9 @@ package binding
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/hopeio/utils/net/http/binding"
 	"github.com/hopeio/utils/reflect/mtos"
 	"reflect"
 )
-
-// support go 1.22
-type uriBinding struct{}
-
-func (uriBinding) Name() string {
-	return "uri"
-}
-
-func (uriBinding) Bind(ctx *gin.Context, obj interface{}) error {
-	if err := mtos.MappingByTag(obj, (uriSource)(ctx.Params), binding.Tag); err != nil {
-		return err
-	}
-	return Validate(obj)
-}
 
 type uriSource gin.Params
 

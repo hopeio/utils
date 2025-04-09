@@ -10,44 +10,8 @@ import (
 	"errors"
 	"github.com/hopeio/utils/reflect/mtos"
 	"mime/multipart"
-	"net/http"
 	"reflect"
 )
-
-const defaultMemory = 32 << 20
-
-type formPostBinding struct{}
-
-func (formPostBinding) Name() string {
-	return "application/x-www-form-urlencoded"
-}
-
-func (formPostBinding) Bind(req *http.Request, obj interface{}) error {
-	if err := req.ParseForm(); err != nil {
-		return err
-	}
-	if err := mtos.Decode(obj, req.PostForm); err != nil {
-		return err
-	}
-	return Validate(obj)
-}
-
-type formMultipartBinding struct{}
-
-func (formMultipartBinding) Name() string {
-	return "multipart/form-data"
-}
-
-func (formMultipartBinding) Bind(req *http.Request, obj interface{}) error {
-	if err := req.ParseMultipartForm(defaultMemory); err != nil {
-		return err
-	}
-	if err := mtos.MappingByTag(obj, (*MultipartSource)(req.MultipartForm), Tag); err != nil {
-		return err
-	}
-
-	return Validate(obj)
-}
 
 type MultipartSource multipart.Form
 

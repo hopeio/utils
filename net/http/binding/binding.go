@@ -12,121 +12,160 @@ import (
 	"github.com/hopeio/utils/net/http/consts"
 	"github.com/hopeio/utils/reflect/mtos"
 	"github.com/hopeio/utils/validation/validator"
+	"io"
 	"net/http"
+	"reflect"
+	"sync"
 )
-
-var Tag = "json"
-
-func SetTag(tag string) {
-	if tag != "" {
-		Tag = tag
-	}
-	mtos.SetAliasTag(tag)
-}
-
-// Binding describes the interface which needs to be implemented for binding the
-// data present in the request such as JSON request body, query parameters or
-// the form POST.
-type Binding interface {
-	Name() string
-	Bind(*http.Request, interface{}) error
-}
 
 // Validator is the default validator which implements the StructValidator
 // interface. It uses https://github.com/go-playground/validator/tree/v8.18.2
 // under the hood.
 var Validator = validator.DefaultValidator
 
-// These implement the Binding interface and can be used to bind the data
-// present in the request to struct instances.
 var (
-	Uri    = uriBinding{}
-	Query  = queryBinding{}
-	Header = headerBinding{}
-
-	CustomBody    = &bodyBinding{name: "json", unmarshaller: json.Unmarshal}
-	FormPost      = formPostBinding{}
-	FormMultipart = formMultipartBinding{}
+	DefaultMemory    int64                   = 32 << 20
+	BodyUnmarshaller func([]byte, any) error = json.Unmarshal
 )
 
 func Validate(obj interface{}) error {
 	return Validator.ValidateStruct(obj)
 }
 
-func Bind(r *http.Request, obj interface{}) error {
-	tag := Tag
-	var args mtos.CanSetters
-	if r.Body != nil && r.ContentLength != 0 {
-		switch r.Header.Get("Content-Type") {
-		case consts.ContentTypeForm:
-			err := r.ParseForm()
+var defaultTags = []string{"uri", "path", "query", "header", "form"}
+
+type Source interface {
+	Uri() mtos.Setter
+	Query() mtos.Setter
+	Header() mtos.Setter
+	Form() mtos.Setter
+	BodyBind(obj any) error
+}
+
+type Field struct {
+	Tag      string
+	TagValue string
+	Index    int
+	Field    *reflect.StructField
+}
+
+var cache = sync.Map{}
+
+func Bind(r *http.Request, obj any) error {
+	return CommonBind(RequestSource{r}, obj)
+}
+
+func CommonBind(s Source, obj any) error {
+	value := reflect.ValueOf(obj).Elem()
+	typ := value.Type()
+	err := s.BodyBind(obj)
+	if err != nil {
+		return err
+	}
+	if fields, ok := cache.Load(typ); ok {
+		for _, field := range fields.([]Field) {
+			var setter mtos.Setter
+			switch field.Tag {
+			case "uri", "path":
+				setter = s.Uri()
+			case "query":
+				setter = s.Query()
+			case "header":
+				setter = s.Header()
+			case "form":
+				setter = s.Form()
+			}
+			_, err = setter.TrySet(value.Field(field.Index), field.Field, field.TagValue, mtos.SetOptions{})
 			if err != nil {
 				return err
 			}
-			args = append(args, mtos.KVsSource(r.PostForm))
-			tag = "form"
-		case consts.ContentTypeMultipart:
-			err := r.ParseMultipartForm(defaultMemory)
-			if err != nil {
-				return err
-			}
-			args = append(args, (*MultipartSource)(r.MultipartForm))
-			tag = "form"
-		default:
-			err := CustomBody.Bind(r, obj)
-			if err != nil {
-				return fmt.Errorf("body bind error: %w", err)
-			}
-			tag = CustomBody.Name()
 		}
+		return Validate(obj)
 	}
-	if r.Pattern != "" {
-		args = append(args, (*UriSource)(r))
-	}
-	if len(r.URL.RawQuery) > 0 {
-		args = append(args, mtos.KVsSource(r.URL.Query()))
-	}
-	if len(r.Header) > 0 {
-		args = append(args, HeaderSource(r.Header))
-	}
-	if len(args) > 0 {
-		err := mtos.MappingByTag(obj, args, tag)
+	var fields []Field
+	for i := 0; i < value.NumField(); i++ {
+		sf := typ.Field(i)
+		if sf.PkgPath != "" && !sf.Anonymous { // unexported
+			continue
+		}
+		var tagValue string
+		var tag string
+		for _, tag = range defaultTags {
+			tagValue = sf.Tag.Get(tag)
+			if tagValue != "" && tagValue != "-" {
+				break
+			}
+		}
+		if tagValue == "" || tagValue == "-" { // just ignoring this field
+			continue
+		}
+
+		var setter mtos.Setter
+		switch tag {
+		case "uri", "path":
+			setter = s.Uri()
+		case "query":
+			setter = s.Query()
+		case "header":
+			setter = s.Header()
+		}
+		_, err = setter.TrySet(value.Field(i), &sf, tagValue, mtos.SetOptions{})
 		if err != nil {
-			return fmt.Errorf("args bind error: %w", err)
+			return err
 		}
+		fields = append(fields, Field{
+			Tag:      tag,
+			TagValue: tagValue,
+			Index:    i,
+			Field:    &sf,
+		})
+	}
+	cache.Store(typ, fields)
+	return Validate(obj)
+}
+
+type RequestSource struct {
+	*http.Request
+}
+
+func (s RequestSource) Uri() mtos.Setter {
+	return (*UriSource)(s.Request)
+}
+
+func (s RequestSource) Query() mtos.Setter {
+	return (mtos.KVsSource)(s.URL.Query())
+}
+
+func (s RequestSource) Header() mtos.Setter {
+	return (HeaderSource)(s.Request.Header)
+}
+
+func (s RequestSource) Form() mtos.Setter {
+	contentType := s.Request.Header.Get(consts.HeaderContentType)
+	if contentType == consts.ContentTypeForm {
+		err := s.ParseForm()
+		if err != nil {
+			return nil
+		}
+		return (mtos.KVsSource)(s.PostForm)
+	}
+	if contentType == consts.ContentTypeMultipart {
+		err := s.ParseMultipartForm(DefaultMemory)
+		if err != nil {
+			return nil
+		}
+		return (*MultipartSource)(s.MultipartForm)
 	}
 	return nil
 }
 
-func NewReq[REQ any](r *http.Request) (*REQ, error) {
-	req := new(REQ)
-	err := Bind(r, req)
-	if err != nil {
-		return nil, err
+func (s RequestSource) BodyBind(obj any) error {
+	if s.Method == http.MethodGet {
+		return nil
 	}
-	return req, nil
-}
-
-func BindBody(r *http.Request, obj interface{}) error {
-	return BindWith(r, obj, CustomBody)
-}
-
-func BindHeader(r *http.Request, obj interface{}) error {
-	return Header.Bind(r, obj)
-}
-
-// BindQuery is a shortcut for c.BindWith(obj, binding.Query).
-func BindQuery(r *http.Request, obj interface{}) error {
-	return BindWith(r, obj, Query)
-}
-
-func BindUri(r *http.Request, obj interface{}) error {
-	return Uri.Bind(r, obj)
-}
-
-// BindWith binds the passed struct pointer using the specified binding engine.
-// It will abort the request with HTTP 400 if any error occurs.
-// See the binding package.
-func BindWith(r *http.Request, obj interface{}, b Binding) error {
-	return b.Bind(r, obj)
+	data, err := io.ReadAll(s.Body)
+	if err != nil {
+		return fmt.Errorf("read body error: %w", err)
+	}
+	return BodyUnmarshaller(data, obj)
 }
