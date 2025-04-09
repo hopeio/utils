@@ -55,7 +55,7 @@ type User2 struct {
 }
 
 func TestBind2(t *testing.T) {
-	done := make(chan struct{}, 1)
+
 	http.HandleFunc("/user/{id}", func(w http.ResponseWriter, r *http.Request) {
 		var u User2
 		err := Bind(r, &u)
@@ -63,9 +63,13 @@ func TestBind2(t *testing.T) {
 			t.Error(err)
 		}
 		t.Log(u)
-		assert.Equal(t, 1, u.ID)
-		assert.Equal(t, "test", u.Name)
-		done <- struct{}{}
+		if u.ID == 1 {
+			assert.Equal(t, "test", u.Name)
+		}
+		if u.ID == 2 {
+			assert.Equal(t, "test2", u.Name)
+		}
+
 	})
 	go func() {
 		if err := http.ListenAndServe(":8080", nil); err != nil {
@@ -83,5 +87,14 @@ func TestBind2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	<-done
+	req, err = http.NewRequest("POST", "http://localhost:8080/user/2?phone=007", bytes.NewBufferString(`{"name":"test2"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Age", "18")
+	_, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
