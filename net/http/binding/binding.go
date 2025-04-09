@@ -15,6 +15,7 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+	"strings"
 	"sync"
 )
 
@@ -46,6 +47,7 @@ type Source interface {
 type Field struct {
 	Tag      string
 	TagValue string
+	Options  mtos.SetOptions
 	Index    int
 	Field    *reflect.StructField
 }
@@ -83,7 +85,7 @@ func CommonBind(s Source, obj any) error {
 			if setter == nil {
 				continue
 			}
-			_, err = setter.TrySet(value.Field(field.Index), field.Field, field.TagValue, mtos.SetOptions{})
+			_, err = setter.TrySet(value.Field(field.Index), field.Field, field.TagValue, field.Options)
 			if err != nil {
 				return err
 			}
@@ -107,6 +109,9 @@ func CommonBind(s Source, obj any) error {
 		if tagValue == "" || tagValue == "-" {
 			tagValue = sf.Tag.Get(CommonTag)
 			if tagValue != "" && tagValue != "-" {
+				if idx := strings.Index(tagValue, ","); idx > 0 {
+					tagValue = tagValue[:idx]
+				}
 				fields = append(fields, Field{
 					Tag:      CommonTag,
 					TagValue: tagValue,
@@ -132,6 +137,8 @@ func CommonBind(s Source, obj any) error {
 		case "form":
 			setter = formSetter
 		}
+		tags := strings.Split(tagValue, ",")
+		tagValue = tags[0]
 		fields = append(fields, Field{
 			Tag:      tag,
 			TagValue: tagValue,
