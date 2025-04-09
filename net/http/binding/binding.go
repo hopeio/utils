@@ -26,6 +26,7 @@ var Validator = validator.DefaultValidator
 var (
 	DefaultMemory    int64                   = 32 << 20
 	BodyUnmarshaller func([]byte, any) error = json.Unmarshal
+	CommonTag                                = "json"
 )
 
 func Validate(obj interface{}) error {
@@ -62,31 +63,25 @@ func CommonBind(s Source, obj any) error {
 	if err != nil {
 		return err
 	}
-	var uriSetter, querySetter, headerSetter, formSetter mtos.Setter
+	uriSetter, querySetter, headerSetter, formSetter := s.Uri(), s.Query(), s.Header(), s.Form()
+	commonSetter := mtos.Setters{Setters: []mtos.Setter{uriSetter, querySetter, headerSetter}}
 	if fields, ok := cache.Load(typ); ok {
 		for _, field := range fields.([]Field) {
 			var setter mtos.Setter
 			switch field.Tag {
 			case "uri", "path":
-				if uriSetter == nil {
-					uriSetter = s.Uri()
-				}
 				setter = uriSetter
 			case "query":
-				if querySetter == nil {
-					querySetter = s.Query()
-				}
 				setter = querySetter
 			case "header":
-				if headerSetter == nil {
-					headerSetter = s.Header()
-				}
 				setter = headerSetter
 			case "form":
-				if formSetter == nil {
-					formSetter = s.Form()
-				}
 				setter = formSetter
+			case CommonTag:
+				setter = commonSetter
+			}
+			if setter == nil {
+				continue
 			}
 			_, err = setter.TrySet(value.Field(field.Index), field.Field, field.TagValue, mtos.SetOptions{})
 			if err != nil {
@@ -109,36 +104,33 @@ func CommonBind(s Source, obj any) error {
 				break
 			}
 		}
-		if tagValue == "" || tagValue == "-" { // just ignoring this field
+		if tagValue == "" || tagValue == "-" {
+			tagValue = sf.Tag.Get(CommonTag)
+			if tagValue != "" && tagValue != "-" {
+				fields = append(fields, Field{
+					Tag:      CommonTag,
+					TagValue: tagValue,
+					Index:    i,
+					Field:    &sf,
+				})
+				_, err = commonSetter.TrySet(value.Field(i), &sf, tagValue, mtos.SetOptions{})
+				if err != nil {
+					return err
+				}
+			}
 			continue
 		}
 
 		var setter mtos.Setter
 		switch tag {
 		case "uri", "path":
-			if uriSetter == nil {
-				uriSetter = s.Uri()
-			}
 			setter = uriSetter
 		case "query":
-			if querySetter == nil {
-				querySetter = s.Query()
-			}
 			setter = querySetter
 		case "header":
-			if headerSetter == nil {
-				headerSetter = s.Header()
-			}
 			setter = headerSetter
 		case "form":
-			if formSetter == nil {
-				formSetter = s.Form()
-			}
 			setter = formSetter
-		}
-		_, err = setter.TrySet(value.Field(i), &sf, tagValue, mtos.SetOptions{})
-		if err != nil {
-			return err
 		}
 		fields = append(fields, Field{
 			Tag:      tag,
@@ -146,6 +138,14 @@ func CommonBind(s Source, obj any) error {
 			Index:    i,
 			Field:    &sf,
 		})
+		if setter == nil {
+			continue
+		}
+		_, err = setter.TrySet(value.Field(i), &sf, tagValue, mtos.SetOptions{})
+		if err != nil {
+			return err
+		}
+
 	}
 	cache.Store(typ, fields)
 	return Validate(obj)

@@ -19,6 +19,27 @@ type Setter interface {
 	TrySet(value reflect.Value, field *reflect.StructField, key string, opt SetOptions) (isSet bool, err error)
 }
 
+type Setters struct {
+	Setters []Setter
+}
+
+func (receiver Setters) TrySet(value reflect.Value, field *reflect.StructField, key string, opt SetOptions) (isSet bool, err error) {
+	defaultValue := opt.defaultValue
+	opt.defaultValue = ""
+	for _, arg := range receiver.Setters {
+		if arg != nil {
+			isSet, err = arg.TrySet(value, field, key, opt)
+			if isSet {
+				return
+			}
+		}
+	}
+	if defaultValue != "" {
+		return true, SetValueByStringWithStructField(value, field, defaultValue)
+	}
+	return
+}
+
 func MappingByTag(ptr interface{}, setter Setter, tag string) error {
 	_, err := mapping(reflect.ValueOf(ptr), nil, setter, tag)
 	return err
@@ -84,8 +105,7 @@ func mapping(value reflect.Value, field *reflect.StructField, setter Setter, tag
 }
 
 type SetOptions struct {
-	isDefaultExists bool
-	defaultValue    string
+	defaultValue string
 }
 
 func tryToSetValue(value reflect.Value, field *reflect.StructField, setter Setter, tagValue string) (bool, error) {
@@ -105,7 +125,6 @@ func tryToSetValue(value reflect.Value, field *reflect.StructField, setter Sette
 		opt, opts = head(opts, ",")
 
 		if k, v := head(opt, "="); k == "default" {
-			setOpt.isDefaultExists = true
 			setOpt.defaultValue = v
 			break
 		}

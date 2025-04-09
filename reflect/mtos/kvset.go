@@ -125,7 +125,7 @@ func (args PeekVsSource) TrySet(value reflect.Value, field *reflect.StructField,
 
 func SetValueByKVsWithStructField(value reflect.Value, field *reflect.StructField, kv PeekVs, key string, opt SetOptions) (isSet bool, err error) {
 	vs, ok := kv.Peek(key)
-	if !ok && !opt.isDefaultExists {
+	if !ok && opt.defaultValue == "" {
 		return false, nil
 	}
 
