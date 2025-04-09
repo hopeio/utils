@@ -62,18 +62,31 @@ func CommonBind(s Source, obj any) error {
 	if err != nil {
 		return err
 	}
+	var uriSetter, querySetter, headerSetter, formSetter mtos.Setter
 	if fields, ok := cache.Load(typ); ok {
 		for _, field := range fields.([]Field) {
 			var setter mtos.Setter
 			switch field.Tag {
 			case "uri", "path":
-				setter = s.Uri()
+				if uriSetter == nil {
+					uriSetter = s.Uri()
+				}
+				setter = uriSetter
 			case "query":
-				setter = s.Query()
+				if querySetter == nil {
+					querySetter = s.Query()
+				}
+				setter = querySetter
 			case "header":
-				setter = s.Header()
+				if headerSetter == nil {
+					headerSetter = s.Header()
+				}
+				setter = headerSetter
 			case "form":
-				setter = s.Form()
+				if formSetter == nil {
+					formSetter = s.Form()
+				}
+				setter = formSetter
 			}
 			_, err = setter.TrySet(value.Field(field.Index), field.Field, field.TagValue, mtos.SetOptions{})
 			if err != nil {
@@ -103,11 +116,25 @@ func CommonBind(s Source, obj any) error {
 		var setter mtos.Setter
 		switch tag {
 		case "uri", "path":
-			setter = s.Uri()
+			if uriSetter == nil {
+				uriSetter = s.Uri()
+			}
+			setter = uriSetter
 		case "query":
-			setter = s.Query()
+			if querySetter == nil {
+				querySetter = s.Query()
+			}
+			setter = querySetter
 		case "header":
-			setter = s.Header()
+			if headerSetter == nil {
+				headerSetter = s.Header()
+			}
+			setter = headerSetter
+		case "form":
+			if formSetter == nil {
+				formSetter = s.Form()
+			}
+			setter = formSetter
 		}
 		_, err = setter.TrySet(value.Field(i), &sf, tagValue, mtos.SetOptions{})
 		if err != nil {
