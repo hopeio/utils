@@ -52,6 +52,7 @@ type User2 struct {
 	Name  string `json:"name"`
 	Age   int    `json:"age"`
 	Phone string `json:"phone"`
+	User  User   `json:"user"`
 }
 
 func TestBind2(t *testing.T) {
@@ -77,7 +78,7 @@ func TestBind2(t *testing.T) {
 		}
 	}()
 	time.Sleep(time.Second)
-	req, err := http.NewRequest("POST", "http://localhost:8080/user/1?phone=123", bytes.NewBufferString(`{"name":"test"}`))
+	req, err := http.NewRequest("POST", "http://localhost:8080/user/1?phone=123", bytes.NewBufferString(`{"name":"test","user":{"id":1}}`))
 	if err != nil {
 		t.Fatal(err)
 	}

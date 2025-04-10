@@ -50,11 +50,15 @@ type Source interface {
 }
 
 type Field struct {
-	Tag      string
-	TagValue string
-	Options  mtos.SetOptions
-	Index    int
-	Field    *reflect.StructField
+	Tags  []Tag
+	Index int
+	Field *reflect.StructField
+}
+
+type Tag struct {
+	Key     string
+	Value   string
+	Options mtos.SetOptions
 }
 
 var cache = sync.Map{}
@@ -73,26 +77,32 @@ func CommonBind(s Source, obj any) error {
 	uriSetter, querySetter, headerSetter, formSetter := s.Uri(), s.Query(), s.Header(), s.Form()
 	commonSetter := mtos.Setters{Setters: []mtos.Setter{uriSetter, querySetter, headerSetter}}
 	if fields, ok := cache.Load(typ); ok {
+		var isSet bool
 		for _, field := range fields.([]Field) {
 			var setter mtos.Setter
-			switch field.Tag {
-			case "uri", "path":
-				setter = uriSetter
-			case "query":
-				setter = querySetter
-			case "header":
-				setter = headerSetter
-			case "form":
-				setter = formSetter
-			case commonTag:
-				setter = commonSetter
-			}
-			if setter == nil {
-				continue
-			}
-			_, err = setter.TrySet(value.Field(field.Index), field.Field, field.TagValue, field.Options)
-			if err != nil {
-				return err
+			for _, tag := range field.Tags {
+				switch tag.Key {
+				case "uri", "path":
+					setter = uriSetter
+				case "query":
+					setter = querySetter
+				case "header":
+					setter = headerSetter
+				case "form":
+					setter = formSetter
+				case commonTag:
+					setter = commonSetter
+				}
+				if setter == nil {
+					continue
+				}
+				isSet, err = setter.TrySet(value.Field(field.Index), field.Field, tag.Value, tag.Options)
+				if err != nil {
+					return err
+				}
+				if isSet {
+					break
+				}
 			}
 		}
 		return Validate(obj)
@@ -106,10 +116,11 @@ func CommonBind(s Source, obj any) error {
 		var tagValue string
 		var tag string
 		var isSet bool
+		var setter mtos.Setter
 		for _, tag = range defaultTags {
 			tagValue = sf.Tag.Get(tag)
+			var tags []Tag
 			if tagValue != "" && tagValue != "-" {
-				var setter mtos.Setter
 				switch tag {
 				case "uri", "path":
 					setter = uriSetter
@@ -122,9 +133,14 @@ func CommonBind(s Source, obj any) error {
 				case commonTag:
 					setter = commonSetter
 				}
-				tags := strings.Split(tagValue, ",")
-				tagValue = tags[0]
+				tagValues := strings.Split(tagValue, ",")
+				tagValue = tagValues[0]
 				options := mtos.SetOptions{}
+				tags = append(tags, Tag{
+					Key:     tag,
+					Value:   tagValue,
+					Options: options,
+				})
 				if setter == nil {
 					continue
 				}
@@ -132,15 +148,13 @@ func CommonBind(s Source, obj any) error {
 				if err != nil {
 					return err
 				}
+				field := Field{
+					Tags:  tags,
+					Index: i,
+					Field: &sf,
+				}
+				fields = append(fields, field)
 				if isSet {
-					field := Field{
-						Tag:      tag,
-						TagValue: tagValue,
-						Index:    i,
-						Field:    &sf,
-						Options:  options,
-					}
-					fields = append(fields, field)
 					break
 				}
 			}

@@ -237,7 +237,7 @@ func isPermanentHTTPHeader(hdr string) bool {
 		"If-Match",
 		"If-Modified-Since",
 		"If-None-Match",
-		"If-Schedule-Tag-Match",
+		"If-Schedule-Key-Match",
 		"If-Unmodified-Since",
 		"Max-Forwards",
 		"Origin",

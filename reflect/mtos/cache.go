@@ -273,7 +273,7 @@ func indirectType(typ reflect.Type) reflect.Type {
 	return typ
 }
 
-// fieldAlias parses a field Tag to get a field alias.
+// fieldAlias parses a field Key to get a field alias.
 func fieldAlias(field reflect.StructField, tagName string) (alias string, options tagOptions) {
 	if tag := field.Tag.Get(tagName); tag != "" {
 		alias, options = parseTag(tag)
@@ -284,11 +284,11 @@ func fieldAlias(field reflect.StructField, tagName string) (alias string, option
 	return alias, options
 }
 
-// tagOptions is the string following a comma in a struct field's Tag, or
+// tagOptions is the string following a comma in a struct field's Key, or
 // the empty string. It does not include the leading comma.
 type tagOptions []string
 
-// parseTag splits a struct field's url Tag into its name and comma-separated
+// parseTag splits a struct field's url Key into its name and comma-separated
 // options.
 func parseTag(tag string) (string, tagOptions) {
 	s := strings.Split(tag, ",")

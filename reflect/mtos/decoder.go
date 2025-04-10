@@ -27,8 +27,8 @@ type Decoder struct {
 	ignoreUnknownKeys bool
 }
 
-// SetAliasTag changes the Tag used to locate custom field aliases.
-// The default Tag is "schema".
+// SetAliasTag changes the Key used to locate custom field aliases.
+// The default Key is "schema".
 func (d *Decoder) SetAliasTag(tag string) {
 	d.cache.tag = tag
 }
