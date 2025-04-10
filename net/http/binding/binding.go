@@ -27,14 +27,19 @@ var Validator = validator.DefaultValidator
 var (
 	DefaultMemory    int64                   = 32 << 20
 	BodyUnmarshaller func([]byte, any) error = json.Unmarshal
-	CommonTag                                = "json"
 )
+
+const commonTag = "json"
 
 func Validate(obj interface{}) error {
 	return Validator.ValidateStruct(obj)
 }
 
-var defaultTags = []string{"uri", "path", "query", "header", "form"}
+var defaultTags = []string{"uri", "path", "query", "header", "form", commonTag}
+
+func CommonTag(tag string) {
+	defaultTags[5] = tag
+}
 
 type Source interface {
 	Uri() mtos.Setter
@@ -79,7 +84,7 @@ func CommonBind(s Source, obj any) error {
 				setter = headerSetter
 			case "form":
 				setter = formSetter
-			case CommonTag:
+			case commonTag:
 				setter = commonSetter
 			}
 			if setter == nil {
@@ -100,59 +105,46 @@ func CommonBind(s Source, obj any) error {
 		}
 		var tagValue string
 		var tag string
+		var isSet bool
 		for _, tag = range defaultTags {
 			tagValue = sf.Tag.Get(tag)
 			if tagValue != "" && tagValue != "-" {
-				break
-			}
-		}
-		if tagValue == "" || tagValue == "-" {
-			tagValue = sf.Tag.Get(CommonTag)
-			if tagValue != "" && tagValue != "-" {
-				if idx := strings.Index(tagValue, ","); idx > 0 {
-					tagValue = tagValue[:idx]
+				var setter mtos.Setter
+				switch tag {
+				case "uri", "path":
+					setter = uriSetter
+				case "query":
+					setter = querySetter
+				case "header":
+					setter = headerSetter
+				case "form":
+					setter = formSetter
+				case commonTag:
+					setter = commonSetter
 				}
-				fields = append(fields, Field{
-					Tag:      CommonTag,
-					TagValue: tagValue,
-					Index:    i,
-					Field:    &sf,
-				})
-				_, err = commonSetter.TrySet(value.Field(i), &sf, tagValue, mtos.SetOptions{})
+				tags := strings.Split(tagValue, ",")
+				tagValue = tags[0]
+				options := mtos.SetOptions{}
+				if setter == nil {
+					continue
+				}
+				isSet, err = setter.TrySet(value.Field(i), &sf, tagValue, options)
 				if err != nil {
 					return err
 				}
+				if isSet {
+					field := Field{
+						Tag:      tag,
+						TagValue: tagValue,
+						Index:    i,
+						Field:    &sf,
+						Options:  options,
+					}
+					fields = append(fields, field)
+					break
+				}
 			}
-			continue
 		}
-
-		var setter mtos.Setter
-		switch tag {
-		case "uri", "path":
-			setter = uriSetter
-		case "query":
-			setter = querySetter
-		case "header":
-			setter = headerSetter
-		case "form":
-			setter = formSetter
-		}
-		tags := strings.Split(tagValue, ",")
-		tagValue = tags[0]
-		fields = append(fields, Field{
-			Tag:      tag,
-			TagValue: tagValue,
-			Index:    i,
-			Field:    &sf,
-		})
-		if setter == nil {
-			continue
-		}
-		_, err = setter.TrySet(value.Field(i), &sf, tagValue, mtos.SetOptions{})
-		if err != nil {
-			return err
-		}
-
 	}
 	cache.Store(typ, fields)
 	return Validate(obj)
