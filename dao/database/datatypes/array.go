@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"database/sql/driver"
 	"encoding"
+	"encoding/json"
 	"errors"
 	"fmt"
 	dbi "github.com/hopeio/utils/dao/database"
@@ -271,4 +272,59 @@ func (d TimeArray) Value() (driver.Value, error) {
 	buf.WriteByte('"')
 	buf.WriteByte('}')
 	return buf.String(), nil
+}
+
+type JsonArray []map[string]any
+
+// 实现 sql.Scanner 接口，Scan 将 value 扫描至 Json
+func (j *JsonArray) Scan(value interface{}) error {
+	str, ok := value.(string)
+	if !ok {
+		data, ok := value.([]byte)
+		if !ok {
+			return errors.New(fmt.Sprint("failed to scan array value:", value))
+		}
+		str = string(data)
+	}
+	var arr []map[string]any
+	str = str[1 : len(str)-1]
+
+	for {
+		jsonStr := str
+		idx := strings.Index(str, `","`)
+		if idx != -1 {
+			jsonStr = str[:idx+1]
+			str = str[idx+2:]
+		} else {
+			break
+		}
+		var err error
+		jsonStr, err = strconv.Unquote(jsonStr)
+		if err != nil {
+			return err
+		}
+		var m map[string]any
+		err = json.Unmarshal(stringsi.ToBytes(jsonStr), &m)
+		if err != nil {
+			return err
+		}
+		arr = append(arr, m)
+	}
+	*j = arr
+	return nil
+}
+
+// 实现 driver.Valuer 接口，Value 返回 json value
+func (j JsonArray) Value() (driver.Value, error) {
+	if j == nil {
+		return []byte("null"), nil
+	}
+	if len(j) == 0 {
+		return []byte("[]"), nil
+	}
+	return json.Marshal(j)
+}
+
+func (*JsonArray) GormDataType() string {
+	return "jsonb[]"
 }
