@@ -295,8 +295,6 @@ func (j *JsonArray) Scan(value interface{}) error {
 		if idx != -1 {
 			jsonStr = str[:idx+1]
 			str = str[idx+2:]
-		} else {
-			break
 		}
 		var err error
 		jsonStr, err = strconv.Unquote(jsonStr)
@@ -309,6 +307,9 @@ func (j *JsonArray) Scan(value interface{}) error {
 			return err
 		}
 		arr = append(arr, m)
+		if idx == -1 {
+			break
+		}
 	}
 	*j = arr
 	return nil
@@ -317,12 +318,26 @@ func (j *JsonArray) Scan(value interface{}) error {
 // 实现 driver.Valuer 接口，Value 返回 json value
 func (j JsonArray) Value() (driver.Value, error) {
 	if j == nil {
-		return []byte("null"), nil
+		return nil, nil
 	}
-	if len(j) == 0 {
-		return []byte("[]"), nil
+	var buf bytes.Buffer
+	buf.WriteByte('{')
+	for i, v := range j {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		data, err := json.Marshal(&v)
+		if err != nil {
+			return nil, err
+		}
+		_, err = buf.WriteString(strconv.Quote(stringsi.FromBytes(data)))
+		if err != nil {
+			return nil, err
+		}
 	}
-	return json.Marshal(j)
+
+	buf.WriteByte('}')
+	return buf.String(), nil
 }
 
 func (*JsonArray) GormDataType() string {
