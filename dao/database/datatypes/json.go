@@ -57,7 +57,7 @@ func (j *NullJson[T]) Scan(value interface{}) error {
 	case string:
 		return json.Unmarshal(strings.ToBytes(bytes), &j.V)
 	default:
-		return errors.New(fmt.Sprint("failed to scan Json value:", value))
+		return errors.New(fmt.Sprint("failed to scan NullJson value:", value))
 	}
 }
 
@@ -92,4 +92,26 @@ func (j *Json[T]) Scan(value interface{}) error {
 // 实现 driver.Valuer 接口，Value 返回 json value
 func (j *Json[T]) Value() (driver.Value, error) {
 	return json.Marshal(&j.V)
+}
+
+type MapJson map[string]any
+
+// 实现 sql.Scanner 接口，Scan 将 value 扫描至 Json
+func (j *MapJson) Scan(value interface{}) error {
+	switch bytes := value.(type) {
+	case []byte:
+		return json.Unmarshal(bytes, j)
+	case string:
+		return json.Unmarshal(strings.ToBytes(bytes), &j)
+	default:
+		return errors.New(fmt.Sprint("failed to scan MapJson value:", value))
+	}
+}
+
+// 实现 driver.Valuer 接口，Value 返回 json value
+func (j MapJson) Value() (driver.Value, error) {
+	if j == nil {
+		return nil, nil
+	}
+	return json.Marshal(j)
 }

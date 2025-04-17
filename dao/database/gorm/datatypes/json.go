@@ -28,17 +28,17 @@ func (*Json[T]) GormDBDataType(db *gorm.DB, field *schema.Field) string {
 	return ""
 }
 
-func (j Json[T]) GormValue(ctx context.Context, db *gorm.DB) clause.Expr {
-	v, _ := (datatypes.Json[T])(j).Value()
+func (j *Json[T]) GormValue(ctx context.Context, db *gorm.DB) clause.Expr {
+	v, _ := (*datatypes.Json[T])(j).Value()
 	return clause.Expr{
 		SQL:  "?",
 		Vars: []any{v},
 	}
 }
 
-func (j Json[T]) Value() (driver.Value, error) {
+func (j *Json[T]) Value() (driver.Value, error) {
 	// Scan a value into struct from database driver
-	return (datatypes.Json[T])(j).Value()
+	return (*datatypes.Json[T])(j).Value()
 }
 
 func (j *Json[T]) Scan(v any) error {
