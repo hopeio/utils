@@ -274,10 +274,12 @@ func (d TimeArray) Value() (driver.Value, error) {
 	return buf.String(), nil
 }
 
-type JsonArray []map[string]any
+// 不要用这个类型，下面这些都合法，直接用jsonb
+// {[],[]} {"{}","{}"} {"{}",[]}
+type jsonArray []map[string]any
 
 // 实现 sql.Scanner 接口，Scan 将 value 扫描至 Json
-func (j *JsonArray) Scan(value interface{}) error {
+func (j *jsonArray) Scan(value interface{}) error {
 	str, ok := value.(string)
 	if !ok {
 		data, ok := value.([]byte)
@@ -316,7 +318,7 @@ func (j *JsonArray) Scan(value interface{}) error {
 }
 
 // 实现 driver.Valuer 接口，Value 返回 json value
-func (j JsonArray) Value() (driver.Value, error) {
+func (j jsonArray) Value() (driver.Value, error) {
 	if j == nil {
 		return nil, nil
 	}
@@ -340,6 +342,6 @@ func (j JsonArray) Value() (driver.Value, error) {
 	return buf.String(), nil
 }
 
-func (*JsonArray) GormDataType() string {
+func (*jsonArray) GormDataType() string {
 	return "jsonb[]"
 }

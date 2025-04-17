@@ -62,7 +62,7 @@ func (j *NullJson[T]) Scan(value interface{}) error {
 }
 
 // 实现 driver.Valuer 接口，Value 返回 json value
-func (j NullJson[T]) Value() (driver.Value, error) {
+func (j *NullJson[T]) Value() (driver.Value, error) {
 	if !j.Valid {
 		return nil, nil
 	}
@@ -90,6 +90,6 @@ func (j *Json[T]) Scan(value interface{}) error {
 }
 
 // 实现 driver.Valuer 接口，Value 返回 json value
-func (j Json[T]) Value() (driver.Value, error) {
+func (j *Json[T]) Value() (driver.Value, error) {
 	return json.Marshal(&j.V)
 }
