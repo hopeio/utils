@@ -14,176 +14,82 @@ import (
 	"github.com/hopeio/utils/strings"
 )
 
-type JsonB []byte
+type RawJson []byte
 
-// 实现 sql.Scanner 接口，Scan 将 value 扫描至 JsonB
-func (j *JsonB) Scan(value interface{}) error {
+// 实现 sql.Scanner 接口，Scan 将 value 扫描至 RawJson
+func (j *RawJson) Scan(value interface{}) error {
 	switch bytes := value.(type) {
 	case []byte:
-		*j = append((*j)[0:0], bytes...)
+		*j = bytes
 		return nil
 	case string:
-		*j = JsonB(bytes)
+		*j = strings.ToBytes(bytes)
 		return nil
 	default:
-		return errors.New(fmt.Sprint("failed to scan JsonB value:", value))
+		return errors.New(fmt.Sprint("failed to scan RawJson value:", value))
 	}
 
 }
 
 // 实现 driver.Valuer 接口，Value 返回 json value
-func (j JsonB) Value() (driver.Value, error) {
+func (j RawJson) Value() (driver.Value, error) {
 	if j == nil {
-		return []byte("null"), nil
+		return nil, nil
 	}
 	return j, nil
 }
 
-func (*JsonB) GormDataType() string {
+func (*RawJson) GormDataType() string {
 	return "jsonb"
 }
 
-type Json map[string]any
-
-// 实现 sql.Scanner 接口，Scan 将 value 扫描至 Json
-func (j *Json) Scan(value interface{}) error {
-	switch bytes := value.(type) {
-	case []byte:
-		*j = map[string]any{}
-		return json.Unmarshal(bytes, j)
-	case string:
-		*j = map[string]any{}
-		return json.Unmarshal([]byte(bytes), j)
-	default:
-		return errors.New(fmt.Sprint("failed to scan Value value:", value))
-	}
-}
-
-// 实现 driver.Valuer 接口，Value 返回 json value
-func (j Json) Value() (driver.Value, error) {
-	if j == nil {
-		return []byte("null"), nil
-	}
-	return json.Marshal(j)
-}
-
-func (Json) GormDataType() string {
-	return "jsonb"
-}
-
-type ArrayJson []map[string]any
-
-// 实现 sql.Scanner 接口，Scan 将 value 扫描至 Json
-func (j *ArrayJson) Scan(value interface{}) error {
-	switch bytes := value.(type) {
-	case []byte:
-		*j = make([]map[string]any, 0)
-		return json.Unmarshal(bytes, j)
-	case string:
-		*j = make([]map[string]any, 0)
-		return json.Unmarshal([]byte(bytes), j)
-	default:
-		return errors.New(fmt.Sprint("failed to scan ArrayJson value:", value))
-	}
-}
-
-// 实现 driver.Valuer 接口，Value 返回 json value
-func (j ArrayJson) Value() (driver.Value, error) {
-	if j == nil {
-		return []byte("null"), nil
-	}
-	if len(j) == 0 {
-		return []byte("[]"), nil
-	}
-	return json.Marshal(j)
-}
-
-func (*ArrayJson) GormDataType() string {
-	return "jsonb"
-}
-
-type JsonStr string
-
-// 实现 sql.Scanner 接口，Scan 将 value 扫描至 JsonStr
-func (j *JsonStr) Scan(value interface{}) error {
-	switch bytes := value.(type) {
-	case []byte:
-		*j = JsonStr(bytes)
-		return nil
-	case string:
-		*j = JsonStr(strings.ToBytes(bytes))
-		return nil
-	default:
-		return errors.New(fmt.Sprint("failed to scan JsonStr value:", value))
-	}
-}
-
-// 实现 driver.Valuer 接口，Value 返回 json value
-func (j JsonStr) Value() (driver.Value, error) {
-	if len(j) == 0 {
-		return []byte("null"), nil
-	}
-	return []byte(j), nil
-}
-
-func (*JsonStr) GormDataType() string {
-	return "jsonb"
-}
-
-type JsonT[T any] struct {
-	Data *T
+type NullJson[T any] struct {
+	V     T
+	Valid bool
 }
 
 // 实现 sql.Scanner 接口，Scan 将 value 扫描至 Json
-func (j *JsonT[T]) Scan(value interface{}) error {
+func (j *NullJson[T]) Scan(value interface{}) error {
+	j.Valid = true
 	switch bytes := value.(type) {
 	case []byte:
-		j.Data = new(T)
-		return json.Unmarshal(bytes, j.Data)
+		return json.Unmarshal(bytes, &j.V)
 	case string:
-		j.Data = new(T)
-		return json.Unmarshal(strings.ToBytes(bytes), j.Data)
+		return json.Unmarshal(strings.ToBytes(bytes), &j.V)
 	default:
-		return errors.New(fmt.Sprint("failed to scan Value value:", value))
+		return errors.New(fmt.Sprint("failed to scan Json value:", value))
 	}
 }
 
 // 实现 driver.Valuer 接口，Value 返回 json value
-func (j JsonT[T]) Value() (driver.Value, error) {
-	if j.Data == nil {
-		return []byte("null"), nil
+func (j NullJson[T]) Value() (driver.Value, error) {
+	if !j.Valid {
+		return nil, nil
 	}
-	return json.Marshal(j.Data)
+	return json.Marshal(&j.V)
 }
 
-func (*JsonT[T]) GormDataType() string {
+func (*NullJson[T]) GormDataType() string {
 	return "jsonb"
 }
 
-type ArrayJsonT[T any] []T
+type Json[T any] struct {
+	V T
+}
 
 // 实现 sql.Scanner 接口，Scan 将 value 扫描至 Json
-func (j *ArrayJsonT[T]) Scan(value interface{}) error {
+func (j *Json[T]) Scan(value interface{}) error {
 	switch bytes := value.(type) {
 	case []byte:
-		*j = make(ArrayJsonT[T], 0)
-		return json.Unmarshal(bytes, j)
+		return json.Unmarshal(bytes, &j.V)
 	case string:
-		*j = make(ArrayJsonT[T], 0)
-		return json.Unmarshal([]byte(bytes), j)
+		return json.Unmarshal(strings.ToBytes(bytes), &j.V)
 	default:
-		return errors.New(fmt.Sprint("failed to scan Value value:", value))
+		return errors.New(fmt.Sprint("failed to scan Json value:", value))
 	}
 }
 
 // 实现 driver.Valuer 接口，Value 返回 json value
-func (j ArrayJsonT[T]) Value() (driver.Value, error) {
-	if j == nil {
-		return []byte("null"), nil
-	}
-	return json.Marshal(j)
-}
-
-func (*ArrayJsonT[T]) GormDataType() string {
-	return "jsonb"
+func (j Json[T]) Value() (driver.Value, error) {
+	return json.Marshal(&j.V)
 }

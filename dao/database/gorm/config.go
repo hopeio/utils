@@ -19,7 +19,7 @@ import (
 
 type Config struct {
 	Type, Charset, Database, TimeZone string
-	Host                              string `flag:"name:db_host;usage:数据库host"`
+	Host                              string
 	Port                              int32
 	User, Password                    string
 	Postgres                          Postgres

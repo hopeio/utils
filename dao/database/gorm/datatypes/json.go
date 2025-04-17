@@ -16,9 +16,9 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-type JsonT[T any] datatypes.JsonT[T]
+type Json[T any] datatypes.Json[T]
 
-func (*JsonT[T]) GormDBDataType(db *gorm.DB, field *schema.Field) string {
+func (*Json[T]) GormDBDataType(db *gorm.DB, field *schema.Field) string {
 	switch db.Dialector.Name() {
 	case dbi.Sqlite, dbi.Mysql:
 		return "json"
@@ -28,20 +28,20 @@ func (*JsonT[T]) GormDBDataType(db *gorm.DB, field *schema.Field) string {
 	return ""
 }
 
-func (j JsonT[T]) GormValue(ctx context.Context, db *gorm.DB) clause.Expr {
-	v, _ := (datatypes.JsonT[T])(j).Value()
+func (j Json[T]) GormValue(ctx context.Context, db *gorm.DB) clause.Expr {
+	v, _ := (datatypes.Json[T])(j).Value()
 	return clause.Expr{
 		SQL:  "?",
 		Vars: []any{v},
 	}
 }
 
-func (j JsonT[T]) Value() (driver.Value, error) {
+func (j Json[T]) Value() (driver.Value, error) {
 	// Scan a value into struct from database driver
-	return (datatypes.JsonT[T])(j).Value()
+	return (datatypes.Json[T])(j).Value()
 }
 
-func (j *JsonT[T]) Scan(v any) error {
+func (j *Json[T]) Scan(v any) error {
 	// Scan a value into struct from database driver
-	return (*datatypes.JsonT[T])(j).Scan(v)
+	return (*datatypes.Json[T])(j).Scan(v)
 }
