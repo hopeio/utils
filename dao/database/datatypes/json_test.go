@@ -15,11 +15,11 @@ type Foo struct {
 	B string
 }
 
-func TestJSONArrayT(t *testing.T) {
-	var jat NullJson[[]Foo]
+func TestJSON(t *testing.T) {
+	var jat Json[[]Foo]
 	err := jat.Scan([]byte(`[{"A":1,"B":"1"},{"A":2,"B":"2"}]`))
 	if err != nil {
 		t.Error(err)
 	}
-	assert.Equal(t, ArrayJsonT[Foo]{{1, "1"}, {2, "2"}}, jat)
+	assert.Equal(t, Json[[]Foo]{V: []Foo{{1, "1"}, {2, "2"}}}, jat)
 }
