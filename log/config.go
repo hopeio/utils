@@ -125,13 +125,10 @@ func (lc *Config) Init() {
 		if lc.EncoderConfig.FunctionKey == "" {
 			lc.EncoderConfig.FunctionKey = FieldFunc
 		}
-		if len(lc.OutputPaths.Console) == 0 && len(lc.OutputPaths.Json) == 0 {
-			lc.OutputPaths.Json = []string{stdout}
-		}
-	} else {
-		if len(lc.OutputPaths.Console) == 0 && len(lc.OutputPaths.Json) == 0 {
-			lc.OutputPaths.Console = []string{stdout}
-		}
+	}
+
+	if len(lc.OutputPaths.Console) == 0 && len(lc.OutputPaths.Json) == 0 {
+		lc.OutputPaths.Console = []string{stdout}
 	}
 
 	if lc.EncoderConfig.TimeKey == "" {
