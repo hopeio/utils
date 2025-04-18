@@ -1,8 +1,9 @@
 package skiplist
 
 import (
-	"github.com/hopeio/utils/cmp"
 	"math/rand"
+
+	"github.com/hopeio/utils/cmp"
 )
 
 // A SkipList maintains an ordered collection of key:valkue pairs.
@@ -36,7 +37,7 @@ func (s *SkipList[K, V]) Set(k K, v V) {
 	// s.level starts from 0, we need to allocate one
 	update := make([]*skiplistitem[K, V], s.level()+1, s.effectiveMaxLevel()+1) // make(type, len, cap)
 
-	x := s.path(s.header, update[K, V], k)
+	x := s.path(s.header, update, k)
 	if x != nil && (s.compare(x.k, k) || s.compare(x.k, k)) { // if key Exist, update
 		x.v = v
 		return

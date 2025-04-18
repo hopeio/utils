@@ -10,17 +10,18 @@ import (
 	bytesp "bytes"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+
 	"github.com/hopeio/utils/crypto/aes"
 	em3u8 "github.com/hopeio/utils/encoding/m3u8"
 	"github.com/hopeio/utils/net/http/client"
 	url2 "github.com/hopeio/utils/net/url"
-	"io"
-	"net/http"
-	"net/url"
 )
 
 var reqClient = client.DefaultHeaderClient().RetryTimes(20).DisableLog()
-var reqClient2 = reqClient.Clone().ResponseHandler(func(response *http.Response) (retry bool, reader io.Reader, err error) {
+var reqClient2 = reqClient.Clone().ResponseHandler(func(response *http.Response) (retry bool, reader io.ReadCloser, err error) {
 	data, err := io.ReadAll(response.Body)
 	if err != nil {
 		return false, nil, err
@@ -32,9 +33,9 @@ var reqClient2 = reqClient.Clone().ResponseHandler(func(response *http.Response)
 	if len(data) == 0 {
 		return false, nil, fmt.Errorf("no key")
 	}
-	return false, bytesp.NewReader(data), err
+	return false, io.NopCloser(bytesp.NewReader(data)), err
 })
-var reqClient3 = reqClient.Clone().ResponseHandler(func(response *http.Response) (retry bool, reader io.Reader, err error) {
+var reqClient3 = reqClient.Clone().ResponseHandler(func(response *http.Response) (retry bool, reader io.ReadCloser, err error) {
 	data, err := io.ReadAll(response.Body)
 	if err != nil {
 		return false, nil, err
@@ -45,7 +46,7 @@ var reqClient3 = reqClient.Clone().ResponseHandler(func(response *http.Response)
 	if bytesp.HasPrefix(data, []byte("<html>")) {
 		return true, nil, nil
 	}
-	return false, bytesp.NewReader(data), err
+	return false, io.NopCloser(bytesp.NewReader(data)), err
 })
 
 type Result struct {

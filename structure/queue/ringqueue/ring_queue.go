@@ -47,7 +47,7 @@ func (q *RingQueue[T]) Tail() (T, bool) {
 }
 
 func (q *RingQueue[T]) Enqueue(value T) bool {
-	if q.IsFull() || value == nil {
+	if q.IsFull() {
 		return false
 	}
 

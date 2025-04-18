@@ -99,7 +99,7 @@ func (b Num64) Num8(leftIdx int) bool {
 
 func (b Uint8) SetAt(leftIdx int, v bool) Num64 {
 	if v {
-		return b | (1 << (7 - leftIdx))
+		return Num64(b | (1 << (7 - leftIdx)))
 	}
-	return b &^ (1 << (7 - leftIdx))
+	return Num64(b &^ (1 << (7 - leftIdx)))
 }
