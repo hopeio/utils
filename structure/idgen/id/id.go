@@ -8,9 +8,10 @@ package id
 
 import (
 	"sync/atomic"
+	"time"
 )
 
-var currentID uint64 = 0
+var currentID uint64 = uint64(time.Now().Unix()) << 32
 
 // 单机顺序id
 func NewOrderID() uint64 {
