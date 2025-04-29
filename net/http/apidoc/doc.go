@@ -9,7 +9,7 @@ package apidoc
 import (
 	"encoding/json"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/invopop/yaml"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
 	"path/filepath"
