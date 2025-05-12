@@ -9,7 +9,7 @@ package engine
 import (
 	"context"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/dgraph-io/ristretto"
+	"github.com/dgraph-io/ristretto/v2"
 	"github.com/hopeio/utils/log"
 	"github.com/hopeio/utils/os/fs"
 	"github.com/hopeio/utils/slices"

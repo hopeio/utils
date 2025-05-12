@@ -6,7 +6,6 @@ require (
 	bou.ke/monkey v1.0.2
 	github.com/aws/aws-sdk-go v1.55.7
 	github.com/boombuler/barcode v1.0.2
-	github.com/dgraph-io/ristretto v0.1.2-0.20240116140435-c67e07994f91
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-oauth2/oauth2/v4 v4.5.3
@@ -49,6 +48,7 @@ require (
 	github.com/chromedp/chromedp v0.13.6
 	github.com/cloudflare/cloudflare-go v0.115.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
+	github.com/dgraph-io/ristretto/v2 v2.2.0
 	github.com/elastic/go-elasticsearch/v8 v8.18.0
 	github.com/getkin/kin-openapi v0.131.0
 	github.com/go-viper/mapstructure/v2 v2.2.1
@@ -127,7 +127,6 @@ require (
 	github.com/oasdiff/yaml3 v0.0.0-20250309153720-d2182401db90 // indirect
 	github.com/onsi/ginkgo/v2 v2.22.2 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.63.0 // indirect
