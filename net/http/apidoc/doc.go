@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"github.com/getkin/kin-openapi/openapi3"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -46,7 +46,7 @@ func GetDoc(realPath, modName string) *openapi3.T {
 			log.Error(err)
 		}
 		defer file.Close()
-		data, err := ioutil.ReadAll(file)
+		data, err := io.ReadAll(file)
 		if err != nil {
 			log.Error(err)
 		}
