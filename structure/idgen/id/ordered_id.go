@@ -14,6 +14,6 @@ import (
 var currentID uint64 = uint64(time.Now().Unix()) << 32
 
 // 单机顺序id
-func NewOrderID() uint64 {
+func NewOrderedID() uint64 {
 	return atomic.AddUint64(&currentID, 1)
 }

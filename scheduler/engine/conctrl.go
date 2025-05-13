@@ -187,7 +187,7 @@ func (e *Engine[KEY]) addTasks(ctx context.Context, priority int, tasks ...*Task
 			task.ctx = e.ctx
 		}
 		task.Priority = priority
-		task.id = id2.NewOrderID()
+		task.id = id2.NewOrderedID()
 		e.readyTaskHeap.Push(task)
 	}
 
@@ -268,7 +268,7 @@ func (e *Engine[KEY]) AddFixedTasks(workerId int, generation int, tasks ...*Task
 			task.ctx = e.ctx
 		}
 		task.Priority += generation
-		task.id = id2.NewOrderID()
+		task.id = id2.NewOrderedID()
 		worker.taskCh <- task
 	}
 	return nil
