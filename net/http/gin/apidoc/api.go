@@ -11,7 +11,7 @@ import (
 	"github.com/hopeio/utils/net/http/apidoc"
 	gin2 "github.com/hopeio/utils/net/http/gin"
 	"github.com/hopeio/utils/os/fs"
-	_ "github.com/ugorji/go"
+	_ "github.com/ugorji/go/codec"
 )
 
 func OpenApi(mux *gin.Engine, uriPrefix, dir string) {
