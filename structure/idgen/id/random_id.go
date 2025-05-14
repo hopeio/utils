@@ -6,6 +6,8 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/hopeio/utils/strings"
+	"io"
 	"math/rand"
 	"sync"
 )
@@ -52,10 +54,16 @@ func (t RandomID) IsValid() bool {
 // MarshalJSON implements a custom marshal function to encode TraceID
 // as a hex string.
 func (t RandomID) MarshalJSON() ([]byte, error) {
-	return json.Marshal(t.String())
+	return strings.ToBytes(`"` + t.String() + `"`), nil
 }
 
 // String returns the hex string representation form of a TraceID.
 func (t RandomID) String() string {
 	return hex.EncodeToString(t[:])
+}
+
+func UniqueID() string {
+	id := make([]byte, 16)
+	io.ReadFull(crand.Reader, id)
+	return hex.EncodeToString(id)
 }
