@@ -108,7 +108,7 @@ func OpenApi(mux *http.ServeMux, uriPrefix, dir string) {
 	if uriPrefix != "" {
 		UriPrefix = uriPrefix
 	}
-	mux.Handle(UriPrefix, http.HandlerFunc(DocList))
-	mux.Handle(UriPrefix+"/markdown/", http.HandlerFunc(Markdown))
-	mux.Handle(UriPrefix+"/openapi/", http.HandlerFunc(Swagger))
+	mux.HandleFunc(UriPrefix, DocList)
+	mux.HandleFunc(UriPrefix+"/markdown/", Markdown)
+	mux.HandleFunc(UriPrefix+"/openapi/", Swagger)
 }

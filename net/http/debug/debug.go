@@ -7,18 +7,22 @@
 package debug
 
 import (
-	_ "expvar"
+	"expvar"
 	"net/http"
-	_ "net/http/pprof"
+	"net/http/pprof"
 	"runtime/debug"
 )
 
-func init() {
-	http.Handle("/debug/stack", http.HandlerFunc(Stack))
-}
-
-func Handler() http.Handler {
-	return http.DefaultServeMux
+func Handle(prefix string) {
+	http.HandleFunc(prefix+"/debug/stack", Stack)
+	if prefix != "" && prefix != "GET " {
+		http.HandleFunc(prefix+"/debug/pprof/", pprof.Index)
+		http.HandleFunc(prefix+"/debug/pprof/cmdline", pprof.Cmdline)
+		http.HandleFunc(prefix+"/debug/pprof/profile", pprof.Profile)
+		http.HandleFunc(prefix+"/debug/pprof/symbol", pprof.Symbol)
+		http.HandleFunc(prefix+"/debug/pprof/trace", pprof.Trace)
+		http.Handle(prefix+"/debug/vars", expvar.Handler())
+	}
 }
 
 func Stack(w http.ResponseWriter, r *http.Request) {
