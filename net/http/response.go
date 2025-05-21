@@ -135,52 +135,22 @@ func NewReceiveData(code errcode.ErrCode, msg string, data any) *ReceiveData {
 	}
 }
 
-type IHttpResponse interface {
-	StatusCode() int
-	Header() Header
-	io.WriterTo
-	io.Closer
-}
-
-func RespWrite(w http.ResponseWriter, httpres IHttpResponse) (int, error) {
-	w.WriteHeader(httpres.StatusCode())
-	header := w.Header()
-	httpres.Header().Range(header.Set)
-	i, err := httpres.WriteTo(w)
-	if err != nil {
-		return int(i), err
-	}
-	err = httpres.Close()
-	if err != nil {
-		return int(i), err
-	}
-	return int(i), err
-}
-
 type HttpResponseRawBody struct {
 	Status  int       `json:"status,omitempty"`
 	Headers MapHeader `json:"header,omitempty"`
 	Body    []byte    `json:"body,omitempty"`
 }
 
-func (res *HttpResponseRawBody) Header() Header {
-	return res.Headers
-}
-
-func (res *HttpResponseRawBody) WriteTo(writer io.Writer) (int64, error) {
-	i, err := writer.Write(res.Body)
-	return int64(i), err
-}
-
-func (res *HttpResponseRawBody) Close() error {
-	return nil
-}
-
-func (res *HttpResponseRawBody) StatusCode() int {
-	return res.Status
-}
-
 func (res *HttpResponseRawBody) Response(w http.ResponseWriter) (int, error) {
+	w.WriteHeader(res.Status)
+	header := w.Header()
+	for k, v := range res.Headers {
+		header.Set(k, v)
+	}
+	return w.Write(res.Body)
+}
+
+func (res *HttpResponseRawBody) CommonResponse(w CommonResponseWriter) (int, error) {
 	w.WriteHeader(res.Status)
 	header := w.Header()
 	for k, v := range res.Headers {
@@ -200,23 +170,23 @@ type WriterToCloser interface {
 	io.Closer
 }
 
-func (res *HttpResponse) Header() Header {
-	return res.Headers
-}
-
-func (res *HttpResponse) WriteTo(writer io.Writer) (int64, error) {
-	return res.Body.WriteTo(writer)
-}
-
-func (res *HttpResponse) Close() error {
-	return res.Body.Close()
-}
-
-func (res *HttpResponse) StatusCode() int {
-	return res.Status
-}
-
 func (res *HttpResponse) Response(w http.ResponseWriter) (int, error) {
+	w.WriteHeader(res.Status)
+	for k, v := range res.Headers {
+		w.Header().Set(k, v)
+	}
+	i, err := res.Body.WriteTo(w)
+	if err != nil {
+		return int(i), err
+	}
+	err = res.Body.Close()
+	if err != nil {
+		return int(i), err
+	}
+	return int(i), err
+}
+
+func (res *HttpResponse) CommonResponse(w CommonResponseWriter) (int, error) {
 	w.WriteHeader(res.Status)
 	for k, v := range res.Headers {
 		w.Header().Set(k, v)
@@ -261,37 +231,33 @@ type HttpResponseStream struct {
 	Body    iter.Seq[[]byte] `json:"body,omitempty"`
 }
 
-func (res *HttpResponseStream) Header() Header {
-	res.Headers[consts.HeaderTransferEncoding] = "chunked"
-	return res.Headers
+func (res *HttpResponseStream) Response(w http.ResponseWriter) (int, error) {
+	return res.CommonResponse(CommonResponseWriter{w})
 }
 
-func (res *HttpResponseStream) WriteTo(writer io.Writer) (int64, error) {
-	notifyClosed := writer.(http.CloseNotifier).CloseNotify()
-	var n int64
+func (res *HttpResponseStream) CommonResponse(w ICommonResponseWriter) (int, error) {
+	header := w.Header()
+	for k, v := range res.Headers {
+		header.Set(k, v)
+	}
+	header.Set(consts.HeaderTransferEncoding, "chunked")
+	notifyClosed := w.(http.CloseNotifier).CloseNotify()
+	var n int
 	for data := range res.Body {
 		select {
 		// response writer forced to close, exit.
 		case <-notifyClosed:
 			return n, nil
 		default:
-			write, err := writer.Write(data)
+			write, err := w.Write(data)
 			if err != nil {
 				return 0, err
 			}
-			n += int64(write)
-			writer.(http.Flusher).Flush()
+			n += write
+			w.(http.Flusher).Flush()
 		}
 	}
 	return n, nil
-}
-
-func (res *HttpResponseStream) Close() error {
-	return nil
-}
-
-func (res *HttpResponseStream) StatusCode() int {
-	return res.Status
 }
 
 type RawBody []byte

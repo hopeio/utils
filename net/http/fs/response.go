@@ -13,19 +13,17 @@ type ResponseFile struct {
 	Body io.ReadCloser `json:"body,omitempty"`
 }
 
-func (res *ResponseFile) Header() httpi.Header {
-	return &httpi.SliceHeader{consts.HeaderContentType, consts.ContentTypeOctetStream, consts.HeaderContentDisposition, fmt.Sprintf(consts.AttachmentTmpl, res.Name)}
+func (res *ResponseFile) Response(w http.ResponseWriter) (int, error) {
+	return res.CommonResponse(httpi.CommonResponseWriter{ResponseWriter: w})
 }
 
-func (res *ResponseFile) WriteTo(writer io.Writer) (int64, error) {
-	return io.Copy(writer, res.Body)
-}
-
-func (res *ResponseFile) Close() error {
-	return res.Body.Close()
-}
-func (res *ResponseFile) StatusCode() int {
-	return http.StatusOK
+func (res *ResponseFile) CommonResponse(w httpi.ICommonResponseWriter) (int, error) {
+	header := w.Header()
+	header.Set(consts.HeaderContentType, consts.ContentTypeOctetStream)
+	header.Set(consts.HeaderContentDisposition, fmt.Sprintf(consts.AttachmentTmpl, res.Name))
+	n, err := io.Copy(w, res.Body)
+	res.Body.Close()
+	return int(n), err
 }
 
 type ResponseFileWriteTo struct {
@@ -33,18 +31,15 @@ type ResponseFileWriteTo struct {
 	Body httpi.WriterToCloser `json:"body,omitempty"`
 }
 
-func (res *ResponseFileWriteTo) Header() httpi.Header {
-	return &httpi.SliceHeader{consts.HeaderContentType, consts.ContentTypeOctetStream, consts.HeaderContentDisposition, fmt.Sprintf(consts.AttachmentTmpl, res.Name)}
+func (res *ResponseFileWriteTo) Response(w http.ResponseWriter) (int, error) {
+	return res.CommonResponse(httpi.CommonResponseWriter{ResponseWriter: w})
 }
 
-func (res *ResponseFileWriteTo) WriteTo(writer io.Writer) (int64, error) {
-	return res.Body.WriteTo(writer)
-}
-
-func (res *ResponseFileWriteTo) Close() error {
-	return res.Body.Close()
-}
-
-func (res *ResponseFileWriteTo) StatusCode() int {
-	return http.StatusOK
+func (res *ResponseFileWriteTo) CommonResponse(w httpi.ICommonResponseWriter) (int, error) {
+	header := w.Header()
+	header.Set(consts.HeaderContentType, consts.ContentTypeOctetStream)
+	header.Set(consts.HeaderContentDisposition, fmt.Sprintf(consts.AttachmentTmpl, res.Name))
+	n, err := res.Body.WriteTo(w)
+	res.Body.Close()
+	return int(n), err
 }
