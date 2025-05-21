@@ -18,8 +18,8 @@ import (
 )
 
 func ForwardResponseMessage(ctx *gin.Context, md grpc.ServerMetadata, message proto.Message) {
-	if res, ok := message.(httpi.IHttpResponse); ok {
-		httpi.RespWrite(ctx.Writer, res)
+	if res, ok := message.(httpi.ICommonResponseTo); ok {
+		res.CommonResponse(httpi.CommonResponseWriter{ctx.Writer})
 		return
 	}
 	gateway.HandleForwardResponseServerMetadata(ctx.Writer, md.HeaderMD)

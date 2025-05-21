@@ -8,6 +8,8 @@ package fs
 
 import (
 	"errors"
+	httpi "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/utils/net/http/consts"
 	"io"
 	"io/fs"
 	"mime/multipart"
@@ -19,6 +21,13 @@ import (
 type File struct {
 	File http.File
 	Name string
+}
+
+func (f *File) Response(w httpi.ICommonResponseWriter) (int, error) {
+	header := w.Header()
+	header.Set(consts.HeaderContentDisposition, "attachment; filename="+f.Name)
+	header.Set(consts.HeaderContentType, http.DetectContentType(make([]byte, 512)))
+
 }
 
 type IFile interface {

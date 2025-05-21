@@ -11,8 +11,12 @@ import (
 )
 
 func Response(ctx context.Context, writer http.ResponseWriter, message proto.Message) error {
-	if v, ok := message.(httpi.IHttpResponse); ok {
-		_, err := httpi.RespWrite(writer, v)
+	if v, ok := message.(httpi.ICommonResponseTo); ok {
+		_, err := v.CommonResponse(httpi.CommonResponseWriter{writer})
+		return err
+	}
+	if v, ok := message.(httpi.IHttpResponseTo); ok {
+		_, err := v.Response(writer)
 		return err
 	}
 	var buf []byte

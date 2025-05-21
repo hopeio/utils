@@ -32,8 +32,8 @@ func HandlerWrap[REQ, RES any](service GinService[*REQ, *RES]) gin.HandlerFunc {
 			reserr.Response(ctx.Writer)
 			return
 		}
-		if httpres, ok := any(res).(httpi.IHttpResponse); ok {
-			httpi.RespWrite(ctx.Writer, httpres)
+		if httpres, ok := any(res).(httpi.ICommonResponseTo); ok {
+			httpres.CommonResponse(httpi.CommonResponseWriter{ctx.Writer})
 			return
 		}
 		httpi.NewSuccessRespData(res).Response(ctx.Writer)
@@ -53,8 +53,8 @@ func HandlerWrapCompatibleGRPC[REQ, RES any](service types.GrpcServiceMethod[*RE
 			httpi.ErrRepFrom(err).Response(ctx.Writer)
 			return
 		}
-		if httpres, ok := any(res).(httpi.IHttpResponse); ok {
-			httpi.RespWrite(ctx.Writer, httpres)
+		if httpres, ok := any(res).(httpi.ICommonResponseTo); ok {
+			httpres.CommonResponse(httpi.CommonResponseWriter{ctx.Writer})
 			return
 		}
 		httpi.NewSuccessRespData(res).Response(ctx.Writer)
