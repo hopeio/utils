@@ -23,11 +23,17 @@ type File struct {
 	Name string
 }
 
-func (f *File) Response(w httpi.ICommonResponseWriter) (int, error) {
+func (f *File) Response(w http.ResponseWriter) (int, error) {
+	return f.CommonResponse(httpi.CommonResponseWriter{w})
+}
+
+func (f *File) CommonResponse(w httpi.ICommonResponseWriter) (int, error) {
 	header := w.Header()
 	header.Set(consts.HeaderContentDisposition, "attachment; filename="+f.Name)
 	header.Set(consts.HeaderContentType, http.DetectContentType(make([]byte, 512)))
-
+	n, err := io.Copy(w, f.File)
+	f.File.Close()
+	return int(n), err
 }
 
 type IFile interface {
