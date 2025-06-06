@@ -11,6 +11,7 @@ import (
 	"github.com/hopeio/utils/errors/errcode"
 	httpi "github.com/hopeio/utils/net/http"
 	"github.com/hopeio/utils/net/http/gin/binding"
+	"github.com/hopeio/utils/net/http/handlerwrap"
 	"github.com/hopeio/utils/types"
 	"net/http"
 )
@@ -40,7 +41,7 @@ func HandlerWrap[REQ, RES any](service GinService[*REQ, *RES]) gin.HandlerFunc {
 	}
 }
 
-func HandlerWrapCompatibleGRPC[REQ, RES any](service types.GrpcServiceMethod[*REQ, *RES]) gin.HandlerFunc {
+func HandlerWrapCompatibleGRPC[REQ, RES any](service types.GrpcService[*REQ, *RES]) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		req := new(REQ)
 		err := binding.Bind(ctx, req)
@@ -48,7 +49,7 @@ func HandlerWrapCompatibleGRPC[REQ, RES any](service types.GrpcServiceMethod[*RE
 			ctx.JSON(http.StatusBadRequest, errcode.InvalidArgument.Wrap(err))
 			return
 		}
-		res, err := service(httpi.WarpContext(ctx), req)
+		res, err := service(handlerwrap.WarpContext(ctx), req)
 		if err != nil {
 			httpi.ErrRepFrom(err).Response(ctx.Writer)
 			return
