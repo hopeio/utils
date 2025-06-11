@@ -60,8 +60,11 @@ func AddFlag(commandLine *pflag.FlagSet, v any) error {
 	if !fcValue.IsValid() {
 		return errors.New("invalid value")
 	}
-	fcTyp := fcValue.Type()
+	return AddFlagByReflectValue(commandLine, fcValue)
+}
 
+func AddFlagByReflectValue(commandLine *pflag.FlagSet, fcValue reflect.Value) error {
+	fcTyp := fcValue.Type()
 	for i := range fcTyp.NumField() {
 		fieldType := fcTyp.Field(i)
 		if !fieldType.IsExported() {
@@ -100,7 +103,7 @@ func AddFlag(commandLine *pflag.FlagSet, v any) error {
 				}
 			}
 		} else if kind == reflect.Struct {
-			err := AddFlag(commandLine, fieldValue)
+			err := AddFlagByReflectValue(commandLine, fieldValue)
 			if err != nil {
 				return err
 			}

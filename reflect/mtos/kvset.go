@@ -202,14 +202,15 @@ func SetValueByStringWithStructField(value reflect.Value, field *reflect.StructF
 	case reflect.String:
 		value.SetString(val)
 	case reflect.Array, reflect.Slice:
-		subType := value.Type().Elem()
+		typ := value.Type()
+		subType := typ.Elem()
 		eKind := subType.Kind()
 		if eKind == reflect.Array || eKind == reflect.Slice || eKind == reflect.Map {
 			return fmt.Errorf("unsupported sub type %v", subType)
 		}
 		strs := strings.Split(val, ",")
 		if kind == reflect.Slice {
-			value.Set(reflect.MakeSlice(subType, len(strs), len(strs)))
+			value.Set(reflect.MakeSlice(typ, len(strs), len(strs)))
 		}
 		for i := 0; i < value.Len(); i++ {
 			if err := SetValueByString(value.Index(i), strs[i]); err != nil {
