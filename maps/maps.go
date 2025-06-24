@@ -95,3 +95,12 @@ func Merge[M ~map[K]V, K comparable, V any](maps ...M) M {
 	}
 	return r
 }
+
+func Transform[M1 ~map[K1]V1, K1 comparable, V1 any, M2 ~map[K2]V2, K2 comparable, V2 any](m M1, transform func(K1, V1) (K2, V2)) M2 {
+	m2 := make(M2)
+	for k1, v1 := range m {
+		k2, v2 := transform(k1, v1)
+		m2[k2] = v2
+	}
+	return m2
+}
