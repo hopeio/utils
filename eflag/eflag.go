@@ -20,7 +20,7 @@ const flagTagName = "flag"
 	// environment
 	Env string `flag:"name:env;short:e;default:dev;usage:环境"`
 	// 配置文件路径
-	ConfPath string `flag:"name:confdao;short:c;default:config.toml;usage:配置文件路径,默认./config.toml或./config/config.toml"`
+	ConfPath string `flag:"name:conf;short:c;default:config.toml;usage:配置文件路径,默认./config.toml或./config/config.toml"`
 }*/
 
 type flagTagSettings struct {

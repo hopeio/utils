@@ -322,3 +322,11 @@ func GroupBy[S ~[]T, T any, K comparable](s S, getK func(T) K) map[K][]T {
 	}
 	return m
 }
+
+func Sum[S ~[]T, T constraints.Ordered](s S) T {
+	var ret T
+	for _, s := range s {
+		ret += s
+	}
+	return ret
+}
