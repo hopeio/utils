@@ -7,7 +7,6 @@
 package cmp
 
 import (
-	constraintsi "github.com/hopeio/utils/types/constraints"
 	"golang.org/x/exp/constraints"
 )
 
@@ -42,16 +41,5 @@ type EqualKey[T comparable] interface {
 // 合理使用,如int, 正序 return v,倒序return -v,并适当考虑边界值问题
 // Deprecated: use cmp.Comparable
 type CompareKey[T constraints.Ordered] interface {
-	CompareKey() T
-}
-
-// Deprecated: use cmp.Comparable
-type ComparableKey[T Comparable[T]] interface {
-	CompareKey() T
-}
-
-// 可以直接用-号
-// Deprecated: use cmp.Comparable
-type CompareNumKey[T constraintsi.Number] interface {
 	CompareKey() T
 }

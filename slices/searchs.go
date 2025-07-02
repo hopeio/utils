@@ -7,18 +7,17 @@
 package slices
 
 import (
-	constraints2 "github.com/hopeio/utils/cmp"
-	"golang.org/x/exp/constraints"
+	"github.com/hopeio/utils/cmp"
 )
 
 // BinarySearch 二分查找
-func BinarySearch[V constraints.Ordered](arr []constraints2.CompareKey[V], x constraints2.CompareKey[V]) int {
+func BinarySearch[T any, S ~[]cmp.Comparable[T]](arr S, x T) int {
 	l, r := 0, len(arr)-1
 	for l <= r {
 		mid := (l + r) / 2
-		if arr[mid].CompareKey() == x.CompareKey() {
+		if arr[mid].Compare(x) == 0 {
 			return mid
-		} else if x.CompareKey() > arr[mid].CompareKey() {
+		} else if arr[mid].Compare(x) < 0 {
 			r = mid - 1
 		} else {
 			l = mid + 1
