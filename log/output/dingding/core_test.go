@@ -19,6 +19,6 @@ func TestDingDing(t *testing.T) {
 		Level:       zapcore.DebugLevel,
 		OutputPaths: log.OutPutPaths{},
 		Name:        "",
-	}, NewCore("", "", zapcore.DebugLevel))
+	}, NewCore("", "", zapcore.DebugLevel, &zapcore.EncoderConfig{}))
 	log.Info("测试")
 }

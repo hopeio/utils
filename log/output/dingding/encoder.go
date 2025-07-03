@@ -8,11 +8,9 @@ package dingding
 
 import (
 	"encoding/base64"
-	bufferi "github.com/hopeio/utils/io/buffer"
 	"github.com/hopeio/utils/log/output"
 	"go.uber.org/zap/zapcore"
 	"math"
-	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -21,27 +19,6 @@ import (
 
 // For JSON-escaping; see dingEncoder.safeAddString below.
 const _hex = "0123456789abcdef"
-
-var _jsonPool = sync.Pool{New: func() interface{} {
-	return &dingEncoder{}
-}}
-
-func getDingEncoder() *dingEncoder {
-	return _jsonPool.Get().(*dingEncoder)
-}
-
-func putDingEncoder(enc *dingEncoder) {
-	if enc.reflectBuf != nil {
-		enc.reflectBuf.Free()
-	}
-	enc.EncoderConfig = nil
-	enc.buf = nil
-	enc.spaced = false
-	enc.openNamespaces = 0
-	enc.reflectBuf = nil
-	enc.reflectEnc = nil
-	_jsonPool.Put(enc)
-}
 
 type dingEncoder struct {
 	*zapcore.EncoderConfig
@@ -69,10 +46,9 @@ func newDingEncoder(cfg *zapcore.EncoderConfig, spaced bool) *dingEncoder {
 	if cfg.NewReflectedEncoder == nil {
 		cfg.NewReflectedEncoder = output.DefaultReflectedEncoder
 	}
-
 	return &dingEncoder{
 		EncoderConfig: cfg,
-		buf:           bufferi.Get(),
+		buf:           buffer.NewPool().Get(),
 		spaced:        spaced,
 	}
 }
@@ -133,7 +109,7 @@ func (enc *dingEncoder) AddInt64(key string, val int64) {
 
 func (enc *dingEncoder) resetReflectBuf() {
 	if enc.reflectBuf == nil {
-		enc.reflectBuf = bufferi.Get()
+		enc.reflectBuf = buffer.NewPool().Get()
 		enc.reflectEnc = enc.NewReflectedEncoder(enc.reflectBuf)
 	} else {
 		enc.reflectBuf.Reset()
@@ -318,11 +294,7 @@ func (enc *dingEncoder) Clone() zapcore.Encoder {
 }
 
 func (enc *dingEncoder) clone() *dingEncoder {
-	clone := getDingEncoder()
-	clone.EncoderConfig = enc.EncoderConfig
-	clone.spaced = enc.spaced
-	clone.openNamespaces = enc.openNamespaces
-	clone.buf = bufferi.Get()
+	clone := newDingEncoder(enc.EncoderConfig, enc.spaced)
 	return clone
 }
 
@@ -397,7 +369,6 @@ func (enc *dingEncoder) EncodeEntry(ent zapcore.Entry, fields []zapcore.Field) (
 	}
 
 	ret := final.buf
-	putDingEncoder(final)
 	return ret, nil
 }
 

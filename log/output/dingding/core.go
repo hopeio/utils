@@ -9,60 +9,42 @@ package dingding
 import (
 	"github.com/hopeio/utils/sdk/dingtalk"
 	"go.uber.org/zap/zapcore"
-	"strconv"
-	"time"
 )
 
-func NewCore(token, secret string, level zapcore.Level) zapcore.Core {
+func NewCore(token, secret string, level zapcore.Level, encoderConfig *zapcore.EncoderConfig) zapcore.Core {
 	return &core{
 		RobotConfig: dingtalk.RobotConfig{
 			Token:  token,
 			Secret: secret,
 		},
-		Level: level,
+		encoder: newDingEncoder(encoderConfig),
+		Level:   level,
 	}
 }
 
 type core struct {
 	dingtalk.RobotConfig
 	zapcore.Level
-	fields []zapcore.Field
+	encoder zapcore.Encoder
 }
 
-func (c *core) Enabled(lvl zapcore.Level) bool { return lvl > c.Level }
 func (c *core) With(fields []zapcore.Field) zapcore.Core {
-	c.fields = fields
+	for i := range fields {
+		fields[i].AddTo(c.encoder)
+	}
 	return c
 }
 func (c *core) Check(ent zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
-	return ce.AddCore(ent, c)
+	if c.Enabled(ent.Level) {
+		return ce.AddCore(ent, c)
+	}
+	return ce
 }
 func (c *core) Write(e zapcore.Entry, fields []zapcore.Field) error {
-
-	enc := NewDingEncoder(&zapcore.EncoderConfig{
-		MessageKey:     "信息",
-		LevelKey:       "级别",
-		TimeKey:        "时间",
-		CallerKey:      "调用行",
-		FunctionKey:    "函数",
-		SkipLineEnding: true,
-		EncodeTime: func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-			enc.AppendString(t.Format("2006/01/02 15:04:05.000"))
-		},
-		EncodeDuration: func(d time.Duration, enc zapcore.PrimitiveArrayEncoder) {
-			enc.AppendString(strconv.FormatInt(d.Nanoseconds()/1e6, 10) + "ms")
-		},
-		EncodeCaller: func(caller zapcore.EntryCaller, encoder zapcore.PrimitiveArrayEncoder) {
-			encoder.AppendString(caller.TrimmedPath())
-		},
-		ConsoleSeparator: "",
-	})
-
-	buffer, err := enc.EncodeEntry(e, append(fields, c.fields...))
+	buf, err := c.encoder.EncodeEntry(e, fields)
 	if err != nil {
 		return err
 	}
-
-	return dingtalk.RobotSendMarkDownMessageWithSecret(c.Token, c.Secret, "日志", buffer.String(), nil)
+	return dingtalk.RobotSendMarkDownMessageWithSecret(c.Token, c.Secret, "日志", buf.String(), nil)
 }
 func (*core) Sync() error { return nil }

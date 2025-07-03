@@ -210,8 +210,8 @@ func Logw(lvl zapcore.Level, msg string, fields ...zapcore.Field) {
 	}
 }
 
-func Check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
-	return defaultLogger.Check(lvl, msg)
+func Check(lvl zapcore.Level, args ...any) *zapcore.CheckedEntry {
+	return defaultLogger.Check(lvl, trimLineBreak(fmt.Sprintln(args...)))
 }
 
 func DebugEntry(args ...any) *zapcore.CheckedEntry {
