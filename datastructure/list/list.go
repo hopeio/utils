@@ -6,7 +6,7 @@
 
 package list
 
-import "github.com/hopeio/utils/structure/node"
+import "github.com/hopeio/utils/datastructure/node"
 
 type List[T any] struct {
 	head, tail *node.Node[T]

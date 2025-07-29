@@ -8,7 +8,7 @@ package minstack
 
 import (
 	"github.com/hopeio/utils/cmp"
-	"github.com/hopeio/utils/structure/list"
+	"github.com/hopeio/utils/datastructure/list"
 )
 
 // MinStack ...
