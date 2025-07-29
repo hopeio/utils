@@ -15,7 +15,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
-	github.com/json-iterator/go v1.1.12
+	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/mozillazg/go-pinyin v0.20.0
@@ -50,6 +50,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dgraph-io/ristretto/v2 v2.2.0
 	github.com/elastic/go-elasticsearch/v8 v8.18.0
+	github.com/getkin/kin-openapi v0.132.0
 	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/goccy/go-json v0.10.5
 	github.com/gofiber/fiber/v3 v3.0.0-beta.3
@@ -91,7 +92,6 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
-	github.com/getkin/kin-openapi v0.132.0 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/go-json-experiment/json v0.0.0-20250211171154-1ae217ad3535 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect

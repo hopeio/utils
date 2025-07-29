@@ -1,4 +1,4 @@
-//go:build !jsoniter && !(sonic && amd64) && !go_json
+//go:build !(sonic && amd64) && !go_json
 
 package json
 
