@@ -8,8 +8,8 @@ package ffmpeg
 
 import (
 	"fmt"
-	execi "github.com/hopeio/utils/os/exec"
-	"github.com/hopeio/utils/os/fs"
+	execi "github.com/hopeio/gox/os/exec"
+	"github.com/hopeio/gox/os/fs"
 	"path/filepath"
 )
 

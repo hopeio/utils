@@ -14,7 +14,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 )
 
 var Doc *openapi3.T

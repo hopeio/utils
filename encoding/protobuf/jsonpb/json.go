@@ -7,9 +7,9 @@
 package jsonpb
 
 import (
-	"github.com/hopeio/utils/encoding/json"
-	"github.com/hopeio/utils/errors/errcode"
-	responsei "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/gox/encoding/json"
+	"github.com/hopeio/gox/errors/errcode"
+	responsei "github.com/hopeio/gox/net/http"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )

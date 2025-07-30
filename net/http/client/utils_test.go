@@ -7,7 +7,7 @@
 package client
 
 import (
-	url2 "github.com/hopeio/utils/net/url"
+	url2 "github.com/hopeio/gox/net/url"
 	"net/url"
 	"testing"
 )

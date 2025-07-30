@@ -1,7 +1,7 @@
 package os
 
 import (
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 	"os"
 	"runtime"
 	"strconv"

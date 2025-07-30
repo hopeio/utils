@@ -8,7 +8,7 @@ package linkedlist
 
 import (
 	"fmt"
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 	"testing"
 )
 

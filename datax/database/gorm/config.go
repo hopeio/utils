@@ -7,8 +7,8 @@
 package gorm
 
 import (
-	dbi "github.com/hopeio/utils/datax/database"
-	"github.com/hopeio/utils/log"
+	dbi "github.com/hopeio/gox/datax/database"
+	"github.com/hopeio/gox/log"
 	"gorm.io/gorm/schema"
 	"gorm.io/plugin/prometheus"
 	"time"

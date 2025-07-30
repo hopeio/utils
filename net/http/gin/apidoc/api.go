@@ -8,9 +8,9 @@ package apidoc
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/hopeio/utils/net/http/apidoc"
-	gin2 "github.com/hopeio/utils/net/http/gin"
-	"github.com/hopeio/utils/os/fs"
+	"github.com/hopeio/gox/net/http/apidoc"
+	gin2 "github.com/hopeio/gox/net/http/gin"
+	"github.com/hopeio/gox/os/fs"
 	_ "github.com/ugorji/go/codec"
 )
 

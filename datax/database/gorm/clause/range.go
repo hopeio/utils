@@ -7,8 +7,8 @@
 package clause
 
 import (
-	dbi "github.com/hopeio/utils/datax/database/sql"
-	"github.com/hopeio/utils/types/param"
+	dbi "github.com/hopeio/gox/datax/database/sql"
+	"github.com/hopeio/gox/types/param"
 	"gorm.io/gorm/clause"
 )
 

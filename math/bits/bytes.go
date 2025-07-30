@@ -8,7 +8,7 @@ package bits
 
 import (
 	"fmt"
-	"github.com/hopeio/utils/types/constraints"
+	"github.com/hopeio/gox/types/constraints"
 	"reflect"
 	"strconv"
 	"strings"

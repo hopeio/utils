@@ -9,8 +9,8 @@ package datatypes
 import (
 	"context"
 	"database/sql/driver"
-	dbi "github.com/hopeio/utils/datax/database"
-	"github.com/hopeio/utils/datax/database/datatypes"
+	dbi "github.com/hopeio/gox/datax/database"
+	"github.com/hopeio/gox/datax/database/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"

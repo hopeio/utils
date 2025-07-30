@@ -8,7 +8,7 @@ package poller
 
 import (
 	"context"
-	time2 "github.com/hopeio/utils/time"
+	time2 "github.com/hopeio/gox/time"
 	"time"
 )
 

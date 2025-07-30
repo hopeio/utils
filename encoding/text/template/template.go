@@ -11,7 +11,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 )
 
 var CommonTemp = template.New("all")

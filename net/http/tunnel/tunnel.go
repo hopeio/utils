@@ -7,7 +7,7 @@
 package tunnel
 
 import (
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 	"io"
 	"net"
 	"net/http"

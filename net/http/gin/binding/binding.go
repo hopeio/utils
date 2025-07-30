@@ -8,9 +8,9 @@ package binding
 
 import (
 	"fmt"
-	"github.com/hopeio/utils/net/http/binding"
-	"github.com/hopeio/utils/net/http/consts"
-	"github.com/hopeio/utils/reflect/mtos"
+	"github.com/hopeio/gox/net/http/binding"
+	"github.com/hopeio/gox/net/http/consts"
+	"github.com/hopeio/gox/reflect/mtos"
 	"io"
 	"net/http"
 

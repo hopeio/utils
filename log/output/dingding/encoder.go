@@ -8,7 +8,7 @@ package dingding
 
 import (
 	"encoding/base64"
-	"github.com/hopeio/utils/log/output"
+	"github.com/hopeio/gox/log/output"
 	"go.uber.org/zap/zapcore"
 	"math"
 	"time"

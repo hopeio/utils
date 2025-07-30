@@ -2,7 +2,7 @@ package rbtree
 
 import (
 	"fmt"
-	"github.com/hopeio/utils/cmp"
+	"github.com/hopeio/gox/cmp"
 	"math/rand"
 	"testing"
 )

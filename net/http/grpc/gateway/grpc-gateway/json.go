@@ -7,8 +7,8 @@
 package grpc_gateway
 
 import (
-	"github.com/hopeio/utils/encoding/json"
-	responsei "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/gox/encoding/json"
+	responsei "github.com/hopeio/gox/net/http"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	"io"
 

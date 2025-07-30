@@ -8,7 +8,7 @@ package database
 
 import (
 	"database/sql"
-	sql2 "github.com/hopeio/utils/datax/database/sql"
+	sql2 "github.com/hopeio/gox/datax/database/sql"
 )
 
 func ExistsByFilterExprs(db *sql.DB, tableName string, filters sql2.FilterExprs) (bool, error) {

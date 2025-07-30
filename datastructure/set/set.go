@@ -6,7 +6,7 @@
 
 package set
 
-import "github.com/hopeio/utils/maps"
+import "github.com/hopeio/gox/maps"
 
 type Set[K comparable] map[K]struct{}
 

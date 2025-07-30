@@ -8,8 +8,8 @@ package parser
 
 import (
 	"github.com/blastrain/vitess-sqlparser/sqlparser"
-	"github.com/hopeio/utils/datax/database/mysql"
-	dbi "github.com/hopeio/utils/datax/database/toentity"
+	"github.com/hopeio/gox/datax/database/mysql"
+	dbi "github.com/hopeio/gox/datax/database/toentity"
 )
 
 func MysqlConvertByTable(sql string) {

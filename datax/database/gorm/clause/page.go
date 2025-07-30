@@ -9,7 +9,7 @@
 package clause
 
 import (
-	"github.com/hopeio/utils/types/param"
+	"github.com/hopeio/gox/types/param"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strconv"

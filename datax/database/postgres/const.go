@@ -7,7 +7,7 @@
 package postgres
 
 import (
-	"github.com/hopeio/utils/datax/database/sql"
+	"github.com/hopeio/gox/datax/database/sql"
 )
 
 const (

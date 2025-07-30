@@ -7,7 +7,7 @@
 package mp4box
 
 import (
-	execi "github.com/hopeio/utils/os/exec"
+	execi "github.com/hopeio/gox/os/exec"
 )
 
 // https://www.videohelp.com/software/MP4Box

@@ -2,8 +2,8 @@ package fs
 
 import (
 	"fmt"
-	httpi "github.com/hopeio/utils/net/http"
-	"github.com/hopeio/utils/net/http/consts"
+	httpi "github.com/hopeio/gox/net/http"
+	"github.com/hopeio/gox/net/http/consts"
 	"io"
 	"net/http"
 )

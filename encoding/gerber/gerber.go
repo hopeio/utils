@@ -3,8 +3,8 @@ package gerber
 import (
 	"bufio"
 	"fmt"
-	"github.com/hopeio/utils/log"
-	"github.com/hopeio/utils/math/geom"
+	"github.com/hopeio/gox/log"
+	"github.com/hopeio/gox/math/geom"
 	"io"
 	"math"
 	"strconv"

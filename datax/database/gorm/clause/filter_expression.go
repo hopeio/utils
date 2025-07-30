@@ -1,7 +1,7 @@
 package clause
 
 import (
-	dbi "github.com/hopeio/utils/datax/database/sql"
+	dbi "github.com/hopeio/gox/datax/database/sql"
 	"gorm.io/gorm/clause"
 	"strings"
 )

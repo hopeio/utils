@@ -9,7 +9,7 @@ package logger
 import (
 	"context"
 	"fmt"
-	logi "github.com/hopeio/utils/log"
+	logi "github.com/hopeio/gox/log"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gorm.io/gorm/logger"

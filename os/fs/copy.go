@@ -7,7 +7,7 @@
 package fs
 
 import (
-	"github.com/hopeio/utils/crypto/md5"
+	"github.com/hopeio/gox/crypto/md5"
 	"io"
 	"os"
 	"syscall"

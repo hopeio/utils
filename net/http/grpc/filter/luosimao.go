@@ -8,7 +8,7 @@ package filter
 
 import (
 	"context"
-	"github.com/hopeio/utils/sdk/luosimao"
+	"github.com/hopeio/gox/sdk/luosimao"
 	"google.golang.org/grpc/metadata"
 )
 

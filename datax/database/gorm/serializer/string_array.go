@@ -8,8 +8,8 @@ package serializer
 
 import (
 	"context"
-	"github.com/hopeio/utils/datax/database/datatypes"
-	reflecti "github.com/hopeio/utils/reflect"
+	"github.com/hopeio/gox/datax/database/datatypes"
+	reflecti "github.com/hopeio/gox/reflect"
 	"gorm.io/gorm/schema"
 	"reflect"
 	"unsafe"

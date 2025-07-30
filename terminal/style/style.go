@@ -8,7 +8,7 @@ package style
 
 import (
 	"fmt"
-	stringsi "github.com/hopeio/utils/strings"
+	stringsi "github.com/hopeio/gox/strings"
 	"strconv"
 )
 

@@ -8,7 +8,7 @@ package log
 
 import (
 	"context"
-	"github.com/hopeio/utils/slices"
+	"github.com/hopeio/gox/slices"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"log/slog"

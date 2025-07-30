@@ -9,7 +9,7 @@ package middleware
 import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-gonic/gin"
-	"github.com/hopeio/utils/net/http/apidoc"
+	"github.com/hopeio/gox/net/http/apidoc"
 	"net/http"
 )
 

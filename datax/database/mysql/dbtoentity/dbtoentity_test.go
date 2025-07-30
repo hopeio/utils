@@ -9,7 +9,7 @@ package dbtoentity
 import (
 	"database/sql"
 	"fmt"
-	dbi "github.com/hopeio/utils/datax/database/toentity"
+	dbi "github.com/hopeio/gox/datax/database/toentity"
 	"go/ast"
 	"go/format"
 	"go/parser"

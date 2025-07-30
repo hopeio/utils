@@ -10,7 +10,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
-	"github.com/hopeio/utils/encoding/text/template"
+	"github.com/hopeio/gox/encoding/text/template"
 	"net"
 	"net/smtp"
 )

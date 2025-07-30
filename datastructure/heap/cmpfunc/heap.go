@@ -7,7 +7,7 @@
 package heap
 
 import (
-	"github.com/hopeio/utils/cmp"
+	"github.com/hopeio/gox/cmp"
 )
 
 type Heap[T any] struct {

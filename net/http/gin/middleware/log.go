@@ -7,12 +7,12 @@
 package middleware
 
 import (
-	log2 "github.com/hopeio/utils/net/http/log"
+	log2 "github.com/hopeio/gox/net/http/log"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 )
 
 func SetLog(app *gin.Engine, logger2 *log.Logger, errHandle bool) {

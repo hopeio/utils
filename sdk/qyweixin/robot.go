@@ -9,7 +9,7 @@ package qyweixin
 import (
 	"errors"
 	"fmt"
-	"github.com/hopeio/utils/net/http/client"
+	"github.com/hopeio/gox/net/http/client"
 	"strings"
 )
 

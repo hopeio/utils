@@ -23,7 +23,7 @@
 package strings
 
 import (
-	reflect2 "github.com/hopeio/utils/reflect"
+	reflect2 "github.com/hopeio/gox/reflect"
 	"unsafe"
 )
 

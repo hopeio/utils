@@ -9,7 +9,7 @@ package loader
 import (
 	"errors"
 	"github.com/fsnotify/fsnotify"
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 	"io"
 	"os"
 	"path/filepath"

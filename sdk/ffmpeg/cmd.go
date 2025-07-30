@@ -7,8 +7,8 @@
 package ffmpeg
 
 import (
-	"github.com/hopeio/utils/log"
-	execi "github.com/hopeio/utils/os/exec"
+	"github.com/hopeio/gox/log"
+	execi "github.com/hopeio/gox/os/exec"
 )
 
 // doc: https://ffmpeg.org/ffmpeg-codecs.html

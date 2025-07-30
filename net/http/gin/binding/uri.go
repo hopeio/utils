@@ -8,7 +8,7 @@ package binding
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/hopeio/utils/reflect/mtos"
+	"github.com/hopeio/gox/reflect/mtos"
 	"reflect"
 )
 

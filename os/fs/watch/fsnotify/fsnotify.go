@@ -7,12 +7,12 @@
 package fsnotify
 
 import (
-	"github.com/hopeio/utils/os/fs/watch"
+	"github.com/hopeio/gox/os/fs/watch"
 	"path/filepath"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 )
 
 type Watch struct {

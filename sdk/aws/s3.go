@@ -15,7 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 )
 
 func News3() *s3.S3 {

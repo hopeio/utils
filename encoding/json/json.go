@@ -4,7 +4,7 @@ package json
 
 import (
 	"encoding/json"
-	"github.com/hopeio/utils/strings"
+	"github.com/hopeio/gox/strings"
 )
 
 var (

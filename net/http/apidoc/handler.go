@@ -8,8 +8,8 @@ package apidoc
 
 import (
 	"bytes"
-	"github.com/hopeio/utils/net/http/consts"
-	"github.com/hopeio/utils/os/fs"
+	"github.com/hopeio/gox/net/http/consts"
+	"github.com/hopeio/gox/os/fs"
 	"net/http"
 	"os"
 	"path"

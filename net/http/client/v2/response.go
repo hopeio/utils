@@ -8,8 +8,8 @@ package client
 
 import (
 	"fmt"
-	httpi "github.com/hopeio/utils/net/http"
-	"github.com/hopeio/utils/net/http/client"
+	httpi "github.com/hopeio/gox/net/http"
+	"github.com/hopeio/gox/net/http/client"
 )
 
 type RespData[RES any] httpi.RespData[RES]

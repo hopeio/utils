@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/cloudflare/cloudflare-go"
-	"github.com/hopeio/utils/log"
-	neti "github.com/hopeio/utils/net"
+	"github.com/hopeio/gox/log"
+	neti "github.com/hopeio/gox/net"
 	"strings"
 )
 

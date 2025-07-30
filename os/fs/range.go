@@ -8,7 +8,7 @@ package fs
 
 import (
 	"errors"
-	"github.com/hopeio/utils/errors/multierr"
+	"github.com/hopeio/gox/errors/multierr"
 	"io/fs"
 	"iter"
 	"os"

@@ -1,9 +1,9 @@
 package clause
 
 import (
-	sql2 "github.com/hopeio/utils/datax/database/sql"
-	"github.com/hopeio/utils/reflect/structtag"
-	stringsi "github.com/hopeio/utils/strings"
+	sql2 "github.com/hopeio/gox/datax/database/sql"
+	"github.com/hopeio/gox/reflect/structtag"
+	stringsi "github.com/hopeio/gox/strings"
 	"gorm.io/gorm/clause"
 	"reflect"
 )

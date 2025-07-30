@@ -2,7 +2,7 @@ package excel
 
 import (
 	"fmt"
-	reflecti "github.com/hopeio/utils/reflect"
+	reflecti "github.com/hopeio/gox/reflect"
 	"reflect"
 )
 

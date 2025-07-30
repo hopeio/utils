@@ -9,7 +9,7 @@ package strings
 import (
 	"bytes"
 	"fmt"
-	"github.com/hopeio/utils/strings/ascii"
+	"github.com/hopeio/gox/strings/ascii"
 	"math/rand"
 	"regexp"
 	"slices"

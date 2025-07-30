@@ -8,7 +8,7 @@ package client
 
 import (
 	"fmt"
-	urli "github.com/hopeio/utils/net/url"
+	urli "github.com/hopeio/gox/net/url"
 	"net/http"
 	"net/url"
 	"os"

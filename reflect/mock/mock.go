@@ -7,7 +7,7 @@
 package mock
 
 import (
-	randi "github.com/hopeio/utils/strings"
+	randi "github.com/hopeio/gox/strings"
 	"math/rand/v2"
 	"reflect"
 	"time"

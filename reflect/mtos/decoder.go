@@ -8,8 +8,8 @@ import (
 	"encoding"
 	"errors"
 	"fmt"
-	"github.com/hopeio/utils/errors/multierr"
-	reflecti "github.com/hopeio/utils/reflect/converter"
+	"github.com/hopeio/gox/errors/multierr"
+	reflecti "github.com/hopeio/gox/reflect/converter"
 
 	"reflect"
 	"strings"

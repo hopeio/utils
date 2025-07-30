@@ -7,7 +7,7 @@
 package client
 
 import (
-	"github.com/hopeio/utils/net/http/client"
+	"github.com/hopeio/gox/net/http/client"
 )
 
 func GetRequest[RES any](url string) *Request[RES] {

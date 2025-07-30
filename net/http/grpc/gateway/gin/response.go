@@ -8,12 +8,12 @@ package gin
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/hopeio/utils/net/http/consts"
+	"github.com/hopeio/gox/net/http/consts"
 
-	"github.com/hopeio/utils/encoding/protobuf/jsonpb"
-	httpi "github.com/hopeio/utils/net/http"
-	"github.com/hopeio/utils/net/http/grpc"
-	"github.com/hopeio/utils/net/http/grpc/gateway"
+	"github.com/hopeio/gox/encoding/protobuf/jsonpb"
+	httpi "github.com/hopeio/gox/net/http"
+	"github.com/hopeio/gox/net/http/grpc"
+	"github.com/hopeio/gox/net/http/grpc/gateway"
 	"google.golang.org/protobuf/proto"
 )
 

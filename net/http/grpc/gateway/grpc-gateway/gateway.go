@@ -9,9 +9,9 @@ package grpc_gateway
 import (
 	"context"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	httpi "github.com/hopeio/utils/net/http"
-	"github.com/hopeio/utils/net/http/consts"
-	"github.com/hopeio/utils/net/http/grpc/gateway"
+	httpi "github.com/hopeio/gox/net/http"
+	"github.com/hopeio/gox/net/http/consts"
+	"github.com/hopeio/gox/net/http/grpc/gateway"
 	"google.golang.org/grpc/metadata"
 	"net/http"
 	"net/url"

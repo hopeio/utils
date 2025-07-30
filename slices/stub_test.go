@@ -21,7 +21,7 @@
 package slices
 
 import (
-	"github.com/hopeio/utils/reflect"
+	"github.com/hopeio/gox/reflect"
 	"testing"
 	"unsafe"
 )

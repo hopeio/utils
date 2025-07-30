@@ -10,7 +10,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 	"os"
 )
 

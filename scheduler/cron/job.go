@@ -7,7 +7,7 @@
 package cron
 
 import (
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 )
 
 type RedisTo struct {

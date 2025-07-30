@@ -7,7 +7,7 @@
 package path
 
 import (
-	stringsi "github.com/hopeio/utils/strings"
+	stringsi "github.com/hopeio/gox/strings"
 	sdpath "path"
 	"path/filepath"
 	"slices"

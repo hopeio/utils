@@ -8,7 +8,7 @@ package luosimao
 
 import (
 	"errors"
-	"github.com/hopeio/utils/net/http/client"
+	"github.com/hopeio/gox/net/http/client"
 	"net/http"
 )
 

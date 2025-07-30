@@ -9,9 +9,9 @@ package fs
 import (
 	"crypto/md5"
 	"encoding/hex"
-	md52 "github.com/hopeio/utils/crypto/md5"
-	"github.com/hopeio/utils/log"
-	"github.com/hopeio/utils/slices"
+	md52 "github.com/hopeio/gox/crypto/md5"
+	"github.com/hopeio/gox/log"
+	"github.com/hopeio/gox/slices"
 	"io"
 	"os"
 	stdpath "path"

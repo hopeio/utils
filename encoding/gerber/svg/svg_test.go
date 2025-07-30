@@ -1,7 +1,7 @@
 package svg
 
 import (
-	"github.com/hopeio/utils/encoding/gerber"
+	"github.com/hopeio/gox/encoding/gerber"
 	"os"
 	"testing"
 )

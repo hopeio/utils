@@ -1,7 +1,7 @@
 package sql
 
 import (
-	"github.com/hopeio/utils/reflect/structtag"
+	"github.com/hopeio/gox/reflect/structtag"
 	"reflect"
 )
 

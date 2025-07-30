@@ -7,7 +7,7 @@
 package geom
 
 import (
-	mathi "github.com/hopeio/utils/math"
+	mathi "github.com/hopeio/gox/math"
 	"golang.org/x/exp/constraints"
 	"image"
 	"math"

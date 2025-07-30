@@ -1,7 +1,7 @@
 package slices
 
 import (
-	"github.com/hopeio/utils/types"
+	"github.com/hopeio/gox/types"
 	"iter"
 )
 

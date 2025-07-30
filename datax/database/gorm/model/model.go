@@ -7,7 +7,7 @@
 package model
 
 import (
-	"github.com/hopeio/utils/types/model"
+	"github.com/hopeio/gox/types/model"
 	"gorm.io/gorm"
 	"time"
 )

@@ -11,7 +11,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 )
 
 func init() {

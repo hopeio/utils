@@ -8,7 +8,7 @@ package libjxl
 
 import (
 	"fmt"
-	execi "github.com/hopeio/utils/os/exec"
+	execi "github.com/hopeio/gox/os/exec"
 	"strings"
 )
 

@@ -8,7 +8,7 @@ package image
 
 import (
 	"fmt"
-	debugi "github.com/hopeio/utils/runtime/debug"
+	debugi "github.com/hopeio/gox/runtime/debug"
 	"image"
 	"image/jpeg"
 	"os"

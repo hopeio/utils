@@ -8,7 +8,7 @@ package binding
 
 import (
 	"errors"
-	"github.com/hopeio/utils/reflect/mtos"
+	"github.com/hopeio/gox/reflect/mtos"
 	"mime/multipart"
 	"reflect"
 )

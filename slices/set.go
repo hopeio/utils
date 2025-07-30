@@ -7,8 +7,8 @@
 package slices
 
 import (
-	"github.com/hopeio/utils/cmp"
-	"github.com/hopeio/utils/types"
+	"github.com/hopeio/gox/cmp"
+	"github.com/hopeio/gox/types"
 	"golang.org/x/exp/constraints"
 	"golang.org/x/exp/maps"
 	"slices"

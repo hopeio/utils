@@ -1,6 +1,6 @@
 # grpcweb
 --
-    import "github.com/hopeio/utils/net/http/grpc/web"
+    import "github.com/hopeio/gox/net/http/grpc/web"
 
 `grpcweb` implements the gRPC-Web spec as a wrapper around a gRPC-Go Server.
 

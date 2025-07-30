@@ -7,8 +7,8 @@
 package exec
 
 import (
-	osi "github.com/hopeio/utils/os"
-	stringsi "github.com/hopeio/utils/strings"
+	osi "github.com/hopeio/gox/os"
+	stringsi "github.com/hopeio/gox/strings"
 	"log"
 	"os"
 	"os/exec"

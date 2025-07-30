@@ -9,8 +9,8 @@ package ffmpeg
 import (
 	"bytes"
 	"fmt"
-	execi "github.com/hopeio/utils/os/exec"
-	fs2 "github.com/hopeio/utils/os/fs"
+	execi "github.com/hopeio/gox/os/exec"
+	fs2 "github.com/hopeio/gox/os/fs"
 	"log"
 	"os"
 )

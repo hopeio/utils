@@ -7,9 +7,9 @@
 package parallel
 
 import (
-	"github.com/hopeio/utils/log"
-	"github.com/hopeio/utils/types"
-	"github.com/hopeio/utils/types/interfaces"
+	"github.com/hopeio/gox/log"
+	"github.com/hopeio/gox/types"
+	"github.com/hopeio/gox/types/interfaces"
 	"sync"
 )
 

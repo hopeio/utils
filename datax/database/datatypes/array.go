@@ -13,9 +13,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	dbi "github.com/hopeio/utils/datax/database"
-	reflecti "github.com/hopeio/utils/reflect/converter"
-	stringsi "github.com/hopeio/utils/strings"
+	dbi "github.com/hopeio/gox/datax/database"
+	reflecti "github.com/hopeio/gox/reflect/converter"
+	stringsi "github.com/hopeio/gox/strings"
 	"time"
 
 	"golang.org/x/exp/constraints"

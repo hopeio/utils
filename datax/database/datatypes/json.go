@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hopeio/utils/strings"
+	"github.com/hopeio/gox/strings"
 )
 
 type RawJson []byte

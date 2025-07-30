@@ -8,9 +8,9 @@ package upload
 
 import (
 	"fmt"
-	httpi "github.com/hopeio/utils/net/http"
-	"github.com/hopeio/utils/net/http/consts"
-	"github.com/hopeio/utils/os/fs"
+	httpi "github.com/hopeio/gox/net/http"
+	"github.com/hopeio/gox/net/http/consts"
+	"github.com/hopeio/gox/os/fs"
 	"io"
 	"net/http"
 	"os"

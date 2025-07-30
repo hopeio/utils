@@ -8,8 +8,8 @@ package gin
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/hopeio/utils/errors/errcode"
-	httpi "github.com/hopeio/utils/net/http"
+	"github.com/hopeio/gox/errors/errcode"
+	httpi "github.com/hopeio/gox/net/http"
 )
 
 func RespSuccessMsg(ctx *gin.Context, msg string) {

@@ -7,7 +7,7 @@
 package heap
 
 import (
-	"github.com/hopeio/utils/cmp"
+	"github.com/hopeio/gox/cmp"
 )
 
 func Init[T any](heap []T, cmp cmp.CompareFunc[T]) {

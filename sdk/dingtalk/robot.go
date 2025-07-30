@@ -12,7 +12,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/hopeio/utils/net/http/client"
+	"github.com/hopeio/gox/net/http/client"
 	"net/url"
 	"strconv"
 	"strings"

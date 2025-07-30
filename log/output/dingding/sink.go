@@ -7,7 +7,7 @@
 package dingding
 
 import (
-	"github.com/hopeio/utils/sdk/dingtalk"
+	"github.com/hopeio/gox/sdk/dingtalk"
 	"go.uber.org/zap"
 	"net/url"
 )

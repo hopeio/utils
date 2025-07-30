@@ -7,8 +7,8 @@
 package log
 
 import (
-	neti "github.com/hopeio/utils/net"
-	"github.com/hopeio/utils/slices"
+	neti "github.com/hopeio/gox/net"
+	"github.com/hopeio/gox/slices"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"log"

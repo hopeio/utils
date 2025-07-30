@@ -8,7 +8,7 @@ package gbk
 
 import (
 	"bytes"
-	strings2 "github.com/hopeio/utils/strings"
+	strings2 "github.com/hopeio/gox/strings"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 	"io"

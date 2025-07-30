@@ -7,7 +7,7 @@ import (
 	"sort"
 	"testing"
 
-	testproto "github.com/hopeio/utils/net/http/grpc/web/test"
+	testproto "github.com/hopeio/gox/net/http/grpc/web/test"
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"

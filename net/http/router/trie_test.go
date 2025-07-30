@@ -2,7 +2,7 @@ package router
 
 import (
 	"fmt"
-	"github.com/hopeio/utils/encoding/json"
+	"github.com/hopeio/gox/encoding/json"
 	"net/http"
 	"testing"
 )

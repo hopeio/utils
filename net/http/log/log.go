@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 )
 
 type consoleColorModeValue int

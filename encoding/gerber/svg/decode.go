@@ -6,8 +6,8 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"github.com/hopeio/utils/encoding/gerber"
-	jsoni "github.com/hopeio/utils/encoding/json"
+	"github.com/hopeio/gox/encoding/gerber"
+	jsoni "github.com/hopeio/gox/encoding/json"
 
 	"github.com/mitchellh/mapstructure"
 )

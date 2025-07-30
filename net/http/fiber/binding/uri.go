@@ -8,7 +8,7 @@ package binding
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/hopeio/utils/reflect/mtos"
+	"github.com/hopeio/gox/reflect/mtos"
 	"reflect"
 )
 

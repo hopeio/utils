@@ -3,7 +3,7 @@ package skiplist
 import (
 	"math/rand"
 
-	"github.com/hopeio/utils/cmp"
+	"github.com/hopeio/gox/cmp"
 )
 
 // A SkipList maintains an ordered collection of key:valkue pairs.

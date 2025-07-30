@@ -7,7 +7,7 @@
 package _go
 
 import (
-	execi "github.com/hopeio/utils/os/exec"
+	execi "github.com/hopeio/gox/os/exec"
 	"os"
 	"strings"
 )

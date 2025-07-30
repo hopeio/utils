@@ -5,7 +5,7 @@
 package stack
 
 import (
-	"github.com/hopeio/utils/sync"
+	"github.com/hopeio/gox/sync"
 	"sync/atomic"
 )
 

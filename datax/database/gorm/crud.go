@@ -7,7 +7,7 @@
 package gorm
 
 import (
-	sql2 "github.com/hopeio/utils/datax/database/sql"
+	sql2 "github.com/hopeio/gox/datax/database/sql"
 	"gorm.io/gorm"
 )
 

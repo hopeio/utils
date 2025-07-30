@@ -9,7 +9,7 @@
 package exec
 
 import (
-	osi "github.com/hopeio/utils/os"
+	osi "github.com/hopeio/gox/os"
 	"os/exec"
 )
 

@@ -7,7 +7,7 @@
 package client
 
 import (
-	httpi "github.com/hopeio/utils/net/http/consts"
+	httpi "github.com/hopeio/gox/net/http/consts"
 	"net/http"
 )
 

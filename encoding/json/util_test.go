@@ -7,7 +7,7 @@
 package json
 
 import (
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 	"testing"
 )
 

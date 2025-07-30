@@ -9,8 +9,8 @@ package watch
 import (
 	"bytes"
 	"crypto/md5"
-	"github.com/hopeio/utils/log"
-	http_fs "github.com/hopeio/utils/net/http/fs"
+	"github.com/hopeio/gox/log"
+	http_fs "github.com/hopeio/gox/net/http/fs"
 	"io"
 	"net/http"
 	"time"

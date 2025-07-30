@@ -7,7 +7,7 @@
 package slices
 
 import (
-	"github.com/hopeio/utils/cmp"
+	"github.com/hopeio/gox/cmp"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

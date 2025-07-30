@@ -6,7 +6,7 @@
 package url
 
 import (
-	stringsi "github.com/hopeio/utils/strings"
+	stringsi "github.com/hopeio/gox/strings"
 	"net/url"
 )
 

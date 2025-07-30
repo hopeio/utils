@@ -7,8 +7,8 @@
 package parallel
 
 import (
-	"github.com/hopeio/utils/errors/multierr"
-	"github.com/hopeio/utils/types"
+	"github.com/hopeio/gox/errors/multierr"
+	"github.com/hopeio/gox/types"
 	"golang.org/x/sync/errgroup"
 )
 

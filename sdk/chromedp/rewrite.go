@@ -11,7 +11,7 @@ import (
 	"encoding/base64"
 	"github.com/chromedp/cdproto/fetch"
 	"github.com/chromedp/chromedp"
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 	"os"
 )
 

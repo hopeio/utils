@@ -7,7 +7,7 @@
 package grpc
 
 import (
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 	"go.uber.org/zap/zapgrpc"
 	"google.golang.org/grpc/grpclog"
 )

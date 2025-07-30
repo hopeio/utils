@@ -3,11 +3,11 @@ package handlerwrap
 import (
 	"context"
 	"encoding/json"
-	"github.com/hopeio/utils/errors/errcode"
-	httpi "github.com/hopeio/utils/net/http"
-	"github.com/hopeio/utils/net/http/binding"
-	"github.com/hopeio/utils/net/http/consts"
-	"github.com/hopeio/utils/types"
+	"github.com/hopeio/gox/errors/errcode"
+	httpi "github.com/hopeio/gox/net/http"
+	"github.com/hopeio/gox/net/http/binding"
+	"github.com/hopeio/gox/net/http/consts"
+	"github.com/hopeio/gox/types"
 	"net/http"
 )
 

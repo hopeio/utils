@@ -7,8 +7,8 @@
 package slices
 
 import (
-	"github.com/hopeio/utils/cmp"
-	reflecti "github.com/hopeio/utils/reflect"
+	"github.com/hopeio/gox/cmp"
+	reflecti "github.com/hopeio/gox/reflect"
 	"golang.org/x/exp/constraints"
 	"slices"
 

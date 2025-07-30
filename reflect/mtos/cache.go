@@ -6,7 +6,7 @@ package mtos
 
 import (
 	"errors"
-	reflecti "github.com/hopeio/utils/reflect/converter"
+	reflecti "github.com/hopeio/gox/reflect/converter"
 	"reflect"
 	"strconv"
 	"strings"

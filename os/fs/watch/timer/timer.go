@@ -7,8 +7,8 @@
 package timer
 
 import (
-	"github.com/hopeio/utils/log"
-	"github.com/hopeio/utils/os/fs/watch"
+	"github.com/hopeio/gox/log"
+	"github.com/hopeio/gox/os/fs/watch"
 	"os"
 	"path/filepath"
 	"time"

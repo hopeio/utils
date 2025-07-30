@@ -4,9 +4,9 @@ import (
 	"context"
 	"flag"
 	"github.com/cloudflare/cloudflare-go"
-	"github.com/hopeio/utils/log"
-	neti "github.com/hopeio/utils/net"
-	"github.com/hopeio/utils/scheduler/retry"
+	"github.com/hopeio/gox/log"
+	neti "github.com/hopeio/gox/net"
+	"github.com/hopeio/gox/scheduler/retry"
 	"slices"
 	"time"
 )

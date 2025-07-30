@@ -8,8 +8,8 @@ package dbtoentity
 
 import (
 	"database/sql"
-	"github.com/hopeio/utils/datax/database/mysql"
-	dbi "github.com/hopeio/utils/datax/database/toentity"
+	"github.com/hopeio/gox/datax/database/mysql"
+	dbi "github.com/hopeio/gox/datax/database/toentity"
 )
 
 func MysqlConvert(db *sql.DB, filename string) {

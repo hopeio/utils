@@ -9,8 +9,8 @@ package path
 // 该文件仅供示例
 
 import (
-	stringsi "github.com/hopeio/utils/strings"
-	timei "github.com/hopeio/utils/time"
+	stringsi "github.com/hopeio/gox/strings"
+	timei "github.com/hopeio/gox/time"
 	"os"
 	"strconv"
 	"strings"

@@ -8,7 +8,7 @@ package client
 
 import (
 	"fmt"
-	httpi "github.com/hopeio/utils/net/http"
+	httpi "github.com/hopeio/gox/net/http"
 )
 
 type ResponseBody httpi.RespAnyData

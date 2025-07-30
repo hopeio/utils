@@ -9,7 +9,7 @@
 package exec
 
 import (
-	stringsi "github.com/hopeio/utils/strings"
+	stringsi "github.com/hopeio/gox/strings"
 	"os"
 	"os/exec"
 	"syscall"

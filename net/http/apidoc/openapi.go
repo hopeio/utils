@@ -2,7 +2,7 @@ package apidoc
 
 import (
 	"github.com/getkin/kin-openapi/openapi3"
-	reflecti "github.com/hopeio/utils/reflect"
+	reflecti "github.com/hopeio/gox/reflect"
 	"reflect"
 	"strings"
 )

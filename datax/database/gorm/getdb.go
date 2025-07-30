@@ -8,8 +8,8 @@ package gorm
 
 import (
 	"context"
-	loggeri "github.com/hopeio/utils/datax/database/gorm/logger"
-	"github.com/hopeio/utils/log"
+	loggeri "github.com/hopeio/gox/datax/database/gorm/logger"
+	"github.com/hopeio/gox/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )

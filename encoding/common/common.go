@@ -9,7 +9,7 @@ package common
 import (
 	"encoding/json"
 	"errors"
-	"github.com/hopeio/utils/encoding"
+	"github.com/hopeio/gox/encoding"
 	"github.com/pelletier/go-toml/v2"
 	"gopkg.in/yaml.v3"
 	"strings"

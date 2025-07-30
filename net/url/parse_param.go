@@ -7,8 +7,8 @@
 package url
 
 import (
-	"github.com/hopeio/utils/math"
-	stringsi "github.com/hopeio/utils/strings"
+	"github.com/hopeio/gox/math"
+	stringsi "github.com/hopeio/gox/strings"
 	stdurl "net/url"
 	"path"
 	"reflect"

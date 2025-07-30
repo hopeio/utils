@@ -1,7 +1,7 @@
 package fiber
 
 import (
-	"github.com/hopeio/utils/strings"
+	"github.com/hopeio/gox/strings"
 	"github.com/valyala/fasthttp"
 )
 

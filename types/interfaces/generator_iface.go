@@ -7,7 +7,7 @@
 package interfaces
 
 import (
-	"github.com/hopeio/utils/types/constraints"
+	"github.com/hopeio/gox/types/constraints"
 	"time"
 )
 

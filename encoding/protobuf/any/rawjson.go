@@ -7,7 +7,7 @@
 package any
 
 import (
-	"github.com/hopeio/utils/encoding/json"
+	"github.com/hopeio/gox/encoding/json"
 )
 
 type RawJson []byte

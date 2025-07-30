@@ -8,8 +8,8 @@ package text
 
 import (
 	"encoding"
-	reflecti "github.com/hopeio/utils/reflect/converter"
-	stringsi "github.com/hopeio/utils/strings"
+	reflecti "github.com/hopeio/gox/reflect/converter"
+	stringsi "github.com/hopeio/gox/strings"
 	"golang.org/x/exp/constraints"
 	"golang.org/x/net/html/charset"
 	tencoding "golang.org/x/text/encoding"

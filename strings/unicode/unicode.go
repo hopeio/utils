@@ -7,7 +7,7 @@
 package unicode
 
 import (
-	stringsi "github.com/hopeio/utils/strings"
+	stringsi "github.com/hopeio/gox/strings"
 	"slices"
 	"unicode"
 	"unicode/utf16"

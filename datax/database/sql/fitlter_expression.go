@@ -9,7 +9,7 @@ package sql
 import (
 	"database/sql/driver"
 	"fmt"
-	"github.com/hopeio/utils/encoding/text"
+	"github.com/hopeio/gox/encoding/text"
 	"reflect"
 	"strconv"
 	"strings"

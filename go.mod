@@ -1,4 +1,4 @@
-module github.com/hopeio/utils
+module github.com/hopeio/gox
 
 go 1.23.0
 

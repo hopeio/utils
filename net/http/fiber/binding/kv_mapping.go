@@ -7,8 +7,8 @@
 package binding
 
 import (
-	"github.com/hopeio/utils/reflect/mtos"
-	stringsi "github.com/hopeio/utils/strings"
+	"github.com/hopeio/gox/reflect/mtos"
+	stringsi "github.com/hopeio/gox/strings"
 	"github.com/valyala/fasthttp"
 	"reflect"
 )

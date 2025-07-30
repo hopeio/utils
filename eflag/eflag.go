@@ -2,10 +2,10 @@ package eflag
 
 import (
 	"errors"
-	reflecti "github.com/hopeio/utils/reflect"
-	"github.com/hopeio/utils/reflect/converter"
-	"github.com/hopeio/utils/reflect/mtos"
-	"github.com/hopeio/utils/reflect/structtag"
+	reflecti "github.com/hopeio/gox/reflect"
+	"github.com/hopeio/gox/reflect/converter"
+	"github.com/hopeio/gox/reflect/mtos"
+	"github.com/hopeio/gox/reflect/structtag"
 	"github.com/spf13/pflag"
 	"os"
 	"reflect"

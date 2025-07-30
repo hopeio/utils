@@ -8,7 +8,7 @@ package ffmpeg
 
 import (
 	"fmt"
-	"github.com/hopeio/utils/sdk/mp4box"
+	"github.com/hopeio/gox/sdk/mp4box"
 	"strings"
 )
 

@@ -8,7 +8,7 @@ package crawler
 
 import (
 	"context"
-	"github.com/hopeio/utils/scheduler/engine"
+	"github.com/hopeio/gox/scheduler/engine"
 )
 
 type Request = engine.Task[string]

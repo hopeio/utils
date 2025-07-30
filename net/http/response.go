@@ -8,8 +8,8 @@ package http
 
 import (
 	"encoding/json"
-	"github.com/hopeio/utils/errors/errcode"
-	"github.com/hopeio/utils/net/http/consts"
+	"github.com/hopeio/gox/errors/errcode"
+	"github.com/hopeio/gox/net/http/consts"
 	"io"
 	"iter"
 	"net/http"

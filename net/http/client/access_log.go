@@ -8,9 +8,9 @@ package client
 
 import (
 	"encoding/json"
-	"github.com/hopeio/utils/log"
-	"github.com/hopeio/utils/net/http/consts"
-	stringsi "github.com/hopeio/utils/strings"
+	"github.com/hopeio/gox/log"
+	"github.com/hopeio/gox/net/http/consts"
+	stringsi "github.com/hopeio/gox/strings"
 	"go.uber.org/zap"
 	"net/http"
 	"strings"

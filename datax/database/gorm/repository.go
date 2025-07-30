@@ -7,7 +7,7 @@
 package gorm
 
 import (
-	"github.com/hopeio/utils/datax/database/gorm/scope"
+	"github.com/hopeio/gox/datax/database/gorm/scope"
 	"gorm.io/gorm"
 )
 

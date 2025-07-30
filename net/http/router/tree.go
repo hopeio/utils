@@ -5,7 +5,7 @@
 package router
 
 import (
-	httpi "github.com/hopeio/utils/net/http"
+	httpi "github.com/hopeio/gox/net/http"
 	"net/http"
 	"reflect"
 	"sort"

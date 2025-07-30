@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"github.com/hopeio/utils/net/http/consts"
+	"github.com/hopeio/gox/net/http/consts"
 	"net/http"
 	"path"
 	"strings"

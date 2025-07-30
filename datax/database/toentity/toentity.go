@@ -9,8 +9,8 @@ package toentity
 import (
 	"bytes"
 	"fmt"
-	"github.com/hopeio/utils/os/fs"
-	stringsi "github.com/hopeio/utils/strings"
+	"github.com/hopeio/gox/os/fs"
+	stringsi "github.com/hopeio/gox/strings"
 	"go/ast"
 	"go/format"
 	"go/parser"

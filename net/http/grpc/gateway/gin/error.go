@@ -8,9 +8,9 @@ package gin
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/hopeio/utils/encoding/protobuf/jsonpb"
-	"github.com/hopeio/utils/errors/errcode"
-	httpi "github.com/hopeio/utils/net/http/consts"
+	"github.com/hopeio/gox/encoding/protobuf/jsonpb"
+	"github.com/hopeio/gox/errors/errcode"
+	httpi "github.com/hopeio/gox/net/http/consts"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/status"
 	"io"

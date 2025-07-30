@@ -13,7 +13,7 @@ import (
 	"errors"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
-	"github.com/hopeio/utils/io"
+	"github.com/hopeio/gox/io"
 	"net/http"
 )
 

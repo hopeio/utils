@@ -6,7 +6,7 @@
 
 package retry
 
-import "github.com/hopeio/utils/errors/multierr"
+import "github.com/hopeio/gox/errors/multierr"
 
 func RunTimes(times int, f func(int) error) error {
 	var err error

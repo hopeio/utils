@@ -16,7 +16,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	zh_translations "github.com/go-playground/validator/v10/translations/zh"
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 )
 
 var (

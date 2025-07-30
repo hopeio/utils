@@ -9,10 +9,10 @@ package m3u8
 import (
 	"errors"
 	"fmt"
-	"github.com/hopeio/utils/crypto/aes"
-	em3u8 "github.com/hopeio/utils/encoding/m3u8"
-	"github.com/hopeio/utils/net/http/client"
-	url2 "github.com/hopeio/utils/net/url"
+	"github.com/hopeio/gox/crypto/aes"
+	em3u8 "github.com/hopeio/gox/encoding/m3u8"
+	"github.com/hopeio/gox/net/http/client"
+	url2 "github.com/hopeio/gox/net/url"
 	"net/url"
 )
 

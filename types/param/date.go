@@ -7,7 +7,7 @@
 package param
 
 import (
-	timei "github.com/hopeio/utils/time"
+	timei "github.com/hopeio/gox/time"
 	"strconv"
 	"time"
 )

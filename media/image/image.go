@@ -7,7 +7,7 @@
 package image
 
 import (
-	colori "github.com/hopeio/utils/media/image/color"
+	colori "github.com/hopeio/gox/media/image/color"
 	"image"
 	"image/color"
 	"math"

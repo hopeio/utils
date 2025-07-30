@@ -6,7 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/hopeio/utils/strings"
+	"github.com/hopeio/gox/strings"
 	"io"
 	"math/rand"
 	"sync"

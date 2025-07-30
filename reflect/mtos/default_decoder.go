@@ -1,7 +1,7 @@
 package mtos
 
 import (
-	reflecti "github.com/hopeio/utils/reflect/converter"
+	reflecti "github.com/hopeio/gox/reflect/converter"
 )
 
 var defaultDecoder = NewDecoder("json")

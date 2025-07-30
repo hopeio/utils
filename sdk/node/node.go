@@ -8,7 +8,7 @@ package node
 
 import (
 	"github.com/fsnotify/fsnotify"
-	"github.com/hopeio/utils/log"
+	"github.com/hopeio/gox/log"
 
 	"os"
 	"os/exec"

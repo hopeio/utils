@@ -4,7 +4,7 @@
 
 package btree
 
-import "github.com/hopeio/utils/cmp"
+import "github.com/hopeio/gox/cmp"
 
 const maxItems = 255
 const minItems = maxItems * 40 / 100

@@ -9,9 +9,9 @@ package binding
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hopeio/utils/net/http/consts"
-	"github.com/hopeio/utils/reflect/mtos"
-	"github.com/hopeio/utils/validation/validator"
+	"github.com/hopeio/gox/net/http/consts"
+	"github.com/hopeio/gox/reflect/mtos"
+	"github.com/hopeio/gox/validation/validator"
 	"io"
 	"net/http"
 	"reflect"

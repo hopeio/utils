@@ -7,8 +7,8 @@
 package model
 
 import (
-	model1 "github.com/hopeio/utils/datax/database/sql/model"
-	"github.com/hopeio/utils/types/model"
+	model1 "github.com/hopeio/gox/datax/database/sql/model"
+	"github.com/hopeio/gox/types/model"
 	"gorm.io/gorm"
 )
 

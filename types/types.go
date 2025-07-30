@@ -7,7 +7,7 @@
 package types
 
 import (
-	constraintsi "github.com/hopeio/utils/types/constraints"
+	constraintsi "github.com/hopeio/gox/types/constraints"
 )
 
 type String string

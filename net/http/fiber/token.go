@@ -7,8 +7,8 @@
 package fiber
 
 import (
-	"github.com/hopeio/utils/net/http/consts"
-	stringsi "github.com/hopeio/utils/strings"
+	"github.com/hopeio/gox/net/http/consts"
+	stringsi "github.com/hopeio/gox/strings"
 	"github.com/valyala/fasthttp"
 	"net/url"
 )

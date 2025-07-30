@@ -8,7 +8,7 @@ package http
 
 import (
 	"fmt"
-	"github.com/hopeio/utils/net/http/consts"
+	"github.com/hopeio/gox/net/http/consts"
 	"mime"
 	"net/http"
 	"net/url"

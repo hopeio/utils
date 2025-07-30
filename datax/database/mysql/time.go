@@ -7,7 +7,7 @@
 package mysql
 
 import (
-	timei "github.com/hopeio/utils/time"
+	timei "github.com/hopeio/gox/time"
 	"time"
 )
 

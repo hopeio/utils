@@ -82,8 +82,8 @@ package router
 
 import (
 	"context"
-	httpi "github.com/hopeio/utils/net/http"
-	urli "github.com/hopeio/utils/net/url"
+	httpi "github.com/hopeio/gox/net/http"
+	urli "github.com/hopeio/gox/net/url"
 	"net/http"
 	"strings"
 	"sync"

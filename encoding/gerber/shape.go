@@ -1,8 +1,8 @@
 package gerber
 
 import (
-	"github.com/hopeio/utils/math/geom"
-	imagei "github.com/hopeio/utils/media/image"
+	"github.com/hopeio/gox/math/geom"
+	imagei "github.com/hopeio/gox/media/image"
 	"image"
 )
 

@@ -8,10 +8,10 @@ package binding
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/hopeio/utils/net/http/binding"
-	"github.com/hopeio/utils/net/http/consts"
-	"github.com/hopeio/utils/reflect/mtos"
-	stringsi "github.com/hopeio/utils/strings"
+	"github.com/hopeio/gox/net/http/binding"
+	"github.com/hopeio/gox/net/http/consts"
+	"github.com/hopeio/gox/reflect/mtos"
+	stringsi "github.com/hopeio/gox/strings"
 	"net/http"
 )
 
